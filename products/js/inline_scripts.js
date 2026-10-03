@@ -879,7 +879,7 @@ first.parentNode.insertBefore(script, first);
     "@type": "Organization",
     "name": "FURLOU ",
     
-      "logo": "https:\/\/i.ibb.co\/sdZzF5Sz\/logo-PUPSY.png",
+      "logo": "https:\/\/pupsystores-glitch.github.io\/PUPSYWEB\/images\/logo_PUPSY_optimized.png",
     
     "sameAs": [
       "",
