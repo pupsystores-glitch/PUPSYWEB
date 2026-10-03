@@ -129,6 +129,68 @@ svg.wlh-svg-Icon path {
 }
 
 @media only screen and (max-width: 749px) {
+    .mobile-menu__block--button {
+        display: none !important;
+    }
+
+    #pupsy-mobile-navigation {
+        display: flex !important;
+        position: absolute !important;
+        z-index: 10 !important;
+        top: 109px;
+        right: 0;
+        bottom: 51px;
+        left: 0;
+        flex-direction: column;
+        overflow-x: hidden;
+        overflow-y: auto;
+        padding: 8px 0;
+        background: #fff;
+        animation: none !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        transform: none !important;
+        -webkit-transform: none !important;
+        -webkit-backface-visibility: visible !important;
+        will-change: auto !important;
+    }
+
+    #pupsy-mobile-navigation a {
+        display: flex;
+        flex: 0 0 auto;
+        min-height: 50px;
+        align-items: center;
+        padding: 10px 20px;
+        color: #212121 !important;
+        font-family: system-ui, sans-serif !important;
+        font-size: 14px;
+        line-height: 1.45;
+        text-decoration: none;
+        overflow-wrap: anywhere;
+        -webkit-text-fill-color: #212121 !important;
+        -webkit-transform: none !important;
+        -webkit-backface-visibility: visible !important;
+        will-change: auto !important;
+    }
+
+    #pupsy-mobile-navigation .pupsy-mobile-navigation__promo {
+        justify-content: center;
+        min-height: 50px;
+        margin: 0 16px 12px;
+        padding: 10px 14px;
+        border-radius: 28px;
+        background: #c09488;
+        color: #fff !important;
+        text-align: center;
+        -webkit-text-fill-color: #fff !important;
+    }
+
+    .pupsy-mobile-navigation__divider {
+        height: 1px;
+        margin: 8px 20px;
+        background-color: rgba(33, 33, 33, 0.12);
+    }
+
     .mobile-menu .drawer__content__scroll > .mobile-menu__block {
         flex: 0 0 auto !important;
     }
