@@ -1,5 +1,8 @@
 (() => {
-  const imageBase = new URL("../images/", document.currentScript.src);
+  const script = document.currentScript || Array.from(document.scripts).find(item =>
+    /(?:^|\/)product-contact-error\.js(?:\?|$)/.test(item.src)
+  );
+  const imageBase = new URL("../images/", script ? script.src : document.baseURI);
   const container = document.querySelector("[data-cart-errors-container]");
   if (!container) return;
 
@@ -136,7 +139,10 @@
       close.setAttribute("data-close-error", "");
       close.setAttribute("aria-label", document.documentElement.lang === "en" ? "Close" : "დახურვა");
       close.innerHTML = '<svg aria-hidden="true" focusable="false" role="presentation" width="24px" height="24px" stroke-width="1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="icon icon-cancel"><path d="M6.758 17.243L12.001 12m5.243-5.243L12 12m0 0L6.758 6.757M12.001 12l5.243 5.243" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
-      error.replaceChildren(message, channels, close);
+      while (error.firstChild) error.removeChild(error.firstChild);
+      error.appendChild(message);
+      error.appendChild(channels);
+      error.appendChild(close);
     }
 
     const message = error.querySelector("[data-contact-prompt-message]");
