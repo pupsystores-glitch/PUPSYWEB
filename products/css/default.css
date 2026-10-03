@@ -161,3 +161,24 @@ svg.wlh-svg-Icon path {
         grid-auto-rows: auto !important;
     }
 }
+
+@supports (-webkit-touch-callout: none) {
+    @media only screen and (max-width: 749px) {
+        .mobile-menu .drawer__content__scroll {
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .mobile-menu .drawer__content__scroll > .mobile-menu__block,
+        .mobile-menu .drawer__content__scroll .mobile-menu__block-inner,
+        .mobile-menu .drawer__content__scroll [data-sliderule-pane="0"] [data-animates="0"],
+        .mobile-menu .drawer__content__scroll .sliderule__wrapper,
+        .mobile-menu .drawer__content__scroll .sliderow,
+        .mobile-menu .drawer__content__scroll .sliderow__title {
+            animation: none !important;
+            transition: none !important;
+            transform: none !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+    }
+}
