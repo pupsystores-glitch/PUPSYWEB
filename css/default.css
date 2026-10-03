@@ -127,3 +127,21 @@ svg.wlh-svg-Icon path {
     /* stroke: white;
     stroke-width: 0.5px; */
 }
+
+@media only screen and (max-width: 749px) {
+    html[data-language="ka"] .mobile-menu .drawer__menu .sliderow__title {
+        font-family: system-ui, sans-serif !important;
+        line-height: 1.45;
+    }
+
+    html[data-language="ka"] .mobile-menu__block--menu-columns .drawer__main-menu {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    html[data-language="ka"] .mobile-menu__block--menu-columns .sliderow__title {
+        height: auto;
+        min-height: 40px;
+        padding-block: 10px;
+        overflow-wrap: anywhere;
+    }
+}
