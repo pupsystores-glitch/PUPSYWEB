@@ -129,6 +129,10 @@ svg.wlh-svg-Icon path {
 }
 
 @media only screen and (max-width: 749px) {
+    .mobile-menu .drawer__content__scroll > .mobile-menu__block {
+        flex: 0 0 auto !important;
+    }
+
     .mobile-menu .drawer__content__scroll [data-animation="drawer-items-fade"],
     .mobile-menu .drawer__content__scroll [data-sliderule-pane="0"] [data-animates="0"] {
         animation: none !important;
@@ -139,16 +143,21 @@ svg.wlh-svg-Icon path {
     html[data-language="ka"] .mobile-menu .drawer__menu .sliderow__title {
         font-family: system-ui, sans-serif !important;
         line-height: 1.45;
+        height: auto;
+        min-height: 50px;
+        padding-block: 10px;
+        transform: none !important;
+    }
+
+    .mobile-menu .drawer__main-menu > .sliderule__wrapper,
+    .mobile-menu .drawer__main-menu > .sliderule__wrapper > .sliderow {
+        height: auto !important;
+        min-height: 50px !important;
     }
 
     html[data-language="ka"] .mobile-menu__block--menu-columns .drawer__main-menu {
         grid-template-columns: minmax(0, 1fr) !important;
-    }
-
-    html[data-language="ka"] .mobile-menu__block--menu-columns .sliderow__title {
-        height: auto;
-        min-height: 40px;
-        padding-block: 10px;
-        overflow-wrap: anywhere;
+        grid-template-rows: none !important;
+        grid-auto-rows: auto !important;
     }
 }
