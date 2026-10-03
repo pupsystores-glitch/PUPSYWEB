@@ -1,0 +1,1 @@
+document.getElementById('ps__sent-message').style.display='block';document.getElementById('ps__subscribe-form').style.display='none';
