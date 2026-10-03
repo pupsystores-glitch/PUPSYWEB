@@ -129,17 +129,6 @@ svg.wlh-svg-Icon path {
 }
 
 @media only screen and (max-width: 749px) {
-    .mobile-menu .drawer__body {
-        overflow-x: hidden !important;
-        overflow-y: auto !important;
-    }
-
-    .mobile-menu .drawer__content,
-    .mobile-menu .drawer__content__scroll {
-        display: contents !important;
-        overflow: visible !important;
-    }
-
     .mobile-menu .drawer__content__scroll > .mobile-menu__block {
         flex: 0 0 auto !important;
     }
