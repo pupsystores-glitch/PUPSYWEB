@@ -13,6 +13,8 @@
       justify-content: center;
       gap: 14px;
       max-width: 100%;
+      width: 100%;
+      box-sizing: border-box;
       margin: 0 auto 16px;
       padding: 18px 46px 18px 18px;
       border: 1px solid #c09488 !important;
@@ -114,10 +116,6 @@
     if (!error) return;
 
     if (!error.dataset.contactPrompt) {
-      const errorText = error.textContent || "";
-      const isResponseParseError = /^(?:Failed to execute ['"]json['"] on ['"]Response['"]|Unexpected (?:token|end))/i
-        .test(errorText.trim());
-      if (!isResponseParseError) return;
       error.dataset.contactPrompt = "true";
       error.classList.add("product-contact-prompt");
 
