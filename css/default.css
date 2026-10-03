@@ -129,6 +129,45 @@ svg.wlh-svg-Icon path {
 }
 
 @media only screen and (max-width: 749px) {
+    .mobile-menu__block--menu,
+    .mobile-menu__block--menu-columns,
+    .mobile-menu__block--menu + .mobile-menu__block--divider,
+    .mobile-menu__block--menu-columns + .mobile-menu__block--divider {
+        display: none !important;
+    }
+
+    #pupsy-mobile-navigation {
+        display: flex !important;
+        flex: 0 0 auto;
+        flex-direction: column;
+        width: 100%;
+        padding: 8px 0;
+        animation: none !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        transform: none !important;
+    }
+
+    #pupsy-mobile-navigation a {
+        display: flex;
+        min-height: 50px;
+        align-items: center;
+        padding: 10px 20px;
+        color: #212121 !important;
+        font-family: system-ui, sans-serif !important;
+        font-size: 14px;
+        line-height: 1.45;
+        text-decoration: none;
+        overflow-wrap: anywhere;
+        -webkit-text-fill-color: #212121 !important;
+    }
+
+    .pupsy-mobile-navigation__divider {
+        height: 1px;
+        margin: 8px 20px;
+        background-color: rgba(33, 33, 33, 0.12);
+    }
+
     .mobile-menu .drawer__content__scroll > .mobile-menu__block {
         flex: 0 0 auto !important;
     }
