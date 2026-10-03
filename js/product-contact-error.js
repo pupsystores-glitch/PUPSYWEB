@@ -115,7 +115,9 @@
 
     if (!error.dataset.contactPrompt) {
       const errorText = error.textContent || "";
-      if (!errorText.includes("Failed to execute 'json' on 'Response'") && !errorText.includes("Unexpected end of JSON input")) return;
+      const isResponseParseError = /^(?:Failed to execute ['"]json['"] on ['"]Response['"]|Unexpected (?:token|end))/i
+        .test(errorText.trim());
+      if (!isResponseParseError) return;
       error.dataset.contactPrompt = "true";
       error.classList.add("product-contact-prompt");
 
