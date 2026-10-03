@@ -1,4 +1,5 @@
 (() => {
+  const imageBase = new URL("../images/", document.currentScript.src);
   const priceSelector = [
     "[data-product-price]",
     "[data-price-wrapper]",
@@ -19,7 +20,7 @@
       if (index > 0) {
         const logo = document.createElement("img");
         logo.className = "lari-currency-logo";
-        logo.src = "images/Lari_logo.png";
+        logo.src = new URL("Lari_logo.png", imageBase).href;
         logo.alt = "GEL";
         logo.setAttribute("aria-label", "Georgian lari");
         fragment.append(logo);

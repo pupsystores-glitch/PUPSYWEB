@@ -1,4 +1,5 @@
 (() => {
+  const imageBase = new URL("../images/", document.currentScript.src);
   const container = document.querySelector("[data-cart-errors-container]");
   if (!container) return;
 
@@ -101,7 +102,7 @@
     link.setAttribute("aria-label", label);
     const icon = document.createElement("img");
     icon.className = "product-contact-prompt__icon";
-    icon.src = imageSource;
+    icon.src = new URL(imageSource, imageBase).href;
     icon.alt = "";
     link.append(icon, document.createElement("span"));
     link.lastElementChild.textContent = label;
@@ -125,8 +126,8 @@
       const channels = document.createElement("div");
       channels.className = "product-contact-prompt__channels";
       channels.append(
-        createChannel("WhatsApp", "https://wa.me/13142039237", "images/Whatsapp-Logo.png"),
-        createChannel("Messenger", "https://m.me/furlou", "images/Messenger-Logo.png")
+        createChannel("WhatsApp", "https://wa.me/13142039237", "Whatsapp-Logo.png"),
+        createChannel("Messenger", "https://m.me/furlou", "Messenger-Logo.png")
       );
 
       const close = document.createElement("button");
