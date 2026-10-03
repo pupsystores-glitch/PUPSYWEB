@@ -205,7 +205,7 @@ svg.wlh-svg-Icon path {
     @media only screen and (max-width: 749px) {
         #header-menu .drawer__content__scroll,
         .mobile-menu .drawer__content__scroll {
-            -webkit-overflow-scrolling: touch;
+            -webkit-overflow-scrolling: auto !important;
         }
 
         #header-menu .drawer__content__scroll [data-animation="drawer-items-fade"],
