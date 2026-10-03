@@ -140,17 +140,18 @@ svg.wlh-svg-Icon path {
         display: flex !important;
         flex: 0 0 auto;
         flex-direction: column;
-        position: relative;
-        z-index: 1;
-        isolation: isolate;
+        position: static;
+        z-index: auto;
+        isolation: auto;
         width: 100%;
         padding: 8px 0;
         animation: none !important;
         opacity: 1 !important;
         visibility: visible !important;
         transform: none !important;
-        -webkit-transform: translateZ(0);
-        -webkit-backface-visibility: hidden;
+        -webkit-transform: none !important;
+        -webkit-backface-visibility: visible;
+        will-change: auto !important;
     }
 
     #pupsy-mobile-navigation a {
@@ -165,6 +166,9 @@ svg.wlh-svg-Icon path {
         text-decoration: none;
         overflow-wrap: anywhere;
         -webkit-text-fill-color: #212121 !important;
+        -webkit-transform: none !important;
+        -webkit-backface-visibility: visible;
+        will-change: auto !important;
     }
 
     .pupsy-mobile-navigation__divider {
