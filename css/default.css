@@ -129,6 +129,13 @@ svg.wlh-svg-Icon path {
 }
 
 @media only screen and (max-width: 749px) {
+    .mobile-menu .drawer__content__scroll [data-animation="drawer-items-fade"],
+    .mobile-menu .drawer__content__scroll [data-sliderule-pane="0"] [data-animates="0"] {
+        animation: none !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+    }
+
     html[data-language="ka"] .mobile-menu .drawer__menu .sliderow__title {
         font-family: system-ui, sans-serif !important;
         line-height: 1.45;
