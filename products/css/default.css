@@ -191,6 +191,15 @@ svg.wlh-svg-Icon path {
         background-color: rgba(33, 33, 33, 0.12);
     }
 
+    .mobile-menu .drawer__foot {
+        position: relative;
+        z-index: 11;
+    }
+
+    .mobile-menu .drawer__foot [data-popout-list] {
+        z-index: 12;
+    }
+
     .mobile-menu .drawer__content__scroll > .mobile-menu__block {
         flex: 0 0 auto !important;
     }
