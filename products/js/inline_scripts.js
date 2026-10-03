@@ -879,7 +879,7 @@ first.parentNode.insertBefore(script, first);
     "@type": "Organization",
     "name": "FURLOU ",
     
-      "logo": "https:\/\/furlou.com\/cdn\/shop\/files\/logo_furlou.png?v=1746005217\u0026width=500",
+      "logo": "https:\/\/i.ibb.co\/sdZzF5Sz\/logo-PUPSY.png",
     
     "sameAs": [
       "",
