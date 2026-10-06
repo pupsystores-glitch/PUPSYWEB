@@ -59,6 +59,7 @@
     "Ambassadors": "ამბასადორები",
     "HOW TO USE": "გამოყენების წესი",
     "Contact us": "დაგვიკავშირდით",
+    "Contact Us": "დაგვიკავშირდით",
     "Exchanges, Returns or Cancellations": "გაცვლა, დაბრუნება ან გაუქმება",
     "Customer support": "მომხმარებელთა მხარდაჭერა",
     "Wholesale": "საბითუმო გაყიდვები",
