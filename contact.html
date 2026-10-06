@@ -13766,17 +13766,18 @@
       #sec-3962 .u-gallery-inner-1 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
       #sec-3962 .u-gallery-item { position: relative; display: block; width: 100%; height: min(90vw, 380px); overflow: hidden; color: inherit; text-decoration: none; }
       #sec-3962 .u-back-slide { position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; }
-      #sec-3962 .u-back-image, #sec-3962 .swap-image { display: block; position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: opacity 1800ms cubic-bezier(.22, 1, .36, 1), transform 2400ms cubic-bezier(.22, 1, .36, 1); will-change: opacity, transform; }
+      #sec-3962 .u-back-image, #sec-3962 .swap-image { display: block; position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: opacity 3000ms cubic-bezier(.22, 1, .36, 1), transform 4500ms cubic-bezier(.22, 1, .36, 1); will-change: opacity, transform; }
       #sec-3962 .u-back-image { z-index: 1; opacity: 1; transform: scale(1); }
       #sec-3962 .swap-image { z-index: 2; opacity: 0; transform: scale(1.035); pointer-events: none; }
       #sec-3962 .image-swap.is-visible .u-back-image { opacity: 0; transform: scale(1.06); }
       #sec-3962 .image-swap.is-visible .swap-image { opacity: 1; transform: scale(1.06); }
+      #sec-3962 .image-swap.is-resetting .u-back-image, #sec-3962 .image-swap.is-resetting .swap-image { transition: none !important; }
       #sec-3962 .u-over-slide { display: none; }
       #sec-3962 .image-swap::after { content: attr(data-title); position: absolute; z-index: 3; left: 50%; bottom: 12px; width: max-content; max-width: calc(100% - 24px); transform: translateX(-50%); color: rgba(255, 255, 255, .94); font-size: clamp(12px, 1.5vw, 14px); line-height: 1.2; text-shadow: 0 1px 4px rgba(0, 0, 0, .32); pointer-events: none; }
       @media (min-width: 576px) and (max-width: 991px) { #sec-3962 .u-gallery-inner-1 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
       @media (max-width: 575px) { #sec-3962 { padding-right: 16px; padding-left: 16px; } #sec-3962 .u-gallery-inner-1 { grid-template-columns: minmax(0, 1fr); } #sec-3962 .u-text-1 { margin-top: 36px; } #sec-3962 .u-gallery-1 { margin-bottom: 40px; } }
-      @media (hover: hover) and (pointer: fine) { #sec-3962 .image-swap:hover .u-back-image, #sec-3962 .image-swap:focus-visible .u-back-image { opacity: 0; transform: scale(1.06); } #sec-3962 .image-swap:hover .swap-image, #sec-3962 .image-swap:focus-visible .swap-image { opacity: 1; transform: scale(1.06); } }
-      @media (hover: none) and (pointer: coarse) { #sec-3962 .u-back-image, #sec-3962 .swap-image { transition-duration: 850ms, 1100ms; } }
+
+
       @media (prefers-reduced-motion: reduce) { #sec-3962 .u-back-image, #sec-3962 .swap-image { transition-duration: 1ms; } }
     </style>
 </head>
@@ -22618,49 +22619,51 @@ A small change that can make a big difference for your dog’s well-being 🐶
   })();
 </script><script>
   (() => {
-    if (!('IntersectionObserver' in window)) return;
+    const section = document.getElementById('sec-3962');
+    if (!section) return;
 
-    const queue = [];
-    const queued = new Set();
-    const inView = new Set();
-    let revealTimer = null;
+    const items = [...section.querySelectorAll('.image-swap')];
+    let activeItem = null;
+    let updateScheduled = false;
 
-    const revealNext = () => {
-      revealTimer = null;
-      while (queue.length) {
-        const item = queue.shift();
-        queued.delete(item);
-        if (!inView.has(item)) continue;
-        item.classList.add('is-visible');
-        revealTimer = window.setTimeout(revealNext, 250);
-        return;
+    const setActiveItem = (nextItem) => {
+      if (nextItem === activeItem) return;
+      if (activeItem) {
+        activeItem.classList.add('is-resetting');
+        activeItem.classList.remove('is-visible');
+        void activeItem.offsetWidth;
+        activeItem.classList.remove('is-resetting');
       }
+      activeItem = nextItem;
+      activeItem?.classList.add('is-visible');
     };
 
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        const item = entry.target;
-        if (entry.isIntersecting) {
-          inView.add(item);
-          if (!item.classList.contains('is-visible') && !queued.has(item)) {
-            queue.push(item);
-            queued.add(item);
-          }
-        } else {
-          inView.delete(item);
-          item.classList.remove('is-visible');
-          if (queued.has(item)) {
-            const queueIndex = queue.indexOf(item);
-            if (queueIndex !== -1) queue.splice(queueIndex, 1);
-            queued.delete(item);
-          }
-        }
-      });
-      queue.sort((a, b) => a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1);
-      if (queue.length && revealTimer === null) revealNext();
-    }, { threshold: 0.2, rootMargin: '0px' });
+    const updateCenterItem = () => {
+      updateScheduled = false;
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2;
+      const sectionRect = section.getBoundingClientRect();
+      if (centerX < sectionRect.left || centerX > sectionRect.right || centerY < sectionRect.top || centerY > sectionRect.bottom) {
+        setActiveItem(null);
+        return;
+      }
 
-    document.querySelectorAll('.image-swap').forEach((item) => observer.observe(item));
+      const centeredItem = items.find((item) => {
+        const rect = item.getBoundingClientRect();
+        return centerX >= rect.left && centerX <= rect.right && centerY >= rect.top && centerY <= rect.bottom;
+      }) || null;
+      setActiveItem(centeredItem);
+    };
+
+    const scheduleUpdate = () => {
+      if (updateScheduled) return;
+      updateScheduled = true;
+      window.requestAnimationFrame(updateCenterItem);
+    };
+
+    window.addEventListener('scroll', scheduleUpdate, { passive: true });
+    window.addEventListener('resize', scheduleUpdate, { passive: true });
+    scheduleUpdate();
   })();
 </script>
 </body></html>
