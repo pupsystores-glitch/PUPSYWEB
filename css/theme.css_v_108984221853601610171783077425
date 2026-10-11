@@ -11,4 +11,4 @@ https://flickity.metafizzy.co
 
 /* Keep the current page visibly selected in both navigation layouts. */
 .header__menu .navlink--toplevel[aria-current="page"] span:first-of-type:after{width:100%}
-#shopify-section-sections--20657885544636__mobile-menu .sliderow__title[aria-current="page"]{text-decoration:underline;text-underline-offset:3px}
+.drawer__main-menu .sliderow__title[aria-current="page"]{text-decoration:underline;text-underline-offset:3px}

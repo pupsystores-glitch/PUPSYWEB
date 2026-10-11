@@ -12928,7 +12928,7 @@
                 <div class="drawer__content" data-drawer-content="">
                   <div class="drawer__content__scroll" data-scroll-lock-scrollable="">
                     <nav class="drawer__menu" data-scroll-lock-scrollable="" data-sliderule-pane="0" style="--highlight: #b7958f;">
-                      <div class="drawer__main-menu">
+                      <div class="drawer__main-menu"><div class="sliderule__wrapper"><div class="sliderow" role="button" data-animates="0" data-animation="drawer-items-fade" data-animation-delay="225" data-animation-duration="500"><a class="sliderow__title" href="index.html"><span>&#4315;&#4311;&#4304;&#4309;&#4304;&#4320;&#4312;</span></a></div></div>
                         <div class="sliderule__wrapper">
                           <div class="sliderow" role="button" data-animates="0" data-animation="drawer-items-fade" data-animation-delay="250" data-animation-duration="500">
                             <a class="sliderow__title sliderow__title--highlight" href="/collections/build-your-walk-set">
@@ -13131,7 +13131,7 @@
                               </div>
                             </div>
                           </mobile-sliderule></div>
-                      </div>
+                      <div class="sliderule__wrapper"><div class="sliderow" role="button" data-animates="0" data-animation="drawer-items-fade" data-animation-delay="975" data-animation-duration="500"><a class="sliderow__title" href="guide.html"><span>&#4310;&#4317;&#4315;&#4308;&#4305;&#4312;&#4321; &#4306;&#4310;&#4304;&#4315;&#4313;&#4309;&#4314;&#4308;&#4309;&#4312;</span></a></div></div></div>
                       <div class="sliderule__wrapper sliderule__wrapper--secondary">
                         <div class="sliderow" role="button" data-animates="0" data-animation="drawer-items-fade" data-animation-delay="250" data-animation-duration="500">
                           <a class="sliderow__title sliderow__title--secondary" href="/policies/terms-of-service">
@@ -16679,7 +16679,7 @@
     'ambassador.html': ['ambassador-page']
   };
   const currentTargets = [page, ...(aliases[page] || [])];
-  document.querySelectorAll('.header__menu a[href], #shopify-section-sections--20657885544636__mobile-menu a[href]').forEach((link) => {
+  document.querySelectorAll('.header__menu a[href], #header-menu a[href], #shopify-section-sections--20657885544636__mobile-menu a[href]').forEach((link) => {
     let linkPage;
     let linkPath;
     try {
