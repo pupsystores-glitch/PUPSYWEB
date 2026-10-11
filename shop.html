@@ -14941,7 +14941,7 @@
 
 
 
-                      <hover-disclosure class="menu__item  grandparent kids-0 images-6  grandparent--all-images " aria-haspopup="true" aria-expanded="false" aria-controls="dropdown-4960a9f4cd7df014f337373952839783" role="button">
+                      <div class="menu__item"><a href="index.html" data-top-link="" class="navlink navlink--toplevel"><span class="navtext">&#4315;&#4304;&#4305;&#4304;&#4320;&#4312;</span></a></div><div class="menu__item"><a href="guide.html" data-top-link="" class="navlink navlink--toplevel"><span class="navtext">&#4310;&#4317;&#4315;&#4308;&#4305;&#4312;&#4321; &#4306;&#4304;&#4315;&#4313;&#4305;&#4315;&#4308;&#4314;&#4312;</span></a></div><hover-disclosure class="menu__item  grandparent kids-0 images-6  grandparent--all-images " aria-haspopup="true" aria-expanded="false" aria-controls="dropdown-4960a9f4cd7df014f337373952839783" role="button">
                         <a href="shop.html" data-top-link="" class="navlink navlink--toplevel">
                           <span class="navtext">პროდუქცია</span>
                         </a>
@@ -15499,7 +15499,7 @@
                       <div class="mobile-menu__block-inner" data-animation="drawer-items-fade" data-animation-duration="500" data-animation-delay="400">
                         <nav class="drawer__menu" data-sliderule-pane="0" data-scroll-lock-scrollable="" style="--highlight: #d02e2e;--icon-size: calc(var(--font-body-x-small) * 1.5);">
                           <div class="drawer__main-menu body-x-small">
-                            <div class="sliderule__wrapper">
+                            <div class="sliderule__wrapper"><div class="sliderow" role="button" data-animates="0" data-animation="drawer-items-fade" data-animation-delay="600" data-animation-duration="500"><a class="sliderow__title" href="index.html"><span>&#4315;&#4304;&#4305;&#4304;&#4320;&#4312;</span></a></div></div><div class="sliderule__wrapper"><div class="sliderow" role="button" data-animates="0" data-animation="drawer-items-fade" data-animation-delay="625" data-animation-duration="500"><a class="sliderow__title" href="guide.html"><span>&#4310;&#4317;&#4315;&#4308;&#4305;&#4312;&#4321; &#4306;&#4304;&#4315;&#4313;&#4305;&#4315;&#4308;&#4314;&#4312;</span></a></div></div><div class="sliderule__wrapper">
                               <div class="sliderow" role="button" data-animates="0" data-animation="drawer-items-fade" data-animation-delay="650" data-animation-duration="500">
                                 <a class="sliderow__title" href="/pages/how-to-use-and-adjust">
                                   <span>გამოყენების წესი</span>
@@ -18920,4 +18920,31 @@
 	}
 	// ]]>
 </script>
-<script defer="defer" src="https://cdn.notify-me.io/sdk.js"></script><div id="wishlisthero-popup-display-container" class="wishlisthero-popup-display-container"></div><div id="ps__widget_container" style="position: fixed; left: 0px; bottom: 0px; width: 100vw; z-index: 2147483647;"></div></body></html>
+<script defer="defer" src="https://cdn.notify-me.io/sdk.js"></script><div id="wishlisthero-popup-display-container" class="wishlisthero-popup-display-container"></div><div id="ps__widget_container" style="position: fixed; left: 0px; bottom: 0px; width: 100vw; z-index: 2147483647;"></div><script>
+(() => {
+  const path = window.location.pathname;
+  const page = path.endsWith('/') ? 'index.html' : path.split('/').pop().toLowerCase();
+  const aliases = {
+    'about.html': ['about'],
+    'contact.html': ['contact'],
+    'shop2.html': ['shop.html'],
+    'harnes1.html': ['shop.html'],
+    'care.html': ['shop.html'],
+    'ambassador.html': ['ambassador-page']
+  };
+  const currentTargets = [page, ...(aliases[page] || [])];
+  document.querySelectorAll('.header__menu a[href], #shopify-section-sections--20657885544636__mobile-menu a[href]').forEach((link) => {
+    let linkPage;
+    let linkPath;
+    try {
+      linkPath = new URL(link.getAttribute('href'), window.location.href).pathname.toLowerCase();
+      linkPage = linkPath.endsWith('/') ? 'index.html' : linkPath.split('/').pop();
+    } catch { return; }
+    const isActive = currentTargets.includes(linkPage) ||
+      (page === 'ambassador.html' && linkPath.includes('ambassador-page'));
+    if (isActive) link.setAttribute('aria-current', 'page');
+  });
+})();
+</script>
+
+</body></html>
