@@ -180,6 +180,12 @@ svg.wlh-svg-Icon path {
         will-change: auto !important;
     }
 
+    #pupsy-mobile-navigation a[aria-current="page"] {
+        text-decoration: underline !important;
+        text-underline-offset: 4px;
+        font-weight: 600;
+    }
+
     #pupsy-mobile-navigation .pupsy-mobile-navigation__promo {
         justify-content: center;
         min-height: 50px;
