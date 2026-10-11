@@ -9,28 +9,32 @@
     "Coming soon": "მალე",
     "Shop the look": "შეარჩიე ეს სტილი",
     "view all": "ყველას ნახვა",
-    "Braided Leashes": "დაწნული საბელები",
+    "Braided Leash": "დაწნული თოკი",
+    "Braided Leashes": "დაწნული თოკები",
+    "Eat & Drink": "საკვები და სასმელი",
     "Made for the season": "ამ სეზონისთვის შექმნილი",
     "OUR STORY": "ჩვენი ისტორია",
+    "The Furlou Family": "ფურლოუს ოჯახი",
+    "Paws, Leashes, and Memories": "თათები, საბელები და მოგონებები",
     "When beauty meets functionality.": "როცა სილამაზე პრაქტიკულობას ერწყმის.",
     "I knew I wasn't the only one who cared about their pup this much, and that there would be people looking for cute and practical dog products just like myself.": "ვიცოდი, რომ მხოლოდ მე არ ვზრუნავდი ჩემს ოთხფეხა მეგობარზე ასე ძალიან და რომ სხვებსაც სურდათ ისეთი საყვარელი და პრაქტიკული ნივთები ძაღლებისთვის, როგორსაც თავად ვეძებდი.",
     "Learn more": "მეტის გაგება",
     "Shop Now": "შეიძინე ახლა",
     "shop now": "შეიძინე ახლა",
     "View product": "პროდუქტის ნახვა",
-    "Powder Rose - Comfort Dog Harness": "პუდრისფერი ვარდისფერი კომფორტული ძაღლის აღკაზმულობა",
-    "Lavender - Comfort Dog Harness": "ლავანდისფერი კომფორტული ძაღლის აღკაზმულობა",
-    "Blue and Clay - Dog Harness": "ლურჯი და თიხისფერი ძაღლის აღკაზმულობა",
-    "Lavender and Terracotta - Dog Harness": "ლავანდისფერი და ტერაკოტასფერი ძაღლის აღკაზმულობა",
-    "Rainbow - Dog Harness": "ცისარტყელასფერი ძაღლის აღკაზმულობა",
-    "Brown and Tan - Dog Harness": "ყავისფერი და ღია ყავისფერი ძაღლის აღკაზმულობა",
-    "Lavender and Pink - Dog Harness": "ლავანდისფერი და ვარდისფერი ძაღლის აღკაზმულობა",
-    "Blue and Green - Dog Harness": "ლურჯი და მწვანე ძაღლის აღკაზმულობა",
-    "Yellow - Velvet Dog Harness": "ყვითელი ხავერდის ძაღლის აღკაზმულობა",
-    "Clay - Velvet Dog Harness": "თიხისფერი ხავერდის ძაღლის აღკაზმულობა",
-    "Blue - Velvet Dog Harness": "ლურჯი ხავერდის ძაღლის აღკაზმულობა",
-    "Lilac - Velvet Dog Harness": "იასამნისფერი ხავერდის ძაღლის აღკაზმულობა",
-    "Green - Velvet Dog Harness": "მწვანე ხავერდის ძაღლის აღკაზმულობა",
+    "Powder Rose - Comfort Dog Harness": "პუდრისფერი ვარდისფერი კომფორტული ძაღლის წელსამაგრი",
+    "Lavender - Comfort Dog Harness": "ლავანდისფერი კომფორტული ძაღლის წელსამაგრი",
+    "Blue and Clay - Dog Harness": "ლურჯი და თიხისფერი ძაღლის წელსამაგრი",
+    "Lavender and Terracotta - Dog Harness": "ლავანდისფერი და ტერაკოტასფერი ძაღლის წელსამაგრი",
+    "Rainbow - Dog Harness": "ცისარტყელასფერი ძაღლის წელსამაგრი",
+    "Brown and Tan - Dog Harness": "ყავისფერი და ღია ყავისფერი ძაღლის წელსამაგრი",
+    "Lavender and Pink - Dog Harness": "ლავანდისფერი და ვარდისფერი ძაღლის წელსამაგრი",
+    "Blue and Green - Dog Harness": "ლურჯი და მწვანე ძაღლის წელსამაგრი",
+    "Yellow - Velvet Dog Harness": "ყვითელი ხავერდის ძაღლის წელსამაგრი",
+    "Clay - Velvet Dog Harness": "თიხისფერი ხავერდის ძაღლის წელსამაგრი",
+    "Blue - Velvet Dog Harness": "ლურჯი ხავერდის ძაღლის წელსამაგრი",
+    "Lilac - Velvet Dog Harness": "იასამნისფერი ხავერდის ძაღლის წელსამაგრი",
+    "Green - Velvet Dog Harness": "მწვანე ხავერდის ძაღლის წელსამაგრი",
     "'Green' - Canvas Dog Collar": "მწვანე ტილოს ძაღლის საყელო",
     "'Green' - Velvet Dog Collar": "მწვანე ხავერდის ძაღლის საყელო",
     "'Clay' - Velvet Dog Collar": "თიხისფერი ხავერდის ძაღლის საყელო",
@@ -50,7 +54,7 @@
     "Skip to content": "შინაარსზე გადასვლა",
     "Cart": "კალათა",
     "Shop": "მაღაზია",
-    "Harnesses": "აღკაზმულობები",
+    "Harnesses": "წელსამაგრები",
     "Hands Free Braided Leashes": "ხელის გარეშე სატარებელი დაწნული საბელები",
     "Regular Braided Leashes": "ჩვეულებრივი დაწნული საბელები",
     "Collars": "საყელოები",
@@ -101,7 +105,7 @@
     "European Union": "ევროკავშირი",
     "United States / Rest of the world": "აშშ / დანარჩენი მსოფლიო",
     "Australian Labradoodle is wearing size M. Other dogs with a similar build usually wear the same size.": "ავსტრალიურ ლაბრადუდლს აცვია M ზომა. მსგავსი აღნაგობის სხვა ძაღლებსაც, როგორც წესი, იგივე ზომა უხდებათ.",
-    "Terracotta - Comfort Dog Harness": "ტერაკოტას კომფორტული ძაღლის აღკაზმულობა",
+    "Terracotta - Comfort Dog Harness": "ტერაკოტას კომფორტული ძაღლის წელსამაგრი",
     "off": "ფასდაკლება",
     "Final sale": "საბოლოო გაყიდვა",
     "Size": "ზომა",
@@ -156,21 +160,21 @@
     "Free shipping on orders over $160": "უფასო მიწოდება $160-ზე მეტი ღირებულების შეკვეთებზე",
     "We donate every month to pups in need": "ყოველთვიურად ვეხმარებით მზრუნველობას მოკლებულ ძაღლებს",
     "Description": "აღწერა",
-    "This harness is all about giving your dog that just-right fit with the comfort they deserve. Padded with breathable fabric and adjustable in four places, it wraps gently without restricting movement. The Y-shape keeps pressure off the neck, and the gold hardware adds a little glam to every walk.": "ეს აღკაზმულობა თქვენს ძაღლს ზუსტად მორგებულ და კომფორტულ აღჭურვილობას აძლევს. სუნთქვადი ქსოვილით არის დაფენილი და ოთხ ადგილას რეგულირდება, ამიტომ მოძრაობას არ ზღუდავს. Y-ს ფორმის დიზაინი კისერზე ზეწოლას ამცირებს, ხოლო ოქროსფერი დეტალები თითოეულ გასეირნებას ელეგანტურობას მატებს.",
+    "This harness is all about giving your dog that just-right fit with the comfort they deserve. Padded with breathable fabric and adjustable in four places, it wraps gently without restricting movement. The Y-shape keeps pressure off the neck, and the gold hardware adds a little glam to every walk.": "ეს წელსამაგრი თქვენს ძაღლს ზუსტად მორგებულ და კომფორტულ აღჭურვილობას აძლევს. სუნთქვადი ქსოვილით არის დაფენილი და ოთხ ადგილას რეგულირდება, ამიტომ მოძრაობას არ ზღუდავს. Y-ს ფორმის დიზაინი კისერზე ზეწოლას ამცირებს, ხოლო ოქროსფერი დეტალები თითოეულ გასეირნებას ელეგანტურობას მატებს.",
     "Please note: Some product photos may still show our previous transparent buckles. Our latest production features upgraded color-matching buckles, along with slightly refined tones - so minor color differences may occur compared to past versions or example photos.": "გთხოვთ გაითვალისწინოთ: პროდუქტის ზოგიერთ ფოტოზე შესაძლოა ჯერ კიდევ ჩანდეს ძველი გამჭვირვალე შესაკრავები. ახალ მოდელებში გამოყენებულია გაუმჯობესებული, ფერთან შეხამებული შესაკრავები და ოდნავ განახლებული ტონები, ამიტომ ფერი შეიძლება მცირედ განსხვავდებოდეს ძველი ან საილუსტრაციო ფოტოებისგან.",
     "Read more": "კითხვის გაგრძელება",
     "Sizing": "ზომები",
-    "Fits necks 18-32 cm | 7\u201d-12.5": "კისრის გარშემოწერილობა: 18–32 სმ | 7–12.5 დუიმი",
-    "Fits belly 32-40 cm | 12.5\u201d-15.5\u201d": "მუცლის გარშემოწერილობა: 32–40 სმ | 12.5–15.5 დუიმი",
-    "Fits necks 27-42 cm | 10.5\u201d-16\u201d.5": "კისრის გარშემოწერილობა: 27–42 სმ | 10.5–16.5 დუიმი",
-    "Fits belly 38-55 cm | 15\"-21.5\u201d": "მუცლის გარშემოწერილობა: 38–55 სმ | 15–21.5 დუიმი",
-    "Fits necks 34-52 cm | 13\u201d-20\"": "კისრის გარშემოწერილობა: 34–52 სმ | 13–20 დუიმი",
-    "Fits belly 47-70 cm | 18\u201d.5-27\u201d.5": "მუცლის გარშემოწერილობა: 47–70 სმ | 18.5–27.5 დუიმი",
-    "Fits necks 45-62 cm | 17.5\u201d-24\u201d": "კისრის გარშემოწერილობა: 45–62 სმ | 17.5–24 დუიმი",
-    "Fits belly 62-95 cm | 24\"-37\u201d": "მუცლის გარშემოწერილობა: 62–95 სმ | 24–37 დუიმი",
+    "Fits necks 18-32 cm | 7\u201d-12.5": "კისრის გარშემოწერილობა: 18–32 სმ | 7–12.5 დიუმი",
+    "Fits belly 32-40 cm | 12.5\u201d-15.5\u201d": "მუცლის გარშემოწერილობა: 32–40 სმ | 12.5–15.5 დიუმი",
+    "Fits necks 27-42 cm | 10.5\u201d-16\u201d.5": "კისრის გარშემოწერილობა: 27–42 სმ | 10.5–16.5 დიუმი",
+    "Fits belly 38-55 cm | 15\"-21.5\u201d": "მუცლის გარშემოწერილობა: 38–55 სმ | 15–21.5 დიუმი",
+    "Fits necks 34-52 cm | 13\u201d-20\"": "კისრის გარშემოწერილობა: 34–52 სმ | 13–20 დიუმი",
+    "Fits belly 47-70 cm | 18\u201d.5-27\u201d.5": "მუცლის გარშემოწერილობა: 47–70 სმ | 18.5–27.5 დიუმი",
+    "Fits necks 45-62 cm | 17.5\u201d-24\u201d": "კისრის გარშემოწერილობა: 45–62 სმ | 17.5–24 დიუმი",
+    "Fits belly 62-95 cm | 24\"-37\u201d": "მუცლის გარშემოწერილობა: 62–95 სმ | 24–37 დიუმი",
     "If in between sizes size up": "თუ ზომებს შორის ხართ, აირჩიეთ უფრო დიდი ზომა",
-    "• We don’t recommend harnesses for large size dogs who pull": "• დიდი ზომის ძაღლებისთვის, რომლებიც ქაჩავენ, აღკაზმულობას არ გირჩევთ",
-    "View all size guides": "ზომების ყველა გზამკვლევის ნახვა",
+    "• We don’t recommend harnesses for large size dogs who pull": "• დიდი ზომის ძაღლებისთვის, რომლებიც ძლიერად ქაჩავენ, წელსამაგრს არ გირჩევთ",
+    "View all size guides": "ზომების გზამკვლევის ნახვა",
     "Key Benefits": "მთავარი უპირატესობები",
     "Why you’ll love it:": "რატომ მოგეწონებათ:",
     "Breathable padding that’s soft on the chest": "სუნთქვადი და რბილი საფენი მკერდის არეში",
@@ -185,9 +189,9 @@
     "Recently viewed": "ბოლოს ნანახი",
     "See All": "ყველას ნახვა",
     "'Terracotta' - Hands Free Braided Leash": "ტერაკოტას ხელის გარეშე სატარებელი დაწნული საბელი",
-    "Black - Comfort Dog Harness": "შავი კომფორტული ძაღლის აღკაზმულობა",
+    "Black - Comfort Dog Harness": "შავი კომფორტული ძაღლის წელსამაგრი",
     "'Terracotta' - Poop Bag Holder": "ტერაკოტას პარკის ჩანთის სათავსო",
-    "Tan - Comfort Dog Harness": "ღია ყავისფერი კომფორტული ძაღლის აღკაზმულობა",
+    "Tan - Comfort Dog Harness": "ღია ყავისფერი კომფორტული ძაღლის წელსამაგრი",
     "'Bordeaux' - Hands Free Braided Leash": "ბორდოსფერი ხელის გარეშე სატარებელი დაწნული საბელი",
     "Quick add": "სწრაფი დამატება",
     "UNLOCK 10% OFF YOUR ORDER": "მიიღეთ 10%-იანი ფასდაკლება შეკვეთაზე",
@@ -218,8 +222,42 @@
     "Bordeaux": "ბორდოსფერი"
   };
 
+  // Georgian-only wording overrides. These keys stay English; only their Georgian
+  // rendering changes. The reverse lookup also recognizes the old wording already
+  // present in the saved HTML files.
+  const georgianOverrides = {
+    "Products": "პროდუქცია",
+    "Hello, summer walks.": "ზაფხულის სეირნობები დაიწყო.",
+    "Learn more": "გაიგე მეტი",
+    "Braided Leashes": "დაწნული საბელები",
+    "Harnesses": "წელსამაგრები",
+    "Hands Free Braided Leashes": "ხელების დაუკავებლად სატარებელი დაწნული საბელები",
+    "Lick Mat": "სალოკი საფენი",
+    "Subtotal": "ქვეჯამი",
+    "Final sale": "ფასდაკლებული პროდუქტი დაბრუნებას არ ექვემდებარება"
+  };
+  const georgianToEnglish = {
+    "ჩვენ შესახებ — PUPSY": "About PUPSY",
+    "სიყვარულით, ზრუნვითა და პასუხისმგებლობით": "With love, care, and responsibility",
+    "PUPSY შეიქმნა იმ მარტივი, მაგრამ უმთავრესი იდეით, რომ ჩვენი ოთხფეხა მეგობრები საუკეთესოს იმსახურებენ. ჩვენ არ ვართ უბრალოდ ონლაინ ზოომაღაზია — PUPSY არის სივრცე მათთვის, ვისთვისაც ოთხფეხა კომპანიონი ოჯახის სრულუფლებიანი წევრია. ჩვენი მისიაა შევთავაზოთ ოთხფეხა მეგობრებსა და მათ მფლობელებს გამორჩეული, მაღალი ხარისხის, დახვეწილი დიზაინისა და ფუნქციური პროდუქცია, რომელიც ყოველდღიურობას უფრო კომფორტულს, უსაფრთხოსა და ლამაზს ხდის. თითოეული შენაძენი ცვლის სიცოცხლეს 🐾 ჩვენ გვჯერა, რომ ზრუნვა მხოლოდ საკუთარი ოთხფეხა მეგობრებით არ უნდა შემოიფარგლებოდეს. სწორედ ამიტომ, PUPSY-ის აქვს მკაფიო სოციალური პასუხისმგებლობა: თითოეული გაყიდული პროდუქტიდან მიღებული თანხის 1% ხმარდება ქუჩის უსახლკარო ცუგოებსა და ფისოებს. ჩვენთვის უმნიშვნელოვანესია გამჭვირვალობა და თქვენი ნდობა. თვეში ერთხელ, შეგროვებული თანხით უზრუნველვყოფთ მიუსაფარი ცხოველების კვებას, მკურნალობასა და ზრუნვას. ამ კეთილი საქმის ამსახველ ვიდეო-ანგარიშებს ყოველთვიურად იხილავთ როგორც ჩვენს ვებ-საიტზე, ასევე სოციალურ ქსელებში. როდესაც ირჩევთ PUPSY-ს, თქვენ არ იღებთ მხოლოდ უ": "PUPSY was founded on a simple but important idea: our four-legged friends deserve the very best. We are more than an online pet store; PUPSY is for people who see their four-legged companions as full members of the family. Our mission is to offer pets and their people distinctive, high-quality products with thoughtful design and practical features, making everyday life more comfortable, safe, and beautiful. Every purchase changes a life 🐾 We believe care should reach beyond our own pets. That is why PUPSY is committed to social responsibility: 1% of every product sale goes to homeless dogs and cats living on the streets. Transparency and your trust matter deeply to us. Each month, we use the collected funds to feed, treat, and care for animals in need. We share monthly video reports about this work on our website and social media. When you choose PUPSY, you receive more than…",
+    "რატომ PUPSY?": "Why PUPSY?",
+    "ზრუნვა, რომელიც ჩანს": "Care you can see",
+    "იხილეთ, სად მიდის თქვენი წვლილი ყოველთვიურად.": "See where your contribution goes each month.",
+    "გამორჩეული ხარისხი და დიზაინი: თითოეული პროდუქტი შერჩეულია განსაკუთრებული ყურადღებითა და სიყვარულით. მზუნველობა და პასუხისმგებლობა: ყოველი შენაძენით ეხმარებით უსახლკარო ცხოველებს. სრული გამჭვირვალობა: ყოველთვიური ვიდეო-რეპორტაჟები ჩვენი ერთობლივი ქველმოქმედების შესახებ. გმადლობთ, რომ ირჩევთ PUPSY-ს და ჩვენთან ერთად ცვლით სამყაროს უკეთესობისკენ! 🐾🤍": "Exceptional quality and design: every product is chosen with special care and love. Care and responsibility: every purchase helps animals without a home. Full transparency: monthly video reports show the difference our shared charity work makes. Thank you for choosing PUPSY and helping us make the world a better place! 🐾🤍",
+    "The Furlou Family": "The Furlou Family",
+    "Paws, Leashes, and Memories": "Paws, Leashes, and Memories"
+  };
+  const getGeorgian = english => georgianOverrides[english] ?? translations[english];
+
   const normalize = value => value.replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
+  const reverseTranslations = {};
+  for (const [english, defaultGeorgian] of Object.entries(translations)) {
+    reverseTranslations[normalize(defaultGeorgian)] = english;
+    reverseTranslations[normalize(getGeorgian(english))] = english;
+  }
   const originalTitle = document.title;
+  const englishTitle = reverseTranslations[normalize(originalTitle)] || originalTitle;
+  const georgianTitle = getGeorgian(normalize(originalTitle)) || originalTitle;
   const textEntries = [];
   const attributeEntries = [];
   const walker = document.createTreeWalker(document.documentElement, NodeFilter.SHOW_TEXT);
@@ -229,7 +267,11 @@
     if (!node.nodeValue.trim() || node.parentElement.closest("script, style, noscript, svg")) continue;
     const key = normalize(node.nodeValue);
     if (Object.prototype.hasOwnProperty.call(translations, key)) {
-      textEntries.push({ node, original: node.nodeValue, translated: translations[key] });
+      textEntries.push({ node, original: node.nodeValue, translated: getGeorgian(key) });
+    } else if (Object.prototype.hasOwnProperty.call(reverseTranslations, key)) {
+      textEntries.push({ node, original: reverseTranslations[key], translated: node.nodeValue });
+    } else if (Object.prototype.hasOwnProperty.call(georgianToEnglish, key)) {
+      textEntries.push({ node, original: georgianToEnglish[key], translated: node.nodeValue });
     }
   }
 
@@ -239,19 +281,25 @@
       const original = element.getAttribute(attribute);
       const key = normalize(original);
       if (Object.prototype.hasOwnProperty.call(translations, key)) {
-        attributeEntries.push({ element, attribute, original, translated: translations[key] });
+        attributeEntries.push({ element, attribute, original, translated: getGeorgian(key) });
+      } else if (Object.prototype.hasOwnProperty.call(reverseTranslations, key)) {
+        attributeEntries.push({ element, attribute, original: reverseTranslations[key], translated: original });
       }
     }
   }
 
   for (const element of document.querySelectorAll('input[type="submit"], input[type="button"]')) {
     const original = element.value;
-    const translated = translations[normalize(original)];
-    if (translated) attributeEntries.push({ element, attribute: "value", original, translated });
+    const key = normalize(original);
+    if (translations[key]) {
+      attributeEntries.push({ element, attribute: "value", original, translated: getGeorgian(key) });
+    } else if (reverseTranslations[key]) {
+      attributeEntries.push({ element, attribute: "value", original: reverseTranslations[key], translated: original });
+    }
   }
 
   const fontStyle = document.createElement("style");
-  fontStyle.textContent = 'html[data-language="ka"] body, html[data-language="ka"] body *:not(svg):not(path) { font-family: "BPG Nino Mtavruli", sans-serif !important; }';
+  fontStyle.textContent = 'html[data-language="ka"] body, html[data-language="ka"] body *:not(svg):not(path), html[data-language="ka"] #pupsy-mobile-navigation, html[data-language="ka"] #pupsy-mobile-navigation a { font-family: "BPG Nino Mtavruli", sans-serif !important; }';
   document.head.append(fontStyle);
 
   function setToggleLabel(language) {
@@ -266,7 +314,7 @@
     const isGeorgian = currentLanguage === "ka";
     document.documentElement.lang = currentLanguage;
     document.documentElement.dataset.language = currentLanguage;
-    document.title = isGeorgian ? translations[normalize(originalTitle)] || originalTitle : originalTitle;
+    document.title = isGeorgian ? georgianTitle : englishTitle;
 
     for (const entry of textEntries) entry.node.nodeValue = isGeorgian ? entry.translated : entry.original;
     for (const entry of attributeEntries) entry.element.setAttribute(entry.attribute, isGeorgian ? entry.translated : entry.original);
@@ -281,12 +329,14 @@
     for (const input of document.querySelectorAll('input[name="locale_code"]')) input.value = currentLanguage;
     try {
       localStorage.setItem("pupsy-language", currentLanguage);
-      if (rememberChoice) localStorage.setItem("pupsy-language-choice", "true");
+      if (rememberChoice) localStorage.setItem("pupsy-language-choice-v2", "true");
     } catch {}
   }
 
   window.addEventListener("click", event => {
-    const option = event.target.closest?.("a[data-popout-option]");
+    const option = event.composedPath?.().find(node =>
+      node instanceof Element && node.matches("a[data-popout-option]")
+    ) || (event.target instanceof Element ? event.target.closest("a[data-popout-option]") : null);
     if (!option || !["en", "ka"].includes(option.dataset.value)) return;
     event.preventDefault();
     event.stopImmediatePropagation();
@@ -301,7 +351,7 @@
 
   let savedLanguage = "ka";
   try {
-    if (localStorage.getItem("pupsy-language-choice") === "true") {
+    if (localStorage.getItem("pupsy-language-choice-v2") === "true") {
       savedLanguage = localStorage.getItem("pupsy-language") || "ka";
     } else {
       localStorage.removeItem("pupsy-language");
