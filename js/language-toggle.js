@@ -245,6 +245,65 @@
     "იხილეთ, სად მიდის თქვენი წვლილი ყოველთვიურად.": "See where your contribution goes each month.",
     "გამორჩეული ხარისხი და დიზაინი: თითოეული პროდუქტი შერჩეულია განსაკუთრებული ყურადღებითა და სიყვარულით. მზუნველობა და პასუხისმგებლობა: ყოველი შენაძენით ეხმარებით უსახლკარო ცხოველებს. სრული გამჭვირვალობა: ყოველთვიური ვიდეო-რეპორტაჟები ჩვენი ერთობლივი ქველმოქმედების შესახებ. გმადლობთ, რომ ირჩევთ PUPSY-ს და ჩვენთან ერთად ცვლით სამყაროს უკეთესობისკენ! 🐾🤍": "Exceptional quality and design: every product is chosen with special care and love. Care and responsibility: every purchase helps animals without a home. Full transparency: monthly video reports show the difference our shared charity work makes. Thank you for choosing PUPSY and helping us make the world a better place! 🐾🤍",
     "The Furlou Family": "The Furlou Family",
+    "წესები და პოლიტიკა": "Terms and Policies",
+    "1. ბრენდის პოლიტიკა და ზოგადი პირობები": "1. Brand Policy and General Terms",
+    "მომსახურების არსი:": "Nature of Service:",
+    "წარმოადგენს ონლაინ ზოომაღაზიას, რომელიც მომხმარებელს სთავაზობს უმაღლესი ხარისხისა და გამორჩეული დიზაინის შინაური ცხოველების აქსესუარებსა და პროდუქციას.": "is an online pet store offering customers high-quality, distinctively designed pet accessories and products.",
+    "სოციალური პასუხისმგებლობა:": "Social Responsibility:",
+    "PUPSY-ის პლატფორმაზე განხორციელებული თითოეული წარმატებული გაყიდვიდან მიღებული თანხის": "From every successful sale made through the PUPSY platform, ",
+    "გადაირიცხება მიუსაფარი ცხოველების (ძაღლებისა და კატების) მოვლა-პატრონობის, კვებისა და სამედიცინო დახმარების ფონდში.": "will be transferred to a fund supporting the care, food, and medical treatment of homeless animals (dogs and cats).",
+    "გამჭვირვალობის გარანტია:": "Transparency:",
+    "PUPSY იღებს ვალდებულებას, თვეში ერთხელ საკუთარ ვებ-საიტსა და ოფიციალურ სოციალურ ქსელებში განათავსოს ვიდეო/ფოტო ანგარიში აკუმულირებული თანხის განკარგვის შესახებ.": "PUPSY commits to publishing a video or photo report once a month on its website and official social media channels showing how the collected funds are used.",
+    "პროდუქცია და ასორტიმენტი:": "Products and Assortment:",
+    "PUPSY იტოვებს უფლებას, ნებისმიერ დროს შეცვალოს პროდუქციის ასორტიმენტი ან ფასები წინასწარი შეტყობინების გარეშე.": "PUPSY reserves the right to change its product range or prices at any time without prior notice.",
+    "2. მიწოდების პოლიტიკა": "2. Delivery Policy",
+    "მიწოდების არეალი:": "Delivery Area:",
+    "შეკვეთების მიწოდება ხორციელდება საქართველოს მთელ ტერიტორიაზე.": "Orders are delivered throughout Georgia.",
+    "მიწოდების ვადები:": "Delivery Times:",
+    "თბილისი (იმავე დღეს მიწოდება):": "Tbilisi (same-day delivery):",
+    "14:00 საათამდე": "Before 2:00 p.m.",
+    "განხორციელებული შეკვეთების მიწოდება ხდება იმავე დღეს.": "Orders placed by this time are delivered the same day.",
+    "თბილისი (სტანდარტული):": "Tbilisi (standard delivery):",
+    "14:00 საათის შემდეგ": "After 2:00 p.m.",
+    "განხორციელებული შეკვეთები ჩაბარდება": "Orders placed after this time are delivered within",
+    "1-2 სამუშაო დღეში": "1–2 business days",
+    "თბილისს გარეთ (დიდი ქალაქები):": "Outside Tbilisi (major cities):",
+    "მიწოდება ხორციელდება": "Delivery takes",
+    "2 სამუშაო დღეში": "2 business days",
+    "სხვა რეგიონები და სოფლები:": "Other Regions and Villages:",
+    "3 ან მეტ სამუშაო დღეში": "3 or more business days",
+    "(ზუსტი ვადა განისაზღვრება კონკრეტული მისამართის მითითების შემდეგ).": "(The exact delivery time is determined after the specific address is provided.)",
+    "მიწოდების ღირებულება:": "Delivery Fees:",
+    "თბილისის მასშტაბით 90 ლარზე ზემოთ შეკვეთებზე მიწოდება უფასოა!": "Delivery is free on orders over GEL 90 within Tbilisi!",
+    "სხვა შემთხვევებში მიწოდების სტანდარტული ტარიფი იანგარიშება ანგარიშსწორების (Checkout) ეტაპზე მისამართის მიხედვით.": "Otherwise, the standard delivery fee is calculated by address at checkout.",
+    "მიწოდების პროცესი:": "Delivery Process:",
+    "კურიერი შეკვეთის ჩაბარებამდე დაგიკავშირდებათ მითითებულ საკონტაქტო ნომერზე. თუ მიწოდება ვერ განხორციელდა მომხმარებლის მიზეზით (არასწორი მისამართი, ტელეფონზე უპასუხობა), განმეორებითი მიწოდება შესაძლოა დაექვემდებაროს დამატებით საფასურს.": "The courier will contact you at the phone number provided before delivering your order. If delivery cannot be completed for reasons attributable to the customer (such as an incorrect address or no answer by phone), an additional fee may apply for redelivery.",
+    "3. გაუქმების პოლიტიკა": "3. Cancellation Policy",
+    "შეკვეთის გაუქმება მომხმარებლის მიერ:": "Order Cancellation by the Customer:",
+    "მომხმარებელს უფლება აქვს გააუქმოს შეკვეთა მის": "Customers may cancel their order before",
+    "გაგზავნამდე (დისპეტჩერიზაციამდე)": "dispatch",
+    ". ამ შემთხვევაში გადახდილი თანხა სრულად დაუბრუნდება მომხმარებელს": ". In this case, the full amount paid will be refunded to the customer within",
+    "1-3 სამუშაო დღის": "1–3 business days",
+    "ვადაში.": ".",
+    "თუ შეკვეთა უკვე გადაეცემა კურიერს, მისი გაუქმება დაქვემდებარება დაბრუნების სტანდარტულ პირობებს.": "Once an order has been handed to the courier, cancellation is subject to the standard return policy.",
+    "შეკვეთის გაუქმება PUPSY-ის მიერ:": "Order Cancellation by PUPSY:",
+    "კომპანია იტოვებს უფლებას გააუქმოს შეკვეთა, თუ:": "The company reserves the right to cancel an order if:",
+    "პროდუქტი აღარ არის მარაგში (მომხმარებელს დაუყოვნებლივ დაუბრუნდება გადახდილი თანხა).": "The product is out of stock (the customer will receive an immediate refund).",
+    "მითითებული საკონტაქტო ან მისამართის მონაცემები არასრულია/მცდარია.": "The contact or address details provided are incomplete or incorrect.",
+    "4. დაბრუნებისა და გაცვლის პოლიტიკა": "4. Returns and Exchanges Policy",
+    "დაბრუნებისა და გაცვლის ვადა:": "Return and Exchange Period:",
+    "მომხმარებელს უფლება აქვს დააბრუნოს ან გაცვალოს შეიძინილი პროდუქტი მისი ჩაბარებიდან": "Customers may return or exchange a purchased product within",
+    "14 კალენდარული დღის": "14 calendar days",
+    "განმავლობაში.": "of receiving it.",
+    "დაბრუნების პირობები:": "Return Conditions:",
+    "პროდუქტი უნდა იყოს პირვანდელ მდგომარეობაში: უხმარი, დაუზიანებელი, ორიგინალი იარლიყითა და შეფუთვით.": "The product must be in its original condition: unused, undamaged, and with its original tags and packaging.",
+    "ჰიგიენური ნორმებიდან გამომდინარე, არ ექვემდებარება დაბრუნებას გამოყენებული ან გახსნილი ჰიგიენური და მოვლის საშუალებები (თუ მათ არ აღენიშნებათ ქარხნული წუნი).": "For hygiene reasons, used or opened hygiene and care products cannot be returned unless they have a manufacturing defect.",
+    "ტრანსპორტირების ხარჯი დაბრუნებისას:": "Return Shipping Costs:",
+    "თუ პროდუქტის დაბრუნება/გაცვლა ხდება მომხმარებლის სურვილით (მაგ. ზომა ან ფერი არ მოერგო), ტრანსპორტირების ხარჯს ფარავს მომხმარებელი.": "If a product is returned or exchanged at the customer's request (for example, if the size or color does not fit), the customer pays the shipping costs.",
+    "თუ პროდუქტს აღენიშნება ქარხნული წუნი ან გამოგზავნილია არასწორი ნივთი, ტრანსპორტირების ხარჯს სრულად ფარავს": "If the product has a manufacturing defect or the wrong item was sent, PUPSY will cover the full shipping cost.",
+    "თანხის ანაზღაურება:": "Refunds:",
+    "პროდუქტის საწყობში მიღებისა და შემოწმების შემდეგ, თანხა დაგიბრუნდებათ მითითებულ საბანკო ანგარიშზე": "After the product is received at and inspected by the warehouse, the refund will be sent to the bank account provided within",
+    "2-5 სამუშაო დღის": "2–5 business days",
     "Paws, Leashes, and Memories": "Paws, Leashes, and Memories"
   };
   const getGeorgian = english => georgianOverrides[english] ?? translations[english];
@@ -256,7 +315,10 @@
     reverseTranslations[normalize(getGeorgian(english))] = english;
   }
   const originalTitle = document.title;
-  const englishTitle = reverseTranslations[normalize(originalTitle)] || originalTitle;
+  const isPrivacyPolicyPage = /(?:^|\/)privacy\.html$/i.test(window.location.pathname);
+  const englishTitle = isPrivacyPolicyPage
+    ? "Terms and Policies — PUPSY"
+    : reverseTranslations[normalize(originalTitle)] || originalTitle;
   const georgianTitle = getGeorgian(normalize(originalTitle)) || originalTitle;
   const textEntries = [];
   const attributeEntries = [];
