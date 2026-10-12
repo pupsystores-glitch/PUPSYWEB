@@ -128,7 +128,7 @@ svg.wlh-svg-Icon path {
     stroke-width: 0.5px; */
 }
 
-@media only screen and (max-width: 749px) {
+@media only screen and (max-width: 1366px) {
     .mobile-menu__block--menu,
     .mobile-menu__block--menu-columns,
     .mobile-menu__block--menu + .mobile-menu__block--divider,
@@ -149,6 +149,8 @@ svg.wlh-svg-Icon path {
         bottom: 51px;
         left: 0;
         flex-direction: column;
+        justify-content: center;
+        align-items: center;
         overflow-x: hidden;
         overflow-y: auto;
         padding: 8px 0;
@@ -165,8 +167,10 @@ svg.wlh-svg-Icon path {
     #pupsy-mobile-navigation a {
         display: flex;
         flex: 0 0 auto;
+        width: 100%;
         min-height: 50px;
         align-items: center;
+        justify-content: center;
         padding: 10px 20px;
         color: #212121 !important;
         font-family: system-ui, sans-serif !important;
@@ -178,6 +182,51 @@ svg.wlh-svg-Icon path {
         -webkit-transform: none !important;
         -webkit-backface-visibility: visible;
         will-change: auto !important;
+    }
+
+    #header-menu .drawer__head {
+        position: relative;
+        display: flex;
+        min-height: 100px;
+        align-items: center;
+        justify-content: center;
+    }
+
+    #header-menu .header__logo__link--drawer {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        margin: 0;
+        transform: translate(-50%, -50%);
+    }
+
+    #header-menu .drawer__close {
+        position: absolute;
+        top: 50%;
+        right: var(--inner);
+        transform: translateY(-50%);
+    }
+
+    #header-menu .drawer__body {
+        display: none !important;
+    }
+
+    #header-menu .drawer__foot {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 11;
+        display: flex;
+        justify-content: center;
+    }
+
+    #header-menu .drawer__foot__scroll,
+    #header-menu .mobile-menu__block-localization,
+    #header-menu .popout-header__holder {
+        display: flex;
+        justify-content: center;
+        width: 100%;
     }
 
     #pupsy-mobile-navigation a[aria-current="page"] {
@@ -277,3 +326,4 @@ svg.wlh-svg-Icon path {
         }
     }
 }
+
