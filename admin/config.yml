@@ -1,0 +1,46 @@
+backend:
+  name: github
+  repo: pupsystores-glitch/PUPSYWEB
+  branch: main
+
+site_url: https://pupsystores-glitch.github.io/PUPSYWEB
+display_url: https://pupsystores-glitch.github.io/PUPSYWEB
+locale: ka
+
+media_folder: images/uploads
+public_folder: /PUPSYWEB/images/uploads
+
+collections:
+  - name: products
+    label: პროდუქტები
+    description: მართე საიტზე გამოსაჩენი პროდუქტები.
+    files:
+      - name: catalog
+        label: პროდუქციის კატალოგი
+        file: products/products.json
+        format: json
+        fields:
+          - label: პროდუქტები
+            name: products
+            widget: list
+            summary: '{{fields.title}} — {{fields.price}} ₾'
+            fields:
+              - { label: სათაური, name: title, widget: string }
+              - { label: URL-ის იდენტიფიკატორი (slug), name: slug, widget: string, hint: 'ლათინური ასოები და დეფისი, მაგალითად: terracotta-harness' }
+              - { label: ფასი (₾), name: price, widget: number, value_type: float, min: 0 }
+              - { label: ძველი ფასი (არასავალდებულო), name: oldPrice, widget: number, value_type: float, min: 0, required: false }
+              - label: მთავარი სურათი
+                name: image
+                widget: image
+              - label: გალერეა
+                name: images
+                widget: list
+                required: false
+                field: { label: სურათი, name: image, widget: image }
+              - { label: აღწერა, name: description, widget: markdown }
+              - label: კატეგორია
+                name: category
+                widget: select
+                options: [საყელური, წელსამაგრები, საბელი, აქსესუარები, 'ჰიგიენა & მოვლა', სათამაშოები]
+              - { label: ზომა ან სხვა მახასიათებლები, name: attributes, widget: list, required: false }
+              - { label: გამოტანა საიტზე, name: published, widget: boolean, default: true }

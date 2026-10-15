@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ka">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <base href="/PUPSYWEB/">
+  <title>პროდუქტი | PUPSY</title>
+  <meta name="description" content="PUPSY-ის პროდუქტის გვერდი">
+  <link rel="icon" href="images/logo_PUPSY_optimized.png">
+  <link rel="stylesheet" href="css/cms-products.css">
+</head>
+<body>
+  <header class="cms-products" style="margin:0 auto;padding-top:22px;padding-bottom:18px;border-bottom:1px solid #eee8e2">
+    <a href="index.html" aria-label="PUPSY მთავარი გვერდი" style="color:inherit;text-decoration:none;font-size:24px;font-weight:700;letter-spacing:.08em">PUPSY</a>
+  </header>
+  <main class="cms-product-page">
+    <a class="cms-product-page__back" href="shop.html">← პროდუქტებთან დაბრუნება</a>
+    <p class="cms-product-status" data-product-status>იტვირთება…</p>
+    <article class="cms-product-page__layout" data-product-content hidden>
+      <div>
+        <img class="cms-product-page__main-image" data-product-main-image src="" alt="">
+        <div class="cms-product-page__gallery" data-product-gallery aria-label="პროდუქტის გალერეა"></div>
+      </div>
+      <div>
+        <p class="cms-product-page__category" data-product-category hidden></p>
+        <h1 class="cms-product-page__title" data-product-title></h1>
+        <div class="cms-product-page__prices">
+          <strong data-product-price></strong>
+          <span class="cms-product-page__old-price" data-product-old-price hidden></span>
+        </div>
+        <div class="cms-product-page__description" data-product-description></div>
+        <ul class="cms-product-page__attributes" data-product-attributes></ul>
+      </div>
+    </article>
+  </main>
+  <script src="js/cms-product.js" defer></script>
+</body>
+</html>
