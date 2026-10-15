@@ -1,0 +1,7 @@
+name = "pupsy-decap-oauth"
+main = "index.js"
+compatibility_date = "2026-10-16"
+
+# After deployment, set these as Worker secrets in Cloudflare:
+# GITHUB_CLIENT_ID
+# GITHUB_CLIENT_SECRET
