@@ -32,12 +32,13 @@ collections:
               - { label: ძველი ფასი (არასავალდებულო), name: oldPrice, widget: number, value_type: float, min: 0, required: false }
               - label: მთავარი სურათი
                 name: image
-                widget: image
+                widget: string
+                hint: 'ჩასვი პირდაპირი სურათის ბმული (https://...). Shopify CDN-ის ბმულზე სურათი ავტომატურად ზომაზე მოერგება.'
               - label: გალერეა
                 name: images
                 widget: list
                 required: false
-                field: { label: სურათი, name: image, widget: image }
+                field: { label: სურათის პირდაპირი ბმული, name: image, widget: string }
               - { label: აღწერა, name: description, widget: markdown }
               - label: კატეგორია
                 name: category
