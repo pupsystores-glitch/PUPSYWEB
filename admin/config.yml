@@ -2,6 +2,7 @@ backend:
   name: github
   repo: pupsystores-glitch/PUPSYWEB
   branch: main
+  base_url: https://pupsy-decap-oauth.pupsystores.workers.dev
 
 site_url: https://pupsystores-glitch.github.io/PUPSYWEB
 display_url: https://pupsystores-glitch.github.io/PUPSYWEB
