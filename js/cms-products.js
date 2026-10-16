@@ -3,7 +3,7 @@
 
   const catalogUrl = "products/products.json";
   const baseUrl = new URL(".", document.baseURI);
-  const productUrl = new URL("product.html", baseUrl).href;
+  const productUrl = new URL("harnes1.html", baseUrl).href + "?cmsProduct=";
 
   function formatPrice(value) {
     const amount = Number(value);
@@ -33,7 +33,7 @@
   function renderCard(product) {
     const card = document.createElement("a");
     card.className = "cms-product-card";
-    card.href = productUrl + "?id=" + encodeURIComponent(product.slug);
+    card.href = productUrl + encodeURIComponent(product.slug);
 
     const image = document.createElement("img");
     image.className = "cms-product-card__image";

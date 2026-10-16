@@ -4,19 +4,18 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script>document.write('<base href="' + (location.hostname === "pupsystores-glitch.github.io" ? "/PUPSYWEB/" : "/") + '">');</script>
-  <title>პროდუქტი | PUPSY</title>
-  <link rel="icon" href="images/logo_PUPSY_optimized.png">
-  <style>
-    html, body { margin: 0; min-height: 100%; }
-    body { background: #fff; }
-    [data-product-frame] { display: block; width: 100%; min-height: 100vh; border: 0; }
-    [data-product-status] { padding: 48px 20px; text-align: center; font: 16px sans-serif; }
-    [data-product-status][hidden], [data-product-frame][hidden] { display: none; }
-  </style>
+  <title>PUPSY პროდუქტი</title>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const slug = params.get("id") || params.get("slug") || params.get("cmsProduct");
+    if (slug) {
+      const target = new URL("harnes1.html", document.baseURI);
+      target.searchParams.set("cmsProduct", slug);
+      location.replace(target.href);
+    }
+  </script>
 </head>
 <body>
-  <p data-product-status>პროდუქტი იტვირთება…</p>
-  <iframe data-product-frame title="PUPSY პროდუქტის გვერდი" hidden></iframe>
-  <script src="js/cms-product.js" defer></script>
+  <p>პროდუქტის ბმულში იდენტიფიკატორი არ არის მითითებული.</p>
 </body>
 </html>
