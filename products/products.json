@@ -1,3 +1,16 @@
 {
-  "products": []
+  "products": [
+    {
+      "published": true,
+      "title": "წელსამაგრი Tedy",
+      "slug": "Tedy-brown-harness",
+      "price": 68,
+      "image": "/PUPSYWEB/images/uploads/att.47s-a3uatiqt1fmqaypghdtdies2b0us1pxoltyr8-a.jpeg",
+      "description": "ფუმფულა მატერია და საყვარელი ფორმა. ოთხ ადგილას რეგულირებადი უნიკალური შეგრძნებისთვის და ყავისფერი, შავი დეტალებით, ის ისეთივე პრაქტიკულია, როგორც ელეგანტური. თბილი, რბილი და ნამდვილად საყვარელი. რადგან კომფორტი არასდროს გადადის მოდიდან.",
+      "category": "წელსამაგრები",
+      "attributes": [
+        "პატარა"
+      ]
+    }
+  ]
 }
