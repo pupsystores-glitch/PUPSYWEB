@@ -62,20 +62,20 @@
 
       targets.forEach((target) => {
         const category = target.dataset.category;
+        const normalize = (value) => String(value || "").trim().toLocaleLowerCase("ka-GE").normalize("NFC");
         const visibleProducts = category
-          ? products.filter((product) => product.category === category)
+          ? products.filter((product) => normalize(product.category) === normalize(category))
           : products;
         target.replaceChildren(...visibleProducts.map(renderCard));
+        const section = target.closest(".cms-products");
+        if (section) section.hidden = visibleProducts.length === 0;
         const empty = target.parentElement.querySelector("[data-cms-products-empty]");
-        if (empty) empty.hidden = visibleProducts.length > 0;
+        if (empty) empty.hidden = true;
       });
     } catch (error) {
       targets.forEach((target) => {
-        const status = target.parentElement.querySelector("[data-cms-products-empty]");
-        if (status) {
-          status.hidden = false;
-          status.textContent = "პროდუქტები დროებით ვერ ჩაიტვირთა.";
-        }
+        const section = target.closest(".cms-products");
+        if (section) section.hidden = true;
       });
       console.error("PUPSY product catalog:", error);
     }
