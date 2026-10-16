@@ -67,7 +67,7 @@
     if (!targets.length) return;
 
     try {
-      const response = await fetch(new URL(catalogUrl, baseUrl), { cache: "no-cache" });
+      const response = await fetch(new URL(catalogUrl, baseUrl));
       if (!response.ok) throw new Error("კატალოგის ჩატვირთვა ვერ მოხერხდა");
       const data = await response.json();
       const products = (Array.isArray(data.products) ? data.products : []).filter(

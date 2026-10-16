@@ -68,17 +68,7 @@
     element.replaceChildren(doc.createTextNode(String(value || "")));
   }
 
-  function updateTemplate(source, product) {
-    const parsed = new DOMParser().parseFromString(source, "text/html");
-    const doc = parsed;
-
-    doc.querySelectorAll("script").forEach((script) => {
-      if (script.textContent.includes("location.hostname === \"pupsystores-glitch.github.io\"")) script.remove();
-    });
-    const base = doc.createElement("base");
-    base.href = baseUrl.href;
-    doc.head.prepend(base);
-
+  function updateTemplate(doc, product) {
     doc.title = product.title + " | PUPSY";
     const title = doc.querySelector(".product__title [data-zoom-caption]") || doc.querySelector(".product__title");
     setTextContent(doc, title, product.title);
@@ -129,11 +119,8 @@
       }
     }
 
-    const resizeScript = doc.createElement("script");
-    resizeScript.textContent = "(function(){var send=function(){var height=Math.max(document.documentElement.scrollHeight,document.body.scrollHeight);parent.postMessage({type:'pupsy-product-frame-height',height:height},'*')};document.addEventListener('DOMContentLoaded',send);window.addEventListener('load',send);window.addEventListener('resize',send);if('ResizeObserver'in window)new ResizeObserver(send).observe(document.documentElement)})();";
-    doc.body.append(resizeScript);
-
-    return "<!doctype html>\n" + doc.documentElement.outerHTML;
+    const backLink = doc.querySelector("a[href*='shop.html']");
+    if (backLink) backLink.href = new URL("shop.html", baseUrl).href;
   }
 
   function resizeFrame() {
@@ -142,12 +129,6 @@
       if (doc) frame.style.height = Math.max(doc.documentElement.scrollHeight, doc.body.scrollHeight) + "px";
     } catch (_) { /* srcdoc is expected to share this page's origin */ }
   }
-
-  window.addEventListener("message", function (event) {
-    if (event.source !== frame.contentWindow || event.data?.type !== "pupsy-product-frame-height") return;
-    const height = Number(event.data.height);
-    if (Number.isFinite(height) && height > 0) frame.style.height = height + "px";
-  });
 
   async function init() {
     const params = new URLSearchParams(location.search);
@@ -158,11 +139,8 @@
     }
 
     try {
-      const [catalogResponse, templateResponse] = await Promise.all([
-        fetch(new URL("products/products.json", baseUrl), { cache: "no-cache" }),
-        fetch(new URL("harnes1.html", baseUrl)),
-      ]);
-      if (!catalogResponse.ok || !templateResponse.ok) throw new Error("პროდუქტის მონაცემები ან შაბლონი ვერ ჩაიტვირთა");
+      const catalogResponse = await fetch(new URL("products/products.json", baseUrl));
+      if (!catalogResponse.ok) throw new Error("კატალოგი ვერ ჩაიტვირთა");
       const data = await catalogResponse.json();
       const product = (Array.isArray(data.products) ? data.products : [])
         .find((item) => item.slug === id && item.published !== false);
@@ -171,19 +149,25 @@
         return;
       }
 
-      const source = await templateResponse.text();
       document.title = product.title + " | PUPSY";
       frame.addEventListener("load", function () {
-        resizeFrame();
-        const inner = frame.contentWindow;
-        if (inner) inner.addEventListener("resize", resizeFrame);
-        frame.contentDocument.querySelectorAll("img").forEach((image) => image.addEventListener("load", resizeFrame));
-        const observer = new MutationObserver(resizeFrame);
-        observer.observe(frame.contentDocument.body, { childList: true, subtree: true, attributes: true });
+        try {
+          const doc = frame.contentDocument;
+          updateTemplate(doc, product);
+          resizeFrame();
+          const inner = frame.contentWindow;
+          if (inner) inner.addEventListener("resize", resizeFrame);
+          doc.querySelectorAll("img").forEach((image) => image.addEventListener("load", resizeFrame));
+          const observer = new MutationObserver(resizeFrame);
+          observer.observe(doc.body, { childList: true, subtree: true, attributes: true });
+          status.hidden = true;
+          frame.hidden = false;
+        } catch (error) {
+          status.textContent = "პროდუქტის გვერდი დროებით ვერ ჩაიტვირთა.";
+          console.error("PUPSY product template:", error);
+        }
       }, { once: true });
-      frame.srcdoc = updateTemplate(source, product);
-      status.hidden = true;
-      frame.hidden = false;
+      frame.src = new URL("harnes1.html", baseUrl).href;
     } catch (error) {
       status.textContent = "პროდუქტის გვერდი დროებით ვერ ჩაიტვირთა.";
       console.error("PUPSY product:", error);
