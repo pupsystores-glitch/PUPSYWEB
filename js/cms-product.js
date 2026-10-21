@@ -14,15 +14,6 @@
     { path: "products/categories/hygiene-care.json", category: "ჰიგიენა & მოვლა" },
     { path: "products/categories/toys.json", category: "სათამაშოები" },
   ];
-  const colorValues = {
-    "ყავისფერი": "#5e4f49",
-    "ტერაკოტა": "#cc531f",
-    "ლურჯი": "#38787D",
-    "მწვანე": "#cfd39e",
-    "ვარდისფერი": "#e8aab8",
-    "ღია ყავისფერი": "#ebe0d3",
-    "შავი": "#000000",
-  };
   const georgianToLatin = {
     ა: "a", ბ: "b", გ: "g", დ: "d", ე: "e", ვ: "v", ზ: "z", თ: "t",
     ი: "i", კ: "k", ლ: "l", მ: "m", ნ: "n", ო: "o", პ: "p", ჟ: "zh",
@@ -58,36 +49,45 @@
       .map((color) => String(color || "").trim()).filter(Boolean))];
   }
 
-  function addColorSwatches(parent, product, className, showNames) {
-    const colors = productColors(product);
-    if (!colors.length) return;
-    const container = document.createElement("div");
-    container.className = className;
-    const label = document.createElement("span");
-    label.textContent = "ფერი: ";
-    container.append(label);
-    colors.forEach((color) => {
-      const swatch = document.createElement("span");
-      swatch.className = "cms-product-color-swatch";
-      swatch.title = color;
-      swatch.setAttribute("aria-label", color);
-      swatch.style.backgroundColor = colorValues[color] || "#dedede";
-      container.append(swatch);
-      if (showNames) {
-        const name = document.createElement("span");
-        name.textContent = color;
-        container.append(name);
+  function hideProductHeaderIcons() {
+    if (document.querySelector("#cms-product-header-icons-style")) return;
+    const style = document.createElement("style");
+    style.id = "cms-product-header-icons-style";
+    style.textContent = `
+      .header__wrapper [data-cart-toggle],
+      .header__wrapper .wishlist-hero-header-icon,
+      .header__mobile [data-cart-toggle],
+      .header__mobile .wishlist-hero-header-icon,
+      #wishlist-hero-product-page-button,
+      #wishlisthero-product-page-button-container,
+      .wishlisthero-floating {
+        display: none !important;
       }
-    });
-    parent.append(container);
+    `;
+    document.head.append(style);
   }
 
-  function addColorStyles() {
-    if (document.querySelector("#cms-product-color-style")) return;
-    const style = document.createElement("style");
-    style.id = "cms-product-color-style";
-    style.textContent = ".cms-product-color-swatch{display:inline-block;width:14px;height:14px;border-radius:50%;border:1px solid #999;vertical-align:middle;margin:0 3px}.cms-product-detail-colors{display:flex;align-items:center;gap:5px;margin-top:8px;font-size:14px}.cms-product-card__colors{display:flex;gap:2px;margin-top:5px}";
-    document.head.append(style);
+  function setSelectedColors(product) {
+    const colorsBlock = document.querySelector(".product__siblings");
+    if (!colorsBlock) return;
+
+    const selectedColors = new Set(productColors(product));
+    if (!selectedColors.size) return;
+    const swatches = [...colorsBlock.querySelectorAll(".swatches")];
+    swatches.forEach((swatch) => {
+      const link = swatch.querySelector(".sibling__link");
+      const label = swatch.querySelector(".visually-hidden")?.textContent.trim();
+      if (!link) return;
+      link.classList.remove("sibling__link--current");
+      swatch.classList.toggle("cms-selected-color", selectedColors.has(label));
+    });
+
+    if (!document.querySelector("#cms-selected-color-style")) {
+      const style = document.createElement("style");
+      style.id = "cms-selected-color-style";
+      style.textContent = ".product__siblings .swatches.cms-selected-color .sibling__link{overflow:initial;box-shadow:0 0 0 2px var(--bg)}.product__siblings .swatches.cms-selected-color .sibling__link:after{opacity:1;transform:translateZ(0);overflow:hidden}";
+      document.head.append(style);
+    }
   }
 
   function assetUrl(path) {
@@ -289,7 +289,7 @@
     if (!sizeStyle) {
       sizeStyle = document.createElement("style");
       sizeStyle.id = "cms-selected-size-style";
-      sizeStyle.textContent = ".product__content .radio__button.cms-selected-size > label { border: 2px solid #171717 !important; color: #111 !important; font-weight: 700 !important; box-sizing: border-box; }";
+      sizeStyle.textContent = ".product__block .radio__button.cms-selected-size > label,.product__block .radio__button.cms-selected-size > label .option-title{background-color:#302d29!important;border:2px solid #302d29!important;color:#fff!important;-webkit-text-fill-color:#fff!important;font-weight:700!important;opacity:1!important;box-sizing:border-box}";
       document.head.append(sizeStyle);
     }
     options.forEach((option) => option.classList.remove("cms-selected-size"));
@@ -302,6 +302,7 @@
   }
 
   function render(product) {
+    hideProductHeaderIcons();
     document.title = product.title + " | PUPSY";
     const title = document.querySelector(".product__title [data-zoom-caption]") || document.querySelector(".product__title");
     if (title) title.textContent = product.title || "PUPSY პროდუქტი";
@@ -323,12 +324,7 @@
       }
     }
 
-    if (productColors(product).length) {
-      addColorStyles();
-      const priceWrap = document.querySelector(".product__price__wrap");
-      if (priceWrap) addColorSwatches(priceWrap.parentElement, product, "cms-product-detail-colors", true);
-    }
-
+    setSelectedColors(product);
     setGallery(product);
     setAccordion(/აღწერა/, String(product.description || "აღწერა დამატებული არ არის.").split(/\n{2,}/).map((s) => s.trim()).filter(Boolean));
     const sizeBlock = [...document.querySelectorAll(".product__content .product__block--accordion")]

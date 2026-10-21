@@ -1,0 +1,16 @@
+/* Hide storefront header cart and wishlist entry points on every viewport. */
+header a[href="/cart"],
+header a[href="/cart/"],
+[role="banner"] a[href="/cart"],
+[role="banner"] a[href="/cart/"],
+.header__wrapper [data-cart-toggle],
+.header__wrapper .navlink--cart,
+.header__mobile [data-cart-toggle],
+.header__mobile .navlink--cart,
+.wishlist-hero-header-icon,
+.wishlisthero-header-icon,
+#wishlist-hero-product-page-button,
+#wishlisthero-product-page-button-container,
+.wishlisthero-floating {
+  display: none !important;
+}
