@@ -44,5 +44,6 @@ collections:
                 name: category
                 widget: select
                 options: [საყელური, წელსამაგრები, საბელი, აქსესუარები, 'ჰიგიენა & მოვლა', სათამაშოები]
-              - { label: ზომა ან სხვა მახასიათებლები, name: attributes, widget: list, required: false }
+              - { label: ზომა, name: size, widget: select, options: ["ძალიან პატარა", "პატარა", "საშუალო", "დიდი"] }
+              - { label: სხვა მახასიათებლები, name: attributes, widget: list, required: false }
               - { label: გამოტანა საიტზე, name: published, widget: boolean, default: true }

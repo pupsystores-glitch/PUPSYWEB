@@ -158,6 +158,52 @@
     }));
   }
 
+  const sizeGuideHtml = `
+    <div class="metafield-rich_text_field">
+      <p>ძალიან პატარა<br>კისრის გარშემოწერილობა: 18–32 სმ | 7–12.5 დუიმი<br>მუცლის გარშემოწერილობა: 32–40 სმ | 12.5–15.5 დუიმი</p>
+      <p>პატარა<br>კისრის გარშემოწერილობა: 27–42 სმ | 10.5–16.5 დუიმი<br>მუცლის გარშემოწერილობა: 38–55 სმ | 15–21.5 დუიმი</p>
+      <p>საშუალო<br>კისრის გარშემოწერილობა: 34–52 სმ | 13–20 დუიმი<br>მუცლის გარშემოწერილობა: 47–70 სმ | 18.5–27.5 დუიმი</p>
+      <p>დიდი<br>კისრის გარშემოწერილობა: 45–62 სმ | 17.5–24 დუიმი<br>მუცლის გარშემოწერილობა: 62–95 სმ | 24–37 დუიმი</p>
+      <p>თუ ზომებს შორის ხართ, აირჩიეთ უფრო დიდი ზომა</p>
+      <p>• დიდი ზომის ძაღლებისთვის, რომლებიც ქაჩავენ, წელსამაგრს არ გირჩევთ</p>
+      <p><a href="guide.html">ზომების ყველა გზამკვლევის ნახვა</a></p>
+    </div>`;
+
+  function setSelectedSize(product) {
+    const buttons = document.querySelector(".radio__buttons[data-variant-buttons]");
+    if (!buttons) return;
+
+    const sizes = ["ძალიან პატარა", "პატარა", "საშუალო", "დიდი"];
+    const storedSize = String(product.size || "").trim();
+    const selectedSize = sizes.includes(storedSize)
+      ? storedSize
+      : (Array.isArray(product.attributes)
+        ? sizes.find((size) => product.attributes.map(String).includes(size))
+        : null);
+    if (!selectedSize) return;
+
+    const options = [...buttons.querySelectorAll(":scope > .radio__button")];
+    const optionFor = (size) => options.find((option) =>
+      option.querySelector(".option-title")?.textContent.trim() === size);
+    const selected = optionFor(selectedSize);
+    if (!selected) return;
+
+    let sizeStyle = document.querySelector("#cms-selected-size-style");
+    if (!sizeStyle) {
+      sizeStyle = document.createElement("style");
+      sizeStyle.id = "cms-selected-size-style";
+      sizeStyle.textContent = ".product__content .radio__button.cms-selected-size > label { border: 2px solid #171717 !important; color: #111 !important; font-weight: 700 !important; box-sizing: border-box; }";
+      document.head.append(sizeStyle);
+    }
+    options.forEach((option) => option.classList.remove("cms-selected-size"));
+    selected.classList.add("cms-selected-size");
+    buttons.prepend(selected);
+    options.forEach((option) => {
+      const input = option.querySelector('input[type="radio"]');
+      if (input) input.checked = option === selected;
+    });
+  }
+
   function render(product) {
     document.title = product.title + " | PUPSY";
     const title = document.querySelector(".product__title [data-zoom-caption]") || document.querySelector(".product__title");
@@ -182,7 +228,11 @@
 
     setGallery(product);
     setAccordion(/აღწერა/, String(product.description || "აღწერა დამატებული არ არის.").split(/\n{2,}/).map((s) => s.trim()).filter(Boolean));
-    setAccordion(/ზომები/, Array.isArray(product.attributes) ? product.attributes.map(String).filter(Boolean) : []);
+    const sizeBlock = [...document.querySelectorAll(".product__content .product__block--accordion")]
+      .find((item) => /ზომები/.test(item.querySelector("summary")?.textContent || ""));
+    const sizeContent = sizeBlock?.querySelector("[data-collapsible-content]");
+    if (sizeContent) sizeContent.innerHTML = sizeGuideHtml;
+    setSelectedSize(product);
 
     const backLink = document.querySelector("a[href*='shop.html']");
     if (backLink) backLink.href = new URL("shop.html", baseUrl).href;
