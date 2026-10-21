@@ -6,22 +6,6 @@
   if (!id) return;
 
   const baseUrl = new URL(".", document.baseURI);
-  const georgianToLatin = {
-    ა: "a", ბ: "b", გ: "g", დ: "d", ე: "e", ვ: "v", ზ: "z", თ: "t",
-    ი: "i", კ: "k", ლ: "l", მ: "m", ნ: "n", ო: "o", პ: "p", ჟ: "zh",
-    რ: "r", ს: "s", ტ: "t", უ: "u", ფ: "p", ქ: "k", ღ: "gh", ყ: "q",
-    შ: "sh", ჩ: "ch", ც: "ts", ძ: "dz", წ: "ts", ჭ: "ch", ხ: "kh", ჯ: "j", ჰ: "h",
-  };
-
-  function productSlug(product) {
-    const savedSlug = String(product.slug || "").trim();
-    if (savedSlug) return savedSlug;
-    return [...String(product.title || "").toLocaleLowerCase("ka-GE")]
-      .map((character) => georgianToLatin[character] || (/[a-z0-9]/.test(character) ? character : "-"))
-      .join("")
-      .replace(/-+/g, "-")
-      .replace(/^-|-$/g, "") || "product";
-  }
 
   function assetUrl(path) {
     const value = String(path || "").trim();
@@ -260,7 +244,7 @@
       if (!response.ok) throw new Error("პროდუქტების სია ვერ ჩაიტვირთა");
       const data = await response.json();
       const product = (Array.isArray(data.products) ? data.products : [])
-        .find((item) => productSlug(item) === id && item.published !== false);
+        .find((item) => item.slug === id && item.published !== false);
       if (!product) throw new Error("პროდუქტი ვერ მოიძებნა");
       render(product);
     } catch (error) {
