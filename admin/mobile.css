@@ -1,4 +1,16 @@
-/* Small-screen adjustments for the Decap CMS admin. */
+/* PUPSY admin: clear, calm controls on desktop and mobile. */
+:root {
+  color-scheme: light;
+  --admin-ink: #302d29;
+  --admin-muted: #716b63;
+  --admin-paper: #f7f6f2;
+  --admin-surface: #ffffff;
+  --admin-line: #e6e2da;
+  --admin-accent: #a65332;
+  --admin-accent-soft: #f4e9e2;
+  --admin-focus: #bd6038;
+}
+
 *,
 *::before,
 *::after {
@@ -12,6 +24,154 @@ body {
   overflow-x: hidden;
 }
 
+body {
+  background: var(--admin-paper);
+  color: var(--admin-ink);
+  font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+#nc-root {
+  min-height: 100vh;
+  width: 100%;
+  min-width: 0;
+  color: var(--admin-ink);
+  font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+}
+
+#nc-root form {
+  width: 100%;
+  min-width: 0;
+}
+
+#nc-root h1,
+#nc-root h2,
+#nc-root h3,
+#nc-root h4 {
+  color: var(--admin-ink);
+  letter-spacing: -0.02em;
+}
+
+#nc-root a {
+  color: var(--admin-accent);
+  text-underline-offset: 3px;
+}
+
+#nc-root nav a {
+  border-radius: 10px;
+  text-decoration: none;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+#nc-root nav a:hover,
+#nc-root nav a[aria-current="page"],
+#nc-root nav a[aria-selected="true"] {
+  background: var(--admin-accent-soft);
+  color: var(--admin-accent);
+}
+
+#nc-root button,
+#nc-root [role="button"] {
+  border-radius: 10px;
+  font-family: inherit;
+  font-weight: 600;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+#nc-root button:focus-visible,
+#nc-root [role="button"]:focus-visible,
+#nc-root a:focus-visible,
+#nc-root input:focus-visible,
+#nc-root select:focus-visible,
+#nc-root textarea:focus-visible {
+  outline: 2px solid var(--admin-focus);
+  outline-offset: 2px;
+}
+
+#nc-root input:not([type="checkbox"]):not([type="radio"]),
+#nc-root select,
+#nc-root textarea {
+  border: 1px solid var(--admin-line);
+  border-radius: 10px;
+  background: var(--admin-surface);
+  color: var(--admin-ink);
+  box-shadow: none;
+  font-family: inherit;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+#nc-root input:not([type="checkbox"]):not([type="radio"]):focus,
+#nc-root select:focus,
+#nc-root textarea:focus {
+  border-color: var(--admin-focus);
+  box-shadow: 0 0 0 3px rgb(189 96 56 / 12%);
+}
+
+#nc-root label {
+  color: var(--admin-muted);
+  font-weight: 600;
+}
+
+#nc-root [role="dialog"],
+#nc-root [role="menu"] {
+  border-color: var(--admin-line);
+  border-radius: 14px;
+  box-shadow: 0 16px 48px rgb(48 45 41 / 12%);
+}
+
+/* OpenCart-inspired admin frame: dark navigation, white toolbar, light workspace. */
+#nc-root [class*="SidebarContainer"] {
+  background: #1f2a35;
+  border-right: 0;
+  color: #eef2f5;
+}
+
+#nc-root [class*="SidebarContainer"] * {
+  color: inherit;
+}
+
+#nc-root [class*="SidebarContainer"] a,
+#nc-root [class*="SidebarContainer"] button,
+#nc-root [class*="SidebarNav"] {
+  color: #d5dee6;
+}
+
+#nc-root [class*="SidebarContainer"] a:hover,
+#nc-root [class*="SidebarContainer"] a[aria-current="page"],
+#nc-root [class*="SidebarContainer"] a[aria-selected="true"] {
+  background: #2e4050;
+  color: #ffffff;
+}
+
+#nc-root [class*="AppHeader"] {
+  background: #ffffff;
+  border-bottom: 1px solid var(--admin-line);
+  box-shadow: 0 2px 12px rgb(31 42 53 / 5%);
+}
+
+#nc-root [class*="AppMainContainer"],
+#nc-root [class*="CollectionContainer"] {
+  background: var(--admin-paper);
+}
+
+#nc-root [class*="CollectionMain"],
+#nc-root [class*="ControlPaneContainer"] {
+  border-color: var(--admin-line);
+}
+
+#nc-root [class*="ControlPaneContainer"],
+#nc-root [class*="EditorControlBar"] {
+  background: #ffffff;
+}
+
+#nc-root [class*="ToolbarContainer"] {
+  border-color: var(--admin-line);
+}
+
+#nc-root img {
+  max-width: 100%;
+}
+
 @media (max-width: 700px) {
   body {
     font-size: 16px;
@@ -21,24 +181,91 @@ body {
   #nc-root input:not([type="checkbox"]):not([type="radio"]),
   #nc-root select,
   #nc-root textarea {
+    width: 100%;
     max-width: 100%;
+    min-width: 0;
     min-height: 48px;
     font-size: 16px;
     touch-action: manipulation;
+    padding: 10px 12px;
   }
 
   #nc-root textarea {
     min-height: 120px;
   }
 
+  #nc-root form,
+  #nc-root main,
+  #nc-root [role="main"],
+  #nc-root fieldset,
+  #nc-root [class*="Editor"],
+  #nc-root [class*="editor"],
+  #nc-root [class*="ControlPane"],
+  #nc-root [class*="WidgetControl"],
+  #nc-root [class*="Widget"] {
+    min-width: 0 !important;
+    max-width: 100%;
+  }
+
+  #nc-root fieldset {
+    width: 100%;
+  }
+
+  #nc-root [class*="Toolbar"],
+  #nc-root [class*="toolbar"] {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  #nc-root [class*="CollectionContainer"] {
+    display: flex;
+    flex-direction: column;
+  }
+
+  #nc-root [class*="SidebarContainer"] {
+    position: static;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  #nc-root [class*="CollectionMain"] {
+    width: 100%;
+    margin-top: 16px;
+    padding-left: 0;
+  }
+
+  #nc-root [class*="EditorContainer"],
+  #nc-root [class*="ControlPaneContainer"],
+  #nc-root [class*="ToolbarContainer"] {
+    width: 100%;
+    min-width: 0 !important;
+  }
+
   #nc-root button,
   #nc-root [role="button"] {
-    min-height: 44px;
+    min-height: 46px;
     touch-action: manipulation;
   }
 
-  img,
-  video {
-    max-width: 100%;
+  #nc-root [role="dialog"] {
+    max-width: calc(100vw - 24px);
+    max-height: calc(100vh - 24px);
+    overflow: auto;
+  }
+
+  #nc-root nav a {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
   }
 }
