@@ -4,6 +4,22 @@
   const catalogUrl = "products/products.json";
   const baseUrl = new URL(".", document.baseURI);
   const productUrl = new URL("harnes1.html", baseUrl).href + "?cmsProduct=";
+  const georgianToLatin = {
+    ა: "a", ბ: "b", გ: "g", დ: "d", ე: "e", ვ: "v", ზ: "z", თ: "t",
+    ი: "i", კ: "k", ლ: "l", მ: "m", ნ: "n", ო: "o", პ: "p", ჟ: "zh",
+    რ: "r", ს: "s", ტ: "t", უ: "u", ფ: "p", ქ: "k", ღ: "gh", ყ: "q",
+    შ: "sh", ჩ: "ch", ც: "ts", ძ: "dz", წ: "ts", ჭ: "ch", ხ: "kh", ჯ: "j", ჰ: "h",
+  };
+
+  function productSlug(product) {
+    const savedSlug = String(product.slug || "").trim();
+    if (savedSlug) return savedSlug;
+    return [...String(product.title || "").toLocaleLowerCase("ka-GE")]
+      .map((character) => georgianToLatin[character] || (/[a-z0-9]/.test(character) ? character : "-"))
+      .join("")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "") || "product";
+  }
 
   function formatPrice(value) {
     const amount = Number(value);
@@ -33,7 +49,7 @@
   function renderCard(product) {
     const card = document.createElement("a");
     card.className = "cms-product-card";
-    card.href = productUrl + encodeURIComponent(product.slug);
+    card.href = productUrl + encodeURIComponent(productSlug(product));
 
     const image = document.createElement("img");
     image.className = "cms-product-card__image";
@@ -71,7 +87,7 @@
       if (!response.ok) throw new Error("კატალოგის ჩატვირთვა ვერ მოხერხდა");
       const data = await response.json();
       const products = (Array.isArray(data.products) ? data.products : []).filter(
-        (product) => product.published !== false && product.slug && product.title
+        (product) => product.published !== false && product.title
       );
 
       targets.forEach((target) => {

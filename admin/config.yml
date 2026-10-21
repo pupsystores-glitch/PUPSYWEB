@@ -14,36 +14,82 @@ public_folder: /PUPSYWEB/images/uploads
 collections:
   - name: products
     label: პროდუქტები
-    description: მართე საიტზე გამოსაჩენი პროდუქტები.
+    description: >-
+      პროდუქტის დასამატებლად გახსენი „პროდუქციის კატალოგი“ და დააჭირე „ახალი პროდუქტის დამატებას“.
+      შეავსე სათაური, ფასი, ფოტო და კატეგორია, შემდეგ დააჭირე შენახვას. ფოტო კომპიუტერიდან აიტვირთება.
+      ბმულის იდენტიფიკატორი შეგიძლია ცარიელი დატოვო — საიტი მას სათაურიდან შექმნის.
     files:
       - name: catalog
         label: პროდუქციის კატალოგი
         file: products/products.json
         format: json
         fields:
-          - label: პროდუქტები
+          - label: პროდუქტების სია
             name: products
             widget: list
+            label_singular: ახალი პროდუქტის დამატება
             summary: '{{fields.title}} — {{fields.price}} ₾'
+            hint: დააჭირე ღილაკს ახალი პროდუქტის დასამატებლად. პროდუქტის გამოსაქვეყნებლად ბოლოს დააჭირე შენახვას.
             fields:
-              - { label: სათაური, name: title, widget: string }
-              - { label: URL-ის იდენტიფიკატორი (slug), name: slug, widget: string, hint: 'ლათინური ასოები და დეფისი, მაგალითად: terracotta-harness' }
-              - { label: ფასი (₾), name: price, widget: number, value_type: float, min: 0 }
-              - { label: ძველი ფასი (არასავალდებულო), name: oldPrice, widget: number, value_type: float, min: 0, required: false }
-              - label: მთავარი სურათი
-                name: image
+              - label: პროდუქტის სახელი
+                name: title
                 widget: string
-                hint: 'ჩასვი პირდაპირი სურათის ბმული (https://...). Shopify CDN-ის ბმულზე სურათი ავტომატურად ზომაზე მოერგება.'
-              - label: გალერეა
-                name: images
-                widget: list
-                required: false
-                field: { label: სურათის პირდაპირი ბმული, name: image, widget: string }
-              - { label: აღწერა, name: description, widget: markdown }
+                hint: ჩაწერე სახელი ისე, როგორც გინდა, რომ საიტზე გამოჩნდეს.
+              - label: ფასი (₾)
+                name: price
+                widget: number
+                value_type: float
+                min: 0
+                hint: მიუთითე გასაყიდი ფასი ლარში.
+              - label: მთავარი ფოტო
+                name: image
+                widget: image
+                allow_multiple: false
+                hint: აირჩიე ფოტო კომპიუტერიდან ან უკვე ატვირთული ფოტო ბიბლიოთეკიდან.
               - label: კატეგორია
                 name: category
                 widget: select
                 options: [საყელური, წელსამაგრები, საბელი, აქსესუარები, 'ჰიგიენა & მოვლა', სათამაშოები]
-              - { label: ზომა, name: size, widget: select, options: ["ძალიან პატარა", "პატარა", "საშუალო", "დიდი"] }
-              - { label: სხვა მახასიათებლები, name: attributes, widget: list, required: false }
-              - { label: გამოტანა საიტზე, name: published, widget: boolean, default: true }
+              - label: პროდუქტის აღწერა
+                name: description
+                widget: text
+                required: false
+                hint: მოკლედ აღწერე მასალა, ფერი და პროდუქტის მთავარი უპირატესობა.
+              - label: ზომა
+                name: size
+                widget: select
+                required: false
+                options: ["ძალიან პატარა", "პატარა", "საშუალო", "დიდი"]
+                hint: აირჩიე ზომა, თუ პროდუქტს ზომა აქვს.
+              - label: დამატებითი ფოტოები (არასავალდებულო)
+                name: images
+                widget: list
+                required: false
+                collapsed: true
+                label_singular: ფოტოს დამატება
+                summary: '{{fields.image}}'
+                field: { label: ფოტო, name: image, widget: image, allow_multiple: false }
+              - label: ფასდაკლება — ძველი ფასი (არასავალდებულო)
+                name: oldPrice
+                widget: number
+                value_type: float
+                min: 0
+                required: false
+                hint: შეავსე მხოლოდ ფასდაკლების შემთხვევაში.
+              - label: ბმულის იდენტიფიკატორი (არასავალდებულო)
+                name: slug
+                widget: string
+                required: false
+                pattern: ['^[a-z0-9]+(?:-[a-z0-9]+)*$', 'გამოიყენე ინგლისური პატარა ასოები და დეფისები.']
+                hint: შეგიძლია ცარიელი დატოვო. თუ შეავსებ, გამოიყენე ინგლისური პატარა ასოები და დეფისები, მაგალითად: tedy-brown-harness.
+              - label: დამატებითი მახასიათებლები (არასავალდებულო)
+                name: attributes
+                widget: list
+                required: false
+                collapsed: true
+                label_singular: მახასიათებლის დამატება
+              - label: საიტზე გამოჩენა
+                name: published
+                widget: boolean
+                default: true
+                hint: ჩართული მდგომარეობით პროდუქტი საიტზე გამოჩნდება.
