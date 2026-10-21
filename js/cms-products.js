@@ -1,9 +1,82 @@
 (function () {
   "use strict";
 
-  const catalogUrl = "products/products.json";
+  const catalogFiles = [
+    { path: "products/categories/harnesses.json", category: "წელსამაგრები" },
+    { path: "products/categories/collars.json", category: "საყელური" },
+    { path: "products/categories/leashes.json", category: "საბელი" },
+    { path: "products/categories/accessories.json", category: "აქსესუარები" },
+    { path: "products/categories/hygiene-care.json", category: "ჰიგიენა & მოვლა" },
+    { path: "products/categories/toys.json", category: "სათამაშოები" },
+  ];
   const baseUrl = new URL(".", document.baseURI);
   const productUrl = new URL("harnes1.html", baseUrl).href + "?cmsProduct=";
+  const colorValues = {
+    "ყავისფერი": "#5e4f49",
+    "ტერაკოტა": "#cc531f",
+    "ლურჯი": "#38787D",
+    "მწვანე": "#cfd39e",
+    "ვარდისფერი": "#e8aab8",
+    "ღია ყავისფერი": "#ebe0d3",
+    "შავი": "#000000",
+  };
+  const georgianToLatin = {
+    ა: "a", ბ: "b", გ: "g", დ: "d", ე: "e", ვ: "v", ზ: "z", თ: "t",
+    ი: "i", კ: "k", ლ: "l", მ: "m", ნ: "n", ო: "o", პ: "p", ჟ: "zh",
+    რ: "r", ს: "s", ტ: "t", უ: "u", ფ: "p", ქ: "k", ღ: "gh", ყ: "q",
+    შ: "sh", ჩ: "ch", ც: "ts", ძ: "dz", წ: "ts", ჭ: "ch", ხ: "kh", ჯ: "j", ჰ: "h",
+  };
+
+  function productSlug(product) {
+    const savedSlug = String(product.slug || "").trim();
+    if (savedSlug) return savedSlug;
+    return [...String(product.title || "").toLocaleLowerCase("ka-GE")]
+      .map((character) => georgianToLatin[character] || (/[a-z0-9]/.test(character) ? character : "-"))
+      .join("")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "") || "product";
+  }
+
+  function productImages(product) {
+    const images = [];
+    (Array.isArray(product.photos) ? product.photos : []).forEach((source) => {
+      if (source.source === "gallery" && Array.isArray(source.images)) {
+        images.push(...source.images);
+      } else if (source.source === "links") {
+        images.push(source.link1, source.link2, source.link3, source.link4);
+      }
+    });
+    if (!images.length) images.push(product.image, ...(Array.isArray(product.images) ? product.images : []));
+    return [...new Set(images.filter((path) => typeof path === "string" && path.trim()).map((path) => path.trim()))];
+  }
+
+  function productColors(product) {
+    return [...new Set((Array.isArray(product.colors) ? product.colors : [product.color])
+      .map((color) => String(color || "").trim()).filter(Boolean))];
+  }
+
+  function addColorSwatches(parent, product, className) {
+    const colors = productColors(product);
+    if (!colors.length) return;
+    if (!document.querySelector("#cms-product-color-style")) {
+      const style = document.createElement("style");
+      style.id = "cms-product-color-style";
+      style.textContent = ".cms-product-color-swatch{display:inline-block;width:14px;height:14px;border-radius:50%;border:1px solid #999;vertical-align:middle;margin:0 3px}.cms-product-card__colors{display:flex;gap:2px;margin-top:5px}";
+      document.head.append(style);
+    }
+    const container = document.createElement("span");
+    container.className = className;
+    container.setAttribute("aria-label", "ფერი: " + colors.join(", "));
+    colors.forEach((color) => {
+      const swatch = document.createElement("span");
+      swatch.className = "cms-product-color-swatch";
+      swatch.title = color;
+      swatch.setAttribute("aria-label", color);
+      swatch.style.backgroundColor = colorValues[color] || "#dedede";
+      container.append(swatch);
+    });
+    parent.append(container);
+  }
 
   function formatPrice(value) {
     const amount = Number(value);
@@ -33,12 +106,16 @@
   function renderCard(product) {
     const card = document.createElement("a");
     card.className = "cms-product-card";
-    card.href = productUrl + encodeURIComponent(product.slug);
+    card.href = productUrl + encodeURIComponent(productSlug(product));
 
     const image = document.createElement("img");
     image.className = "cms-product-card__image";
-    const imagePath = product.image || (product.images || [])[0];
-    image.src = safeImagePath(imagePath, 640);
+    const imagePath = productImages(product)[0];
+    if (imagePath) {
+      image.src = safeImagePath(imagePath, 640);
+    } else {
+      image.hidden = true;
+    }
     if (imagePath && /\/cdn\/shop\/files\/|cdn\.shopify\.com/i.test(imagePath)) {
       image.srcset = [320, 480, 640, 800]
         .map((width) => safeImagePath(imagePath, width) + " " + width + "w")
@@ -58,6 +135,7 @@
     price.className = "cms-product-card__price";
     price.textContent = formatPrice(product.price);
     details.append(title, price);
+    addColorSwatches(details, product, "cms-product-card__colors");
     card.append(details);
     return card;
   }
@@ -67,11 +145,17 @@
     if (!targets.length) return;
 
     try {
-      const response = await fetch(new URL(catalogUrl, baseUrl));
-      if (!response.ok) throw new Error("კატალოგის ჩატვირთვა ვერ მოხერხდა");
-      const data = await response.json();
-      const products = (Array.isArray(data.products) ? data.products : []).filter(
-        (product) => product.published !== false && product.slug && product.title
+      const catalogs = await Promise.all(catalogFiles.map(async (catalog) => {
+        const response = await fetch(new URL(catalog.path, baseUrl));
+        if (!response.ok) throw new Error("კატალოგის ჩატვირთვა ვერ მოხერხდა: " + catalog.category);
+        const data = await response.json();
+        return (Array.isArray(data.products) ? data.products : []).map((product) => ({
+          ...product,
+          category: catalog.category,
+        }));
+      }));
+      const products = catalogs.flat().filter(
+        (product) => product.published !== false && product.title
       );
 
       targets.forEach((target) => {

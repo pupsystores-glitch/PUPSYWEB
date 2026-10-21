@@ -1,0 +1,44 @@
+/* Small-screen adjustments for the Decap CMS admin. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  min-width: 320px;
+  overflow-x: hidden;
+}
+
+@media (max-width: 700px) {
+  body {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  #nc-root input:not([type="checkbox"]):not([type="radio"]),
+  #nc-root select,
+  #nc-root textarea {
+    max-width: 100%;
+    min-height: 48px;
+    font-size: 16px;
+    touch-action: manipulation;
+  }
+
+  #nc-root textarea {
+    min-height: 120px;
+  }
+
+  #nc-root button,
+  #nc-root [role="button"] {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+
+  img,
+  video {
+    max-width: 100%;
+  }
+}

@@ -12,38 +12,375 @@ media_folder: images/uploads
 public_folder: /PUPSYWEB/images/uploads
 
 collections:
-  - name: products
-    label: პროდუქტები
-    description: მართე საიტზე გამოსაჩენი პროდუქტები.
+  - name: "harnesses"
+    label: "წელსამაგრები"
+    description: "წელსამაგრები — აქ დაამატე ახალი პროდუქტი ან შეცვალე არსებული."
     files:
       - name: catalog
-        label: პროდუქციის კატალოგი
-        file: products/products.json
+        label: პროდუქცია
+        file: products/categories/harnesses.json
         format: json
         fields:
-          - label: პროდუქტები
+          - label: პროდუქტების ჩამონათვალი
             name: products
             widget: list
             summary: '{{fields.title}} — {{fields.price}} ₾'
+            hint: "ახალი პროდუქტის დასამატებლად დააჭირე დამატებას; რედაქტირებისთვის აირჩიე პროდუქტი სიიდან."
             fields:
-              - { label: სათაური, name: title, widget: string }
-              - { label: URL-ის იდენტიფიკატორი (slug), name: slug, widget: string, hint: 'ლათინური ასოები და დეფისი, მაგალითად: terracotta-harness' }
+              - { label: კატეგორია, name: category, widget: hidden, default: "წელსამაგრები" }
+              - { label: პროდუქტის სახელი, name: title, widget: string, hint: "ჩაწერე პროდუქტის სახელი." }
+              - { label: ბმულის იდენტიფიკატორი (არასავალდებულო), name: slug, widget: string, required: false, hint: "შეგიძლია ცარიელი დატოვო — ბმული სახელიდან შეიქმნება." }
               - { label: ფასი (₾), name: price, widget: number, value_type: float, min: 0 }
               - { label: ძველი ფასი (არასავალდებულო), name: oldPrice, widget: number, value_type: float, min: 0, required: false }
-              - label: მთავარი სურათი
-                name: image
-                widget: string
-                hint: 'ჩასვი პირდაპირი სურათის ბმული (https://...). Shopify CDN-ის ბმულზე სურათი ავტომატურად ზომაზე მოერგება.'
-              - label: გალერეა
-                name: images
+              - { label: აღწერა, name: description, widget: text, hint: "ჩაწერე პროდუქტის აღწერა ჩვეულებრივი ტექსტით." }
+              - label: ზომა
+                name: size
+                widget: select
+                default: "არ აქვს"
+                options: ["არ აქვს", "ძალიან პატარა", "პატარა", "საშუალო", "დიდი"]
+                hint: "თუ პროდუქტს ზომა არ აქვს, აირჩიე „არ აქვს“."
+              - label: ფერი
+                name: colors
+                widget: select
+                required: false
+                multiple: true
+                options: ["ყავისფერი", "ტერაკოტა", "ლურჯი", "მწვანე", "ვარდისფერი", "ღია ყავისფერი", "შავი"]
+                hint: "შეგიძლია მონიშნო პროდუქტის ყველა ხელმისაწვდომი ფერი."
+              - label: ფოტოები (არჩევითი)
+                name: photos
                 widget: list
                 required: false
-                field: { label: სურათის პირდაპირი ბმული, name: image, widget: string }
-              - { label: აღწერა, name: description, widget: markdown }
-              - label: კატეგორია
-                name: category
+                min: 0
+                max: 1
+                label_singular: ფოტოების დამატება
+                typeKey: source
+                types:
+                  - label: გალერეიდან ატვირთვა
+                    name: gallery
+                    widget: object
+                    fields:
+                      - label: აირჩიე ფოტოები
+                        name: images
+                        widget: list
+                        label_singular: ფოტოს დამატება
+                        field: { label: ფოტო, name: image, widget: image, choose_url: false }
+                  - label: ფოტოს ბმულების ჩასმა
+                    name: links
+                    widget: object
+                    fields:
+                      - { label: ფოტოს ბმული 1 (პირდაპირი URL), name: link1, widget: string, required: false, pattern: ['^(https://.+)?$', 'ჩასვი სრული https:// სურათის ბმული.'] }
+                      - { label: ფოტოს ბმული 2 (პირდაპირი URL), name: link2, widget: string, required: false, pattern: ['^(https://.+)?$', 'ჩასვი სრული https:// სურათის ბმული.'] }
+                      - { label: ფოტოს ბმული 3 (პირდაპირი URL), name: link3, widget: string, required: false, pattern: ['^(https://.+)?$', 'ჩასვი სრული https:// სურათის ბმული.'] }
+                      - { label: ფოტოს ბმული 4 (პირდაპირი URL), name: link4, widget: string, required: false, pattern: ['^(https://.+)?$', 'ჩასვი სრული https:// სურათის ბმული.'] }
+              - { label: სხვა მახასიათებლები (არასავალდებულო), name: attributes, widget: list, required: false }
+              - { label: საიტზე გამოჩენა, name: published, widget: boolean, default: true }
+  - name: "collars"
+    label: "საყელური"
+    description: "საყელური — აქ დაამატე ახალი პროდუქტი ან შეცვალე არსებული."
+    files:
+      - name: catalog
+        label: პროდუქცია
+        file: products/categories/collars.json
+        format: json
+        fields:
+          - label: პროდუქტების ჩამონათვალი
+            name: products
+            widget: list
+            summary: '{{fields.title}} — {{fields.price}} ₾'
+            hint: "ახალი პროდუქტის დასამატებლად დააჭირე დამატებას; რედაქტირებისთვის აირჩიე პროდუქტი სიიდან."
+            fields:
+              - { label: კატეგორია, name: category, widget: hidden, default: "საყელური" }
+              - { label: პროდუქტის სახელი, name: title, widget: string, hint: "ჩაწერე პროდუქტის სახელი." }
+              - { label: ბმულის იდენტიფიკატორი (არასავალდებულო), name: slug, widget: string, required: false, hint: "შეგიძლია ცარიელი დატოვო — ბმული სახელიდან შეიქმნება." }
+              - { label: ფასი (₾), name: price, widget: number, value_type: float, min: 0 }
+              - { label: ძველი ფასი (არასავალდებულო), name: oldPrice, widget: number, value_type: float, min: 0, required: false }
+              - { label: აღწერა, name: description, widget: text, hint: "ჩაწერე პროდუქტის აღწერა ჩვეულებრივი ტექსტით." }
+              - label: ზომა
+                name: size
                 widget: select
-                options: [საყელური, წელსამაგრები, საბელი, აქსესუარები, 'ჰიგიენა & მოვლა', სათამაშოები]
-              - { label: ზომა, name: size, widget: select, options: ["ძალიან პატარა", "პატარა", "საშუალო", "დიდი"] }
-              - { label: სხვა მახასიათებლები, name: attributes, widget: list, required: false }
-              - { label: გამოტანა საიტზე, name: published, widget: boolean, default: true }
+                default: "არ აქვს"
+                options: ["არ აქვს", "ძალიან პატარა", "პატარა", "საშუალო", "დიდი"]
+                hint: "თუ პროდუქტს ზომა არ აქვს, აირჩიე „არ აქვს“."
+              - label: ფერი
+                name: colors
+                widget: select
+                required: false
+                multiple: true
+                options: ["ყავისფერი", "ტერაკოტა", "ლურჯი", "მწვანე", "ვარდისფერი", "ღია ყავისფერი", "შავი"]
+                hint: "შეგიძლია მონიშნო პროდუქტის ყველა ხელმისაწვდომი ფერი."
+              - label: ფოტოები (არჩევითი)
+                name: photos
+                widget: list
+                required: false
+                min: 0
+                max: 1
+                label_singular: ფოტოების დამატება
+                typeKey: source
+                types:
+                  - label: გალერეიდან ატვირთვა
+                    name: gallery
+                    widget: object
+                    fields:
+                      - label: აირჩიე ფოტოები
+                        name: images
+                        widget: list
+                        label_singular: ფოტოს დამატება
+                        field: { label: ფოტო, name: image, widget: image, choose_url: false }
+                  - label: ფოტოს ბმულების ჩასმა
+                    name: links
+                    widget: object
+                    fields:
+                      - { label: ფოტოს ბმული 1 (პირდაპირი URL), name: link1, widget: string, required: false, pattern: ['^(https://.+)?$', 'ჩასვი სრული https:// სურათის ბმული.'] }
+                      - { label: ფოტოს ბმული 2 (პირდაპირი URL), name: link2, widget: string, required: false, pattern: ['^(https://.+)?$', 'ჩასვი სრული https:// სურათის ბმული.'] }
+                      - { label: ფოტოს ბმული 3 (პირდაპირი URL), name: link3, widget: string, required: false, pattern: ['^(https://.+)?$', 'ჩასვი სრული https:// სურათის ბმული.'] }
+                      - { label: ფოტოს ბმული 4 (პირდაპირი URL), name: link4, widget: string, required: false, pattern: ['^(https://.+)?$', 'ჩასვი სრული https:// სურათის ბმული.'] }
+              - { label: სხვა მახასიათებლები (არასავალდებულო), name: attributes, widget: list, required: false }
+              - { label: საიტზე გამოჩენა, name: published, widget: boolean, default: true }
+  - name: "leashes"
+    label: "საბელი"
+    description: "საბელი — აქ დაამატე ახალი პროდუქტი ან შეცვალე არსებული."
+    files:
+      - name: catalog
+        label: პროდუქცია
+        file: products/categories/leashes.json
+        format: json
+        fields:
+          - label: პროდუქტების ჩამონათვალი
+            name: products
+            widget: list
+            summary: '{{fields.title}} — {{fields.price}} ₾'
+            hint: "ახალი პროდუქტის დასამატებლად დააჭირე დამატებას; რედაქტირებისთვის აირჩიე პროდუქტი სიიდან."
+            fields:
+              - { label: კატეგორია, name: category, widget: hidden, default: "საბელი" }
+              - { label: პროდუქტის სახელი, name: title, widget: string, hint: "ჩაწერე პროდუქტის სახელი." }
+              - { label: ბმულის იდენტიფიკატორი (არასავალდებულო), name: slug, widget: string, required: false, hint: "შეგიძლია ცარიელი დატოვო — ბმული სახელიდან შეიქმნება." }
+              - { label: ფასი (₾), name: price, widget: number, value_type: float, min: 0 }
+              - { label: ძველი ფასი (არასავალდებულო), name: oldPrice, widget: number, value_type: float, min: 0, required: false }
+              - { label: აღწერა, name: description, widget: text, hint: "ჩაწერე პროდუქტის აღწერა ჩვეულებრივი ტექსტით." }
+              - label: ზომა
+                name: size
+                widget: select
+                default: "არ აქვს"
+                options: ["არ აქვს", "ძალიან პატარა", "პატარა", "საშუალო", "დიდი"]
+                hint: "თუ პროდუქტს ზომა არ აქვს, აირჩიე „არ აქვს“."
+              - label: ფერი
+                name: colors
+                widget: select
+                required: false
+                multiple: true
+                options: ["ყავისფერი", "ტერაკოტა", "ლურჯი", "მწვანე", "ვარდისფერი", "ღია ყავისფერი", "შავი"]
+                hint: "შეგიძლია მონიშნო პროდუქტის ყველა ხელმისაწვდომი ფერი."
+              - label: ფოტოები (არჩევითი)
+                name: photos
+                widget: list
+                required: false
+                min: 0
+                max: 1
+                label_singular: ფოტოების დამატება
+                typeKey: source
+                types:
+                  - label: გალერეიდან ატვირთვა
+                    name: gallery
+                    widget: object
+                    fields:
+                      - label: აირჩიე ფოტოები
+                        name: images
+                        widget: list
+                        label_singular: ფოტოს დამატება
+                        field: { label: ფოტო, name: image, widget: image, choose_url: false }
+                  - label: ფოტოს ბმულების ჩასმა
+                    name: links
+                    widget: object
+                    fields:
+                      - { label: ფოტოს ბმული 1 (პირდაპირი URL), name: link1, widget: string, required: false, pattern: ['^(https://.+)?$', 'ჩასვი სრული https:// სურათის ბმული.'] }
+                      - { label: ფოტოს ბმული 2 (პირდაპირი URL), name: link2, widget: string, required: false, pattern: ['^(https://.+)?$', 'ჩასვი სრული https:// სურათის ბმული.'] }
+                      - { label: ფოტოს ბმული 3 (პირდაპირი URL), name: link3, widget: string, required: false, pattern: ['^(https://.+)?$', 'ჩასვი სრული https:// სურათის ბმული.'] }
+                      - { label: ფოტოს ბმული 4 (პირდაპირი URL), name: link4, widget: string, required: false, pattern: ['^(https://.+)?$', 'ჩასვი სრული https:// სურათის ბმული.'] }
+              - { label: სხვა მახასიათებლები (არასავალდებულო), name: attributes, widget: list, required: false }
+              - { label: საიტზე გამოჩენა, name: published, widget: boolean, default: true }
+  - name: "accessories"
+    label: "აქსესუარები"
+    description: "აქსესუარები — აქ დაამატე ახალი პროდუქტი ან შეცვალე არსებული."
+    files:
+      - name: catalog
+        label: პროდუქცია
+        file: products/categories/accessories.json
+        format: json
+        fields:
+          - label: პროდუქტების ჩამონათვალი
+            name: products
+            widget: list
+            summary: '{{fields.title}} — {{fields.price}} ₾'
+            hint: "ახალი პროდუქტის დასამატებლად დააჭირე დამატებას; რედაქტირებისთვის აირჩიე პროდუქტი სიიდან."
+            fields:
+              - { label: კატეგორია, name: category, widget: hidden, default: "აქსესუარები" }
+              - { label: პროდუქტის სახელი, name: title, widget: string, hint: "ჩაწერე პროდუქტის სახელი." }
+              - { label: ბმულის იდენტიფიკატორი (არასავალდებულო), name: slug, widget: string, required: false, hint: "შეგიძლია ცარიელი დატოვო — ბმული სახელიდან შეიქმნება." }
+              - { label: ფასი (₾), name: price, widget: number, value_type: float, min: 0 }
+              - { label: ძველი ფასი (არასავალდებულო), name: oldPrice, widget: number, value_type: float, min: 0, required: false }
+              - { label: აღწერა, name: description, widget: text, hint: "ჩაწერე პროდუქტის აღწერა ჩვეულებრივი ტექსტით." }
+              - label: ზომა
+                name: size
+                widget: select
+                default: "არ აქვს"
+                options: ["არ აქვს", "ძალიან პატარა", "პატარა", "საშუალო", "დიდი"]
+                hint: "თუ პროდუქტს ზომა არ აქვს, აირჩიე „არ აქვს“."
+              - label: ფერი
+                name: colors
+                widget: select
+                required: false
+                multiple: true
+                options: ["ყავისფერი", "ტერაკოტა", "ლურჯი", "მწვანე", "ვარდისფერი", "ღია ყავისფერი", "შავი"]
+                hint: "შეგიძლია მონიშნო პროდუქტის ყველა ხელმისაწვდომი ფერი."
+              - label: ფოტოები (არჩევითი)
+                name: photos
+                widget: list
+                required: false
+                min: 0
+                max: 1
+                label_singular: ფოტოების დამატება
+                typeKey: source
+                types:
+                  - label: გალერეიდან ატვირთვა
+                    name: gallery
+                    widget: object
+                    fields:
+                      - label: აირჩიე ფოტოები
+                        name: images
+                        widget: list
+                        label_singular: ფოტოს დამატება
+                        field: { label: ფოტო, name: image, widget: image, choose_url: false }
+                  - label: ფოტოს ბმულების ჩასმა
+                    name: links
+                    widget: object
+                    fields:
+                      - { label: ფოტოს ბმული 1 (პირდაპირი URL), name: link1, widget: string, required: false, pattern: ['^(https://.+)?$', 'ჩასვი სრული https:// სურათის ბმული.'] }
+                      - { label: ფოტოს ბმული 2 (პირდაპირი URL), name: link2, widget: string, required: false, pattern: ['^(https://.+)?$', 'ჩასვი სრული https:// სურათის ბმული.'] }
+                      - { label: ფოტოს ბმული 3 (პირდაპირი URL), name: link3, widget: string, required: false, pattern: ['^(https://.+)?$', 'ჩასვი სრული https:// სურათის ბმული.'] }
+                      - { label: ფოტოს ბმული 4 (პირდაპირი URL), name: link4, widget: string, required: false, pattern: ['^(https://.+)?$', 'ჩასვი სრული https:// სურათის ბმული.'] }
+              - { label: სხვა მახასიათებლები (არასავალდებულო), name: attributes, widget: list, required: false }
+              - { label: საიტზე გამოჩენა, name: published, widget: boolean, default: true }
+  - name: "hygiene-care"
+    label: "ჰიგიენა & მოვლა"
+    description: "ჰიგიენა & მოვლა — აქ დაამატე ახალი პროდუქტი ან შეცვალე არსებული."
+    files:
+      - name: catalog
+        label: პროდუქცია
+        file: products/categories/hygiene-care.json
+        format: json
+        fields:
+          - label: პროდუქტების ჩამონათვალი
+            name: products
+            widget: list
+            summary: '{{fields.title}} — {{fields.price}} ₾'
+            hint: "ახალი პროდუქტის დასამატებლად დააჭირე დამატებას; რედაქტირებისთვის აირჩიე პროდუქტი სიიდან."
+            fields:
+              - { label: კატეგორია, name: category, widget: hidden, default: "ჰიგიენა & მოვლა" }
+              - { label: პროდუქტის სახელი, name: title, widget: string, hint: "ჩაწერე პროდუქტის სახელი." }
+              - { label: ბმულის იდენტიფიკატორი (არასავალდებულო), name: slug, widget: string, required: false, hint: "შეგიძლია ცარიელი დატოვო — ბმული სახელიდან შეიქმნება." }
+              - { label: ფასი (₾), name: price, widget: number, value_type: float, min: 0 }
+              - { label: ძველი ფასი (არასავალდებულო), name: oldPrice, widget: number, value_type: float, min: 0, required: false }
+              - { label: აღწერა, name: description, widget: text, hint: "ჩაწერე პროდუქტის აღწერა ჩვეულებრივი ტექსტით." }
+              - label: ზომა
+                name: size
+                widget: select
+                default: "არ აქვს"
+                options: ["არ აქვს", "ძალიან პატარა", "პატარა", "საშუალო", "დიდი"]
+                hint: "თუ პროდუქტს ზომა არ აქვს, აირჩიე „არ აქვს“."
+              - label: ფერი
+                name: colors
+                widget: select
+                required: false
+                multiple: true
+                options: ["ყავისფერი", "ტერაკოტა", "ლურჯი", "მწვანე", "ვარდისფერი", "ღია ყავისფერი", "შავი"]
+                hint: "შეგიძლია მონიშნო პროდუქტის ყველა ხელმისაწვდომი ფერი."
+              - label: ფოტოები (არჩევითი)
+                name: photos
+                widget: list
+                required: false
+                min: 0
+                max: 1
+                label_singular: ფოტოების დამატება
+                typeKey: source
+                types:
+                  - label: გალერეიდან ატვირთვა
+                    name: gallery
+                    widget: object
+                    fields:
+                      - label: აირჩიე ფოტოები
+                        name: images
+                        widget: list
+                        label_singular: ფოტოს დამატება
+                        field: { label: ფოტო, name: image, widget: image, choose_url: false }
+                  - label: ფოტოს ბმულების ჩასმა
+                    name: links
+                    widget: object
+                    fields:
+                      - { label: ფოტოს ბმული 1 (პირდაპირი URL), name: link1, widget: string, required: false, pattern: ['^(https://.+)?$', 'ჩასვი სრული https:// სურათის ბმული.'] }
+                      - { label: ფოტოს ბმული 2 (პირდაპირი URL), name: link2, widget: string, required: false, pattern: ['^(https://.+)?$', 'ჩასვი სრული https:// სურათის ბმული.'] }
+                      - { label: ფოტოს ბმული 3 (პირდაპირი URL), name: link3, widget: string, required: false, pattern: ['^(https://.+)?$', 'ჩასვი სრული https:// სურათის ბმული.'] }
+                      - { label: ფოტოს ბმული 4 (პირდაპირი URL), name: link4, widget: string, required: false, pattern: ['^(https://.+)?$', 'ჩასვი სრული https:// სურათის ბმული.'] }
+              - { label: სხვა მახასიათებლები (არასავალდებულო), name: attributes, widget: list, required: false }
+              - { label: საიტზე გამოჩენა, name: published, widget: boolean, default: true }
+  - name: "toys"
+    label: "სათამაშოები"
+    description: "სათამაშოები — აქ დაამატე ახალი პროდუქტი ან შეცვალე არსებული."
+    files:
+      - name: catalog
+        label: პროდუქცია
+        file: products/categories/toys.json
+        format: json
+        fields:
+          - label: პროდუქტების ჩამონათვალი
+            name: products
+            widget: list
+            summary: '{{fields.title}} — {{fields.price}} ₾'
+            hint: "ახალი პროდუქტის დასამატებლად დააჭირე დამატებას; რედაქტირებისთვის აირჩიე პროდუქტი სიიდან."
+            fields:
+              - { label: კატეგორია, name: category, widget: hidden, default: "სათამაშოები" }
+              - { label: პროდუქტის სახელი, name: title, widget: string, hint: "ჩაწერე პროდუქტის სახელი." }
+              - { label: ბმულის იდენტიფიკატორი (არასავალდებულო), name: slug, widget: string, required: false, hint: "შეგიძლია ცარიელი დატოვო — ბმული სახელიდან შეიქმნება." }
+              - { label: ფასი (₾), name: price, widget: number, value_type: float, min: 0 }
+              - { label: ძველი ფასი (არასავალდებულო), name: oldPrice, widget: number, value_type: float, min: 0, required: false }
+              - { label: აღწერა, name: description, widget: text, hint: "ჩაწერე პროდუქტის აღწერა ჩვეულებრივი ტექსტით." }
+              - label: ზომა
+                name: size
+                widget: select
+                default: "არ აქვს"
+                options: ["არ აქვს", "ძალიან პატარა", "პატარა", "საშუალო", "დიდი"]
+                hint: "თუ პროდუქტს ზომა არ აქვს, აირჩიე „არ აქვს“."
+              - label: ფერი
+                name: colors
+                widget: select
+                required: false
+                multiple: true
+                options: ["ყავისფერი", "ტერაკოტა", "ლურჯი", "მწვანე", "ვარდისფერი", "ღია ყავისფერი", "შავი"]
+                hint: "შეგიძლია მონიშნო პროდუქტის ყველა ხელმისაწვდომი ფერი."
+              - label: ფოტოები (არჩევითი)
+                name: photos
+                widget: list
+                required: false
+                min: 0
+                max: 1
+                label_singular: ფოტოების დამატება
+                typeKey: source
+                types:
+                  - label: გალერეიდან ატვირთვა
+                    name: gallery
+                    widget: object
+                    fields:
+                      - label: აირჩიე ფოტოები
+                        name: images
+                        widget: list
+                        label_singular: ფოტოს დამატება
+                        field: { label: ფოტო, name: image, widget: image, choose_url: false }
+                  - label: ფოტოს ბმულების ჩასმა
+                    name: links
+                    widget: object
+                    fields:
+                      - { label: ფოტოს ბმული 1 (პირდაპირი URL), name: link1, widget: string, required: false, pattern: ['^(https://.+)?$', 'ჩასვი სრული https:// სურათის ბმული.'] }
+                      - { label: ფოტოს ბმული 2 (პირდაპირი URL), name: link2, widget: string, required: false, pattern: ['^(https://.+)?$', 'ჩასვი სრული https:// სურათის ბმული.'] }
+                      - { label: ფოტოს ბმული 3 (პირდაპირი URL), name: link3, widget: string, required: false, pattern: ['^(https://.+)?$', 'ჩასვი სრული https:// სურათის ბმული.'] }
+                      - { label: ფოტოს ბმული 4 (პირდაპირი URL), name: link4, widget: string, required: false, pattern: ['^(https://.+)?$', 'ჩასვი სრული https:// სურათის ბმული.'] }
+              - { label: სხვა მახასიათებლები (არასავალდებულო), name: attributes, widget: list, required: false }
+              - { label: საიტზე გამოჩენა, name: published, widget: boolean, default: true }
