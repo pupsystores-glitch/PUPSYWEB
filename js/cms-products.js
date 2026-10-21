@@ -11,17 +11,6 @@
   ];
   const baseUrl = new URL(".", document.baseURI);
   const productUrl = new URL("harnes1.html", baseUrl).href + "?cmsProduct=";
-  const colorValues = {
-    "ყავისფერი": "#5e4f49",
-    "ტერაკოტა": "#cc531f",
-    "ლურჯი": "#38787D",
-    "მწვანე": "#cfd39e",
-    "ლავანდისფერი": "#c4b6d3",
-    "ვარდისფერი": "#dbb3a4",
-    "ღია ყავისფერი": "#ebe0d3",
-    "ბორდოსფერი": "#701e35",
-    "შავი": "#000000",
-  };
   const georgianToLatin = {
     ა: "a", ბ: "b", გ: "g", დ: "d", ე: "e", ვ: "v", ზ: "z", თ: "t",
     ი: "i", კ: "k", ლ: "l", მ: "m", ნ: "n", ო: "o", პ: "p", ჟ: "zh",
@@ -50,34 +39,6 @@
     });
     if (!images.length) images.push(product.image, ...(Array.isArray(product.images) ? product.images : []));
     return [...new Set(images.filter((path) => typeof path === "string" && path.trim()).map((path) => path.trim()))];
-  }
-
-  function productColors(product) {
-    return [...new Set((Array.isArray(product.colors) ? product.colors : [product.color])
-      .map((color) => String(color || "").trim()).filter(Boolean))];
-  }
-
-  function addColorSwatches(parent, product, className) {
-    const colors = productColors(product);
-    if (!colors.length) return;
-    if (!document.querySelector("#cms-product-color-style")) {
-      const style = document.createElement("style");
-      style.id = "cms-product-color-style";
-      style.textContent = ".cms-product-color-swatch{display:inline-block;width:14px;height:14px;border-radius:50%;border:1px solid #999;vertical-align:middle;margin:0 3px}.cms-product-card__colors{display:flex;gap:2px;margin-top:5px}";
-      document.head.append(style);
-    }
-    const container = document.createElement("span");
-    container.className = className;
-    container.setAttribute("aria-label", "ფერი: " + colors.join(", "));
-    colors.forEach((color) => {
-      const swatch = document.createElement("span");
-      swatch.className = "cms-product-color-swatch";
-      swatch.title = color;
-      swatch.setAttribute("aria-label", color);
-      swatch.style.backgroundColor = colorValues[color] || "#dedede";
-      container.append(swatch);
-    });
-    parent.append(container);
   }
 
   function formatPrice(value) {
@@ -137,7 +98,6 @@
     price.className = "cms-product-card__price";
     price.textContent = formatPrice(product.price);
     details.append(title, price);
-    addColorSwatches(details, product, "cms-product-card__colors");
     card.append(details);
     return card;
   }

@@ -8,6 +8,9 @@ site_url: https://pupsystores-glitch.github.io/PUPSYWEB
 display_url: https://pupsystores-glitch.github.io/PUPSYWEB
 locale: ka
 
+editor:
+  preview: false
+
 media_folder: images/uploads
 public_folder: /PUPSYWEB/images/uploads
 

@@ -172,6 +172,68 @@ body {
   max-width: 100%;
 }
 
+/* Keep the product editor readable: Decap renders its fields as a long form. */
+#nc-root form {
+  max-width: 100%;
+  min-width: 0;
+}
+
+#nc-root form label {
+  display: block;
+  max-width: 100%;
+  margin: 0 0 8px;
+  line-height: 1.45;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+#nc-root form input:not([type="checkbox"]):not([type="radio"]),
+#nc-root form select,
+#nc-root form textarea {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  margin: 0 0 10px;
+  padding: 11px 12px;
+  line-height: 1.45;
+}
+
+#nc-root form textarea {
+  min-height: 132px;
+  resize: vertical;
+}
+
+#nc-root form button,
+#nc-root form [role="button"] {
+  max-width: 100%;
+  min-width: 0;
+  height: auto;
+  padding: 10px 14px;
+  line-height: 1.35;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+#nc-root form fieldset {
+  min-width: 0;
+  max-width: 100%;
+  margin: 0 0 18px;
+  padding: 16px;
+  border: 1px solid var(--admin-line);
+  border-radius: 12px;
+  background: #fff;
+}
+
+#nc-root form p {
+  max-width: 100%;
+  margin: 6px 0 12px;
+  color: var(--admin-muted);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 700px) {
   body {
     font-size: 16px;
@@ -207,6 +269,19 @@ body {
     max-width: 100%;
   }
 
+  #nc-root form {
+    padding-inline: 12px;
+  }
+
+  #nc-root form fieldset {
+    padding: 12px;
+    margin-bottom: 14px;
+  }
+
+  #nc-root form label {
+    margin-bottom: 7px;
+  }
+
   #nc-root fieldset {
     width: 100%;
   }
@@ -215,7 +290,14 @@ body {
   #nc-root [class*="toolbar"] {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
     gap: 8px;
+  }
+
+  #nc-root form button,
+  #nc-root form [role="button"] {
+    width: auto;
+    min-height: 44px;
   }
 
   #nc-root [class*="CollectionContainer"] {
