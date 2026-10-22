@@ -545,7 +545,7 @@ async function saveProductForm(event) {
     setSaveStatus(`ვერ აიტვირთა: ${message} მონაცემები ფორმაში დარჩა — შეასწორე პრობლემა და თავიდან სცადე.`, true);
     showToast(message, 'error', 9000);
   } finally {
-    if (saveButton) { saveButton.disabled = false; saveButton.textContent = isEditing ? 'ცვლილებების შენახვა' : 'ატვირთვა'; }
+    if (saveButton) { saveButton.disabled = false; saveButton.textContent = 'ატვირთვა'; }
   }
 }
 
