@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="ka" class="h-full bg-slate-900 text-slate-100 selection:bg-indigo-500 selection:text-white">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PUPSYWEB - CMS Dashboard</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts: Fira GO & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+GO:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Fira GO', 'Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            accent: '#f43f5e'
+                        },
+                        dark: {
+                            bg: '#0f172a',
+                            card: '#1e293b',
+                            border: '#334155',
+                            hover: '#334155'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * {
+            font-family: 'Fira GO', 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* Custom scrollbar for modern feel */
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 9999px;
+        }
+        .glass-nav {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .active-tab-glow {
+            box-shadow: 0 0 20px -5px rgba(99, 102, 241, 0.5);
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col bg-slate-950 text-slate-100 antialiased overflow-x-hidden">
+
+    <!-- Toast Notification Overlay -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-xs w-full px-4 pointer-events-none"></div>
+
+    <!-- Top Floating Header -->
+    <header class="sticky top-0 z-40 glass-nav border-b border-slate-800/80 px-4 py-3">
+        <div class="max-w-3xl mx-auto flex items-center justify-between gap-3">
+            
+            <!-- Site Title & Live Badge -->
+            <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-rose-500 flex items-center justify-center font-black text-white shadow-lg text-sm tracking-wider">
+                    P
+                </div>
+                <div class="min-w-0">
+                    <h1 class="text-sm font-bold text-white tracking-tight truncate flex items-center gap-1.5">
+                        PUPSYWEB
+                        <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    </h1>
+                    <p class="text-[10px] text-slate-400 truncate">pupsystores-glitch.github.io</p>
+                </div>
+            </div>
+
+            <!-- Top Switcher: Contents vs Media -->
+            <div class="bg-slate-900/90 p-1 rounded-2xl border border-slate-800 flex items-center gap-1 shadow-inner">
+                <button id="tab-contents-btn" onclick="switchMainTab('contents')" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all bg-indigo-600 text-white active-tab-glow">
+                    <i data-lucide="folder-tree" class="w-3.5 h-3.5"></i>
+                    <span>შინაარსი</span>
+                </button>
+                <button id="tab-media-btn" onclick="switchMainTab('media')" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 text-slate-400 hover:text-white transition-all">
+                    <i data-lucide="image" class="w-3.5 h-3.5"></i>
+                    <span>მედია</span>
+                </button>
+            </div>
+
+            <!-- User Avatar -->
+            <button class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700/80 flex items-center justify-center text-slate-300 transition-all shrink-0">
+                <i data-lucide="user" class="w-4 h-4"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-3xl w-full mx-auto px-4 py-5 space-y-6">
+
+        <!-- ==================== VIEW 1: CONTENTS TAB ==================== -->
+        <div id="contents-view" class="space-y-6">
+
+            <!-- Search & Collections Header Section -->
+            <section class="space-y-3">
+                <div class="flex items-center justify-between">
+                    <label class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                        <i data-lucide="layers" class="w-3.5 h-3.5 text-indigo-400"></i>
+                        კოლექციები
+                    </label>
+                    <span id="collection-count-badge" class="text-[11px] font-semibold text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700/50">
+                        6 კოლექცია
+                    </span>
+                </div>
+
+                <!-- Collection Search Bar -->
+                <div class="relative">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+                    <input type="text" id="collection-search" oninput="filterCollections()" placeholder="ძებნა კოლექციებში..." 
+                           class="w-full pl-10 pr-4 py-2.5 text-xs bg-slate-900/90 border border-slate-800 rounded-xl text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all">
+                </div>
+
+                <!-- Collections Horizontal Scrollable Chips (Mobile UX) -->
+                <div id="collections-chips" class="flex gap-2 overflow-x-auto pb-2 scrollbar-none pt-1 -mx-1 px-1">
+                    <!-- Dynamically rendered category pills -->
+                </div>
+            </section>
+
+            <!-- Active Collection Content Area -->
+            <section class="glass-card rounded-2xl p-4 sm:p-5 space-y-4">
+                
+                <!-- Active Collection Header Info -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-4">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h2 id="active-collection-title" class="text-lg font-bold text-white tracking-tight">საყელური</h2>
+                            <span id="active-collection-badge" class="text-[11px] font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2.5 py-0.5 rounded-full">
+                                0 პროდუქტი
+                            </span>
+                        </div>
+                        <p id="active-collection-desc" class="text-xs text-slate-400 mt-1">
+                            მართეთ და დაამატეთ ახალი პროდუქტები არჩეულ კოლექციაში.
+                        </p>
+                    </div>
+
+                    <!-- Add New Product Button -->
+                    <button onclick="openAddProductModal()" class="w-full sm:w-auto bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-semibold text-xs px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20 active:scale-95 transition-all shrink-0">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                        <span>პროდუქტის დამატება</span>
+                    </button>
+                </div>
+
+                <!-- Product Filters & Layout Controls -->
+                <div class="flex items-center justify-between gap-2 pt-1">
+                    <!-- Search Items in Current Collection -->
+                    <div class="relative flex-1 max-w-xs">
+                        <i data-lucide="search" class="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                        <input type="text" id="product-search" oninput="renderProducts()" placeholder="ფილტრი..." 
+                               class="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-900/60 border border-slate-800 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-all">
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <!-- Sort Dropdown -->
+                        <div class="relative">
+                            <select id="product-sort" onchange="renderProducts()" class="appearance-none bg-slate-900/80 border border-slate-800 text-slate-300 text-xs rounded-lg pl-2.5 pr-7 py-1.5 focus:outline-none focus:border-indigo-500 cursor-pointer">
+                                <option value="newest">ახლები ჯერ</option>
+                                <option value="price-asc">ფასი: დაბლიდან</option>
+                                <option value="price-desc">ფასი: მაღლიდან</option>
+                                <option value="name">სახელით</option>
+                            </select>
+                            <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                        </div>
+
+                        <!-- View Toggle Buttons -->
+                        <div class="bg-slate-900/80 border border-slate-800 rounded-lg p-0.5 flex items-center">
+                            <button id="view-list-btn" onclick="setProductLayout('list')" class="p-1 rounded text-indigo-400 bg-slate-800 transition-all" title="სია">
+                                <i data-lucide="list" class="w-4 h-4"></i>
+                            </button>
+                            <button id="view-grid-btn" onclick="setProductLayout('grid')" class="p-1 rounded text-slate-500 hover:text-slate-300 transition-all" title="ბადე">
+                                <i data-lucide="layout-grid" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Products Container -->
+                <div id="products-container" class="space-y-2 pt-2">
+                    <!-- Dynamic Product List or Grid -->
+                </div>
+
+                <!-- Empty State -->
+                <div id="empty-products" class="hidden py-12 text-center space-y-3">
+                    <div class="w-12 h-12 bg-slate-800/80 border border-slate-700/50 rounded-2xl flex items-center justify-center text-slate-500 mx-auto">
+                        <i data-lucide="package-open" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold text-slate-300">პროდუქტები არ არის</p>
+                        <p class="text-xs text-slate-500 max-w-xs mx-auto mt-0.5">ამ კოლექციაში პროდუქტი ჯერ არ დამატებულა.</p>
+                    </div>
+                    <button onclick="openAddProductModal()" class="text-xs font-semibold text-indigo-400 hover:text-indigo-300 underline inline-flex items-center gap-1">
+                        + დაამატე პირველი პროდუქტი
+                    </button>
+                </div>
+
+            </section>
+        </div>
+
+        <!-- ==================== VIEW 2: MEDIA LIBRARY TAB ==================== -->
+        <div id="media-view" class="hidden space-y-5">
+            
+            <!-- Upload Area -->
+            <div class="glass-card rounded-2xl p-6 text-center border-dashed border-2 border-slate-700/80 hover:border-indigo-500/50 transition-all cursor-pointer group">
+                <input type="file" id="media-upload-input" multiple accept="image/*" onchange="handleMediaUpload(event)" class="hidden">
+                <label for="media-upload-input" class="cursor-pointer space-y-2 block">
+                    <div class="w-12 h-12 bg-indigo-500/10 text-indigo-400 rounded-2xl flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
+                        <i data-lucide="upload-cloud" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-sm font-bold text-slate-200">ატვირთე ახალი ფოტოები</h3>
+                    <p class="text-xs text-slate-400">ჩააგდე ფაილი აქ ან დააჭირე ასატვირთად (PNG, JPG, WEBP)</p>
+                </label>
+            </div>
+
+            <!-- Media Gallery -->
+            <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">ატვირთული ფაილები (<span id="media-count">4</span>)</h3>
+                </div>
+
+                <div id="media-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <!-- Dynamically populated images -->
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal Dialog: Add / Edit Product -->
+    <div id="product-modal" class="fixed inset-0 z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/80 backdrop-blur-md transition-opacity">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in slide-in-from-bottom duration-200">
+            
+            <!-- Modal Header -->
+            <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/80">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
+                        <i data-lucide="box" class="w-4 h-4"></i>
+                    </div>
+                    <h3 id="modal-title" class="font-bold text-white text-sm">ახალი პროდუქტის დამატება</h3>
+                </div>
+                <button onclick="closeProductModal()" class="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition-all">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Modal Form -->
+            <form id="product-form" onsubmit="saveProductForm(event)" class="p-5 space-y-4 overflow-y-auto">
+                <input type="hidden" id="form-product-id">
+
+                <!-- Title Input -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">პროდუქტის დასახელება *</label>
+                    <input type="text" id="form-product-title" required placeholder="მაგ: ტყავის საყელური 'კლასიკი'" 
+                           class="w-full px-3.5 py-2.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-all">
+                </div>
+
+                <!-- Collection Selector & Price Grid -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">კოლექცია *</label>
+                        <select id="form-product-collection" required class="w-full px-3 py-2.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-100 focus:outline-none focus:border-indigo-500 transition-all">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">ფასი (₾) *</label>
+                        <input type="number" id="form-product-price" step="0.01" required placeholder="0.00" 
+                               class="w-full px-3.5 py-2.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-all">
+                    </div>
+                </div>
+
+                <!-- Size / Sub-category -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">ზომა / მახასიათებელი</label>
+                    <input type="text" id="form-product-size" placeholder="მაგ: S / M / L ზომა, წითელი" 
+                           class="w-full px-3.5 py-2.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-all">
+                </div>
+
+                <!-- Image URL Input with Preview -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">სურათის URL</label>
+                    <div class="flex gap-2">
+                        <input type="url" id="form-product-image" onchange="updateModalImagePreview()" placeholder="https://..." 
+                               class="flex-1 px-3.5 py-2.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-all">
+                        <div class="w-10 h-10 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center overflow-hidden shrink-0">
+                            <img id="form-image-preview" src="https://placehold.co/100x100/1e293b/94a3b8?text=IMG" class="w-full h-full object-cover">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">აღწერა</label>
+                    <textarea id="form-product-desc" rows="3" placeholder="მოკლე აღწერა პროდუქტის შესახებ..." 
+                              class="w-full px-3.5 py-2.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-all resize-none"></textarea>
+                </div>
+
+                <!-- Actions -->
+                <div class="pt-3 border-t border-slate-800 flex items-center justify-end gap-2">
+                    <button type="button" onclick="closeProductModal()" class="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:bg-slate-800 transition-all">
+                        გაუქმება
+                    </button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 active:scale-95 transition-all">
+                        ატვირთვა
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Application JavaScript State & Controller -->
+    <script>
+        // Collections State
+        let collections = [
+            { id: 'sayeluri', name: 'საყელური', icon: 'shield', desc: 'ძაღლისა და კატის საყელურების სრული კოლექცია' },
+            { id: 'welsamagrebii', name: 'წელსამაგრები', icon: 'paperclip', desc: 'კომფორტული და უსაფრთხო წელსამაგრები' },
+            { id: 'sabeli', name: 'საბელი', icon: 'link-2', desc: 'სხვადასხვა სიგრძის და მასალის საბელები' },
+            { id: 'aksesuarebi', name: 'აქსესუარები', icon: 'sparkles', desc: 'ბაბთები, მისამართების ტეგები და სხვა' },
+            { id: 'higiena', name: 'ჰიგიენა & მოვლა', icon: 'heart-pulse', desc: 'შამპუნები, სავარცხლები და მოვლის საშუალებები' },
+            { id: 'satamashoebi', name: 'სათამაშოები', icon: 'gamepad-2', desc: 'ინტერაქტიული და რბილი სათამაშოები' }
+        ];
+
+        let activeCollectionId = 'sayeluri';
+        let currentLayout = 'list'; // 'list' | 'grid'
+
+        // Products Data (NO stock field)
+        let products = [
+            {
+                id: 101,
+                collectionId: 'sayeluri',
+                title: 'ტყავის საყელური "Royal Brown"',
+                price: 42.00,
+                size: 'M ზომა / ყავისფერი',
+                desc: 'ნატურალური რბილი ტყავი, მტკიცე მეტალის ბალთით.',
+                image: 'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?auto=format&fit=crop&q=80&w=300'
+            },
+            {
+                id: 102,
+                collectionId: 'sayeluri',
+                title: 'ამრეკლი საყელური "Neon Safety"',
+                price: 29.50,
+                size: 'S / M ზომა',
+                desc: 'ღამის სეირნობისთვის, მაღალი ამრეკლავი ეფექტით.',
+                image: 'https://images.unsplash.com/photo-1576201836106-db1758fd1c97?auto=format&fit=crop&q=80&w=300'
+            },
+            {
+                id: 103,
+                collectionId: 'welsamagrebii',
+                title: 'ერგონომიული წელსამაგრი "Comfort Harness"',
+                price: 55.00,
+                size: 'L ზომა / შავი',
+                desc: 'სუნთქვადი ბადისებრი ქსოვილი, არ აწვება კისერს.',
+                image: 'https://images.unsplash.com/photo-1535294435445-d7249524ef2e?auto=format&fit=crop&q=80&w=300'
+            },
+            {
+                id: 104,
+                collectionId: 'sabeli',
+                title: 'ავტომატური საბელი 5m "Flexi Pro"',
+                price: 68.00,
+                size: '5 მეტრი / 25 კგ-მდე',
+                desc: 'სწრაფი მუხრუჭის სისტემით და მოსახერხებელი სახელურით.',
+                image: 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?auto=format&fit=crop&q=80&w=300'
+            }
+        ];
+
+        // Media items
+        let mediaFiles = [
+            { id: 1, name: 'collar-1.jpg', url: 'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?auto=format&fit=crop&q=80&w=300' },
+            { id: 2, name: 'harness-green.jpg', url: 'https://images.unsplash.com/photo-1576201836106-db1758fd1c97?auto=format&fit=crop&q=80&w=300' },
+            { id: 3, name: 'dog-harness.jpg', url: 'https://images.unsplash.com/photo-1535294435445-d7249524ef2e?auto=format&fit=crop&q=80&w=300' },
+            { id: 4, name: 'leash-auto.jpg', url: 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?auto=format&fit=crop&q=80&w=300' }
+        ];
+
+        // Init App
+        window.onload = function() {
+            lucide.createIcons();
+            renderCollectionChips();
+            renderProducts();
+            renderMediaGallery();
+            populateModalCollectionSelect();
+        };
+
+        // Switch main tabs (Contents vs Media)
+        function switchMainTab(tab) {
+            const contentsView = document.getElementById('contents-view');
+            const mediaView = document.getElementById('media-view');
+            const contentsBtn = document.getElementById('tab-contents-btn');
+            const mediaBtn = document.getElementById('tab-media-btn');
+
+            if (tab === 'contents') {
+                contentsView.classList.remove('hidden');
+                mediaView.classList.add('hidden');
+                contentsBtn.className = "px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all bg-indigo-600 text-white active-tab-glow";
+                mediaBtn.className = "px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 text-slate-400 hover:text-white transition-all";
+            } else {
+                contentsView.classList.add('hidden');
+                mediaView.classList.remove('hidden');
+                mediaBtn.className = "px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all bg-indigo-600 text-white active-tab-glow";
+                contentsBtn.className = "px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 text-slate-400 hover:text-white transition-all";
+            }
+        }
+
+        // Render Collections Bar
+        function renderCollectionChips(filteredCols = null) {
+            const container = document.getElementById('collections-chips');
+            const colsToRender = filteredCols || collections;
+
+            document.getElementById('collection-count-badge').innerText = `${collections.length} კოლექცია`;
+
+            container.innerHTML = colsToRender.map(col => {
+                const isActive = col.id === activeCollectionId;
+                const count = products.filter(p => p.collectionId === col.id).length;
+
+                return `
+                    <button onclick="selectCollection('${col.id}')" 
+                            class="shrink-0 px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border transition-all ${
+                                isActive 
+                                ? 'bg-indigo-600 text-white border-indigo-500 shadow-md shadow-indigo-600/20' 
+                                : 'bg-slate-900/80 text-slate-400 hover:text-slate-200 border-slate-800 hover:bg-slate-800'
+                            }">
+                        <i data-lucide="${col.icon || 'folder'}" class="w-3.5 h-3.5"></i>
+                        <span>${col.name}</span>
+                        <span class="px-1.5 py-0.2 rounded-md text-[10px] ${isActive ? 'bg-indigo-700 text-indigo-100' : 'bg-slate-800 text-slate-500'} font-bold">
+                            ${count}
+                        </span>
+                    </button>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+        }
+
+        // Filter collections by search
+        function filterCollections() {
+            const query = document.getElementById('collection-search').value.toLowerCase();
+            const filtered = collections.filter(c => c.name.toLowerCase().includes(query));
+            renderCollectionChips(filtered);
+        }
+
+        // Select active collection
+        function selectCollection(id) {
+            activeCollectionId = id;
+            const col = collections.find(c => c.id === id);
+
+            if (col) {
+                document.getElementById('active-collection-title').innerText = col.name;
+                document.getElementById('active-collection-desc').innerText = col.desc;
+            }
+
+            renderCollectionChips();
+            renderProducts();
+        }
+
+        // Render Products
+        function renderProducts() {
+            const container = document.getElementById('products-container');
+            const emptyState = document.getElementById('empty-products');
+            const searchQuery = document.getElementById('product-search').value.toLowerCase();
+            const sortBy = document.getElementById('product-sort').value;
+
+            // Filter
+            let filtered = products.filter(p => p.collectionId === activeCollectionId && p.title.toLowerCase().includes(searchQuery));
+
+            // Sort
+            if (sortBy === 'price-asc') filtered.sort((a, b) => a.price - b.price);
+            else if (sortBy === 'price-desc') filtered.sort((a, b) => b.price - a.price);
+            else if (sortBy === 'name') filtered.sort((a, b) => a.title.localeCompare(b.title));
+            else filtered.sort((a, b) => b.id - a.id); // newest
+
+            // Update badge count
+            document.getElementById('active-collection-badge').innerText = `${filtered.length} პროდუქტი`;
+
+            if (filtered.length === 0) {
+                container.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+
+            if (currentLayout === 'list') {
+                container.className = "space-y-2 pt-2";
+                container.innerHTML = filtered.map(p => `
+                    <div class="p-3 bg-slate-900/60 hover:bg-slate-800/60 border border-slate-800/80 rounded-xl flex items-center justify-between gap-3 transition-all group">
+                        
+                        <div class="flex items-center gap-3 min-w-0">
+                            <img src="${p.image}" 
+                                 onerror="this.src='https://placehold.co/100x100/1e293b/94a3b8?text=IMG'" 
+                                 alt="${p.title}" 
+                                 class="w-12 h-12 rounded-lg object-cover border border-slate-800 bg-slate-950 shrink-0">
+                            
+                            <div class="min-w-0">
+                                <h4 class="font-bold text-slate-100 text-xs sm:text-sm truncate">${p.title}</h4>
+                                <div class="flex items-center gap-2 mt-0.5">
+                                    <span class="text-xs font-bold text-indigo-400">₾${parseFloat(p.price).toFixed(2)}</span>
+                                    ${p.size ? `<span class="text-[10px] text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded">${p.size}</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quick Actions -->
+                        <div class="flex items-center gap-1 shrink-0">
+                            <button onclick="openEditProductModal(${p.id})" title="რედაქტირება" class="p-2 text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-all">
+                                <i data-lucide="edit-2" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="deleteProduct(${p.id})" title="წაშლა" class="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                // Grid layout
+                container.className = "grid grid-cols-2 gap-3 pt-2";
+                container.innerHTML = filtered.map(p => `
+                    <div class="p-3 bg-slate-900/60 border border-slate-800/80 rounded-xl space-y-2 flex flex-col justify-between group">
+                        <div class="space-y-2">
+                            <div class="aspect-square w-full rounded-lg bg-slate-950 border border-slate-800 overflow-hidden relative">
+                                <img src="${p.image}" onerror="this.src='https://placehold.co/200x200/1e293b/94a3b8?text=IMG'" class="w-full h-full object-cover">
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-slate-100 text-xs line-clamp-1">${p.title}</h4>
+                                <p class="text-xs font-bold text-indigo-400 mt-0.5">₾${parseFloat(p.price).toFixed(2)}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-end gap-1 pt-2 border-t border-slate-800/60">
+                            <button onclick="openEditProductModal(${p.id})" class="p-1.5 text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-all">
+                                <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
+                            </button>
+                            <button onclick="deleteProduct(${p.id})" class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            lucide.createIcons();
+        }
+
+        // Layout toggle
+        function setProductLayout(layout) {
+            currentLayout = layout;
+            const listBtn = document.getElementById('view-list-btn');
+            const gridBtn = document.getElementById('view-grid-btn');
+
+            if (layout === 'list') {
+                listBtn.className = "p-1 rounded text-indigo-400 bg-slate-800 transition-all";
+                gridBtn.className = "p-1 rounded text-slate-500 hover:text-slate-300 transition-all";
+            } else {
+                gridBtn.className = "p-1 rounded text-indigo-400 bg-slate-800 transition-all";
+                listBtn.className = "p-1 rounded text-slate-500 hover:text-slate-300 transition-all";
+            }
+            renderProducts();
+        }
+
+        // Modal Controls
+        function openAddProductModal() {
+            document.getElementById('modal-title').innerText = "ახალი პროდუქტის დამატება";
+            document.getElementById('product-form').reset();
+            document.getElementById('form-product-id').value = '';
+            document.getElementById('form-product-collection').value = activeCollectionId;
+            document.getElementById('form-image-preview').src = "https://placehold.co/100x100/1e293b/94a3b8?text=IMG";
+            document.getElementById('product-modal').classList.remove('hidden');
+        }
+
+        function openEditProductModal(id) {
+            const product = products.find(p => p.id === id);
+            if (!product) return;
+
+            document.getElementById('modal-title').innerText = "პროდუქტის რედაქტირება";
+            document.getElementById('form-product-id').value = product.id;
+            document.getElementById('form-product-title').value = product.title;
+            document.getElementById('form-product-collection').value = product.collectionId;
+            document.getElementById('form-product-price').value = product.price;
+            document.getElementById('form-product-size').value = product.size || '';
+            document.getElementById('form-product-image').value = product.image || '';
+            document.getElementById('form-product-desc').value = product.desc || '';
+            
+            updateModalImagePreview();
+            document.getElementById('product-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('product-modal').classList.add('hidden');
+        }
+        function closeProductModal() { closeModal(); }
+
+        function updateModalImagePreview() {
+            const url = document.getElementById('form-product-image').value;
+            const img = document.getElementById('form-image-preview');
+            img.src = url || "https://placehold.co/100x100/1e293b/94a3b8?text=IMG";
+        }
+
+        function populateModalCollectionSelect() {
+            const select = document.getElementById('form-product-collection');
+            select.innerHTML = collections.map(c => `
+                <option value="${c.id}">${c.name}</option>
+            `).join('');
+        }
+
+        // Save Form
+        function saveProductForm(e) {
+            e.preventDefault();
+
+            const id = document.getElementById('form-product-id').value;
+            const title = document.getElementById('form-product-title').value;
+            const collectionId = document.getElementById('form-product-collection').value;
+            const price = parseFloat(document.getElementById('form-product-price').value);
+            const size = document.getElementById('form-product-size').value;
+            const image = document.getElementById('form-product-image').value || 'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?auto=format&fit=crop&q=80&w=300';
+            const desc = document.getElementById('form-product-desc').value;
+
+            if (id) {
+                // Update
+                const index = products.findIndex(p => p.id === parseInt(id));
+                if (index !== -1) {
+                    products[index] = { id: parseInt(id), collectionId, title, price, size, image, desc };
+                    showToast('პროდუქტი განახლდა!');
+                }
+            } else {
+                // Add
+                const newProduct = {
+                    id: Date.now(),
+                    collectionId,
+                    title,
+                    price,
+                    size,
+                    image,
+                    desc
+                };
+                products.unshift(newProduct);
+                showToast('ახალი პროდუქტი დაემატა!');
+            }
+
+            closeModal();
+            activeCollectionId = collectionId;
+            renderCollectionChips();
+            renderProducts();
+        }
+
+        // Delete Product
+        function deleteProduct(id) {
+            products = products.filter(p => p.id !== id);
+            renderProducts();
+            renderCollectionChips();
+            showToast('პროდუქტი წაიშალა');
+        }
+
+        // Media Library Logic
+        function renderMediaGallery() {
+            const grid = document.getElementById('media-grid');
+            document.getElementById('media-count').innerText = mediaFiles.length;
+
+            grid.innerHTML = mediaFiles.map(file => `
+                <div class="group relative bg-slate-900 border border-slate-800 rounded-xl overflow-hidden aspect-square flex items-center justify-center">
+                    <img src="${file.url}" class="w-full h-full object-cover group-hover:scale-105 transition-transform">
+                    <div class="absolute inset-0 bg-slate-950/70 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2">
+                        <span class="text-[10px] text-slate-300 font-mono truncate">${file.name}</span>
+                        <div class="flex items-center justify-end gap-1">
+                            <button onclick="copyMediaUrl('${file.url}')" title="URL-ის კოპირება" class="p-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-all">
+                                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        function handleMediaUpload(event) {
+            const files = event.target.files;
+            if (!files || files.length === 0) return;
+
+            for (let file of files) {
+                const newMedia = {
+                    id: Date.now(),
+                    name: file.name,
+                    url: URL.createObjectURL(file)
+                };
+                mediaFiles.unshift(newMedia);
+            }
+            renderMediaGallery();
+            showToast('ფაილები წარმატებით აიტვირთა!');
+        }
+
+        function copyMediaUrl(url) {
+            navigator.clipboard.writeText(url);
+            showToast('URL скоპირებულია!');
+        }
+
+        // Toast Notification
+        function showToast(msg) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'bg-slate-900 border border-slate-700 text-slate-100 px-3.5 py-2.5 rounded-xl shadow-2xl text-xs font-semibold flex items-center gap-2 transform transition-all duration-300 translate-y-2 opacity-0 pointer-events-auto';
+            toast.innerHTML = `<i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i> ${msg}`;
+
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
+    </script>
+</body>
+</html>
