@@ -21,15 +21,14 @@
       "published": true,
       "photos": [
         {
-          "source": "gallery",
-          "images": [
-            "/PUPSYWEB/images/uploads/1792700233693-5c085778-6fc9-4ce8-9eb7-72e7458b2ccf-IMG_9279.png",
-            "/PUPSYWEB/images/uploads/1792700241439-fab17c58-f0e7-4e53-9591-0fd417dea727-IMG_9280.jpeg",
-            "/PUPSYWEB/images/uploads/1792700243690-34a6912b-4845-4cd0-9180-75886b273b97-IMG_9275.png"
-          ]
+          "source": "links",
+          "link1": "/PUPSYWEB/images/uploads/1792700233693-5c085778-6fc9-4ce8-9eb7-72e7458b2ccf-IMG_9279.png",
+          "link2": "/PUPSYWEB/images/uploads/1792700241439-fab17c58-f0e7-4e53-9591-0fd417dea727-IMG_9280.jpeg",
+          "link3": "/PUPSYWEB/images/uploads/1792700243690-34a6912b-4845-4cd0-9180-75886b273b97-IMG_9275.png"
         }
       ],
-      "image": "/PUPSYWEB/images/uploads/1792700233693-5c085778-6fc9-4ce8-9eb7-72e7458b2ccf-IMG_9279.png"
+      "image": "/PUPSYWEB/images/uploads/1792700233693-5c085778-6fc9-4ce8-9eb7-72e7458b2ccf-IMG_9279.png",
+      "videoUrl": ""
     }
   ]
 }
