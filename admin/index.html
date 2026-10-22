@@ -107,10 +107,9 @@
 
     <!-- Top Floating Header -->
     <header class="sticky top-0 z-40 glass-nav border-b border-slate-800/80 px-4 py-3">
-        <div class="max-w-3xl mx-auto flex items-center justify-between gap-3">
-
-            <!-- Site Title & Live Badge -->
-            <div class="flex items-center gap-2.5 min-w-0">
+        <div class="max-w-3xl mx-auto flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2.5 min-w-0">
                 <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-rose-500 flex items-center justify-center font-black text-white shadow-lg text-sm tracking-wider">
                     P
                 </div>
@@ -119,33 +118,32 @@
                         PUPSYWEB
                         <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                     </h1>
-                    <a href="https://pupsystores-glitch.github.io/PUPSYWEB/" target="_blank" rel="noopener noreferrer" aria-label="საიტის გახსნა ახალ ჩანართში" class="text-[10px] text-indigo-300 hover:text-white truncate inline-flex items-center gap-1 transition-colors">
-                        საიტის ნახვა
-                        <i data-lucide="external-link" class="w-3 h-3 shrink-0"></i>
-                    </a>
                 </div>
+              </div>
+              <button id="logout-button" title="Sign out" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700/80 flex items-center justify-center text-slate-300 transition-all shrink-0">
+                  <i data-lucide="user" class="w-4 h-4"></i>
+              </button>
             </div>
 
-            <!-- Top Switcher: Contents vs Media -->
-            <div class="bg-slate-900/90 p-1 rounded-2xl border border-slate-800 flex items-center gap-1 shadow-inner">
-                <button id="tab-contents-btn" onclick="switchMainTab('contents')" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all bg-indigo-600 text-white active-tab-glow">
+            <a href="https://pupsystores-glitch.github.io/PUPSYWEB/" target="_blank" rel="noopener noreferrer" aria-label="საიტის გახსნა ახალ ჩანართში" class="self-start rounded-lg border border-indigo-500/20 bg-indigo-500/10 px-3 py-2 text-[11px] text-indigo-300 hover:bg-indigo-500/20 hover:text-white inline-flex items-center gap-1.5 transition-colors">
+                საიტის ნახვა
+                <i data-lucide="external-link" class="w-3 h-3 shrink-0"></i>
+            </a>
+
+            <div class="w-full bg-slate-900/90 p-1 rounded-2xl border border-slate-800 flex items-center gap-1 shadow-inner">
+                <button id="tab-contents-btn" onclick="switchMainTab('contents')" class="flex-1 min-w-0 justify-center px-2.5 py-2 rounded-xl text-[11px] sm:text-xs font-semibold flex items-center gap-1.5 transition-all bg-indigo-600 text-white active-tab-glow">
                     <i data-lucide="folder-tree" class="w-3.5 h-3.5"></i>
                     <span>შინაარსი</span>
                 </button>
-                <button id="tab-media-btn" onclick="switchMainTab('media')" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 text-slate-400 hover:text-white transition-all">
+                <button id="tab-media-btn" onclick="switchMainTab('media')" class="flex-1 min-w-0 justify-center px-2.5 py-2 rounded-xl text-[11px] sm:text-xs font-semibold flex items-center gap-1.5 text-slate-400 hover:text-white transition-all">
                     <i data-lucide="image" class="w-3.5 h-3.5"></i>
                     <span>მედია</span>
                 </button>
-                <button id="tab-videos-btn" onclick="switchMainTab('videos')" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 text-slate-400 hover:text-white transition-all">
+                <button id="tab-videos-btn" onclick="switchMainTab('videos')" class="flex-1 min-w-0 justify-center px-2.5 py-2 rounded-xl text-[11px] sm:text-xs font-semibold flex items-center gap-1.5 text-slate-400 hover:text-white transition-all">
                     <i data-lucide="video" class="w-3.5 h-3.5"></i>
                     <span>ვიდეოები</span>
                 </button>
             </div>
-
-            <!-- User Avatar -->
-            <button id="logout-button" title="Sign out" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700/80 flex items-center justify-center text-slate-300 transition-all shrink-0">
-                <i data-lucide="user" class="w-4 h-4"></i>
-            </button>
         </div>
     </header>
 

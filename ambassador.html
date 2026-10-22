@@ -15243,7 +15243,7 @@ A true staple...">
     .ambassador-video-section__title { margin: 0 0 28px; color: #292321; }
     .ambassador-video-section__grid {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 20px;
     }
     .ambassador-video-slot {
@@ -15266,12 +15266,27 @@ A true staple...">
     .ambassador-managed-video { min-height: 0; padding: 12px; }
     .ambassador-managed-video video { width: 100%; aspect-ratio: 4 / 5; max-height: 380px; object-fit: cover; pointer-events: none; }
     .ambassador-video-slot:nth-child(2) { background: #8d7167; }
+    .ambassador-video-slot:nth-child(3) { background: #6e827d; }
+    .ambassador-video-slot:nth-child(4) { background: #887b9e; }
+    .ambassador-video-slot:nth-child(5) { background: #b47f65; }
+    .ambassador-video-slot:nth-child(6) { background: #657a97; }
     .ambassador-video-slot__icon { font-size: 34px; line-height: 1; }
     .ambassador-video-slot__label { font-size: 18px; font-weight: 600; }
     @media (max-width: 640px) {
       .ambassador-video-section { padding: 36px 18px; }
-      .ambassador-video-section__grid { grid-template-columns: 1fr; gap: 14px; }
-      .ambassador-video-slot { min-height: 190px; }
+      .ambassador-video-section__grid {
+        display: flex;
+        gap: 14px;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding: 2px 2px 12px;
+        touch-action: pan-x pan-y;
+      }
+      .ambassador-video-section__grid::-webkit-scrollbar { display: none; }
+      .ambassador-video-slot { flex: 0 0 82%; min-height: 190px; scroll-snap-align: start; }
     }
     .ambassador-media-viewer[hidden] { display: none; }
     .ambassador-media-viewer {
@@ -15330,6 +15345,22 @@ A true staple...">
           <span class="ambassador-video-slot__label">ვიდეო მალე დაემატება</span>
         </button>
         <button type="button" class="ambassador-video-slot" data-video-slot="2" data-video-url="" aria-label="ვიდეოს გადიდება">
+          <span class="ambassador-video-slot__icon" aria-hidden="true">▶</span>
+          <span class="ambassador-video-slot__label">ვიდეო მალე დაემატება</span>
+        </button>
+        <button type="button" class="ambassador-video-slot" data-video-slot="3" data-video-url="" aria-label="ვიდეოს გადიდება">
+          <span class="ambassador-video-slot__icon" aria-hidden="true">▶</span>
+          <span class="ambassador-video-slot__label">ვიდეო მალე დაემატება</span>
+        </button>
+        <button type="button" class="ambassador-video-slot" data-video-slot="4" data-video-url="" aria-label="ვიდეოს გადიდება">
+          <span class="ambassador-video-slot__icon" aria-hidden="true">▶</span>
+          <span class="ambassador-video-slot__label">ვიდეო მალე დაემატება</span>
+        </button>
+        <button type="button" class="ambassador-video-slot" data-video-slot="5" data-video-url="" aria-label="ვიდეოს გადიდება">
+          <span class="ambassador-video-slot__icon" aria-hidden="true">▶</span>
+          <span class="ambassador-video-slot__label">ვიდეო მალე დაემატება</span>
+        </button>
+        <button type="button" class="ambassador-video-slot" data-video-slot="6" data-video-url="" aria-label="ვიდეოს გადიდება">
           <span class="ambassador-video-slot__icon" aria-hidden="true">▶</span>
           <span class="ambassador-video-slot__label">ვიდეო მალე დაემატება</span>
         </button>

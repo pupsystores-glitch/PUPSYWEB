@@ -228,8 +228,8 @@ async function loadMediaFiles() {
 }
 
 function switchMainTab(tab) {
-  const selected = 'px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all bg-indigo-600 text-white active-tab-glow';
-  const idle = 'px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 text-slate-400 hover:text-white transition-all';
+  const selected = 'flex-1 min-w-0 justify-center px-2.5 py-2 rounded-xl text-[11px] sm:text-xs font-semibold flex items-center gap-1.5 transition-all bg-indigo-600 text-white active-tab-glow';
+  const idle = 'flex-1 min-w-0 justify-center px-2.5 py-2 rounded-xl text-[11px] sm:text-xs font-semibold flex items-center gap-1.5 text-slate-400 hover:text-white transition-all';
   ['contents', 'media', 'videos'].forEach(view => {
     document.getElementById(`${view}-view`).classList.toggle('hidden', view !== tab);
     document.getElementById(`tab-${view}-btn`).className = view === tab ? selected : idle;
