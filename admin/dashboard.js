@@ -39,6 +39,30 @@ const stagedProductImageUploads = new Map();
 let accessToken = sessionStorage.getItem('pupsy_github_token') || '';
 let authPopup = null;
 
+const productSlugLetters = {
+  ა: 'a', ბ: 'b', გ: 'g', დ: 'd', ე: 'e', ვ: 'v', ზ: 'z', თ: 't', ი: 'i', კ: 'k',
+  ლ: 'l', მ: 'm', ნ: 'n', ო: 'o', პ: 'p', ჟ: 'zh', რ: 'r', ს: 's', ტ: 't', უ: 'u',
+  ფ: 'p', ქ: 'k', ღ: 'gh', ყ: 'q', შ: 'sh', ჩ: 'ch', ც: 'ts', ძ: 'dz', წ: 'ts',
+  ჭ: 'ch', ხ: 'kh', ჯ: 'j', ჰ: 'h',
+};
+
+function productSlugFromTitle(title) {
+  return [...String(title || '').trim().toLocaleLowerCase('ka-GE')]
+    .map(character => productSlugLetters[character] || (/[a-z0-9]/.test(character) ? character : '-'))
+    .join('')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '') || 'product';
+}
+
+function uniqueProductSlug(title, currentId) {
+  const base = productSlugFromTitle(title);
+  const used = new Set(products.filter(product => product.id !== currentId).map(product => product.raw?.slug).filter(Boolean));
+  if (!used.has(base)) return base;
+  let suffix = 2;
+  while (used.has(`${base}-${suffix}`)) suffix += 1;
+  return `${base}-${suffix}`;
+}
+
 window.addEventListener('load', () => {
   lucide.createIcons();
   document.getElementById('github-login-button').addEventListener('click', loginWithGithub);
@@ -539,9 +563,12 @@ function populateModalCollectionSelect() {
 
 function productToRaw(product, collection, values, isNew) {
   const raw = { ...(product?.raw || {}) };
+  const titleChanged = raw.title !== values.title;
   raw.category = collection.name;
   raw.title = values.title;
-  if (isNew || raw.slug) raw.slug = raw.slug || `product-${Date.now()}`;
+  if (isNew || !raw.slug || titleChanged || /^product-\d+$/.test(raw.slug)) {
+    raw.slug = uniqueProductSlug(values.title, product?.id);
+  }
   raw.price = values.price;
   raw.description = values.desc;
   raw.videoUrl = values.videoUrl;
