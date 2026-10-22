@@ -526,6 +526,7 @@
 
     const backLink = document.querySelector("a[href*='shop.html']");
     if (backLink) backLink.href = new URL("shop.html", baseUrl).href;
+    document.documentElement.classList.remove("cms-product-loading");
   }
 
   async function init() {
@@ -548,7 +549,10 @@
       const message = document.createElement("p");
       message.className = "product__block";
       message.textContent = "პროდუქტის მონაცემები დროებით ვერ ჩაიტვირთა.";
-      document.querySelector(".product__content")?.prepend(message);
+      const productRoot = document.querySelector("product-component[data-product]");
+      if (productRoot) productRoot.replaceChildren(message);
+      else document.querySelector(".product__content")?.prepend(message);
+      document.documentElement.classList.remove("cms-product-loading");
     }
   }
 
