@@ -1,353 +1,203 @@
-/* PUPSY admin: clear, calm controls on desktop and mobile. */
+/* PUPSY CMS theme inspired by PUPSYWEB_Modern_Admin_CMS.html.
+   Decap remains responsible for all collections, media, and editing behavior. */
 :root {
-  color-scheme: light;
-  --admin-ink: #302d29;
-  --admin-muted: #716b63;
-  --admin-paper: #f7f6f2;
-  --admin-surface: #ffffff;
-  --admin-line: #e6e2da;
-  --admin-accent: #a65332;
-  --admin-accent-soft: #f4e9e2;
-  --admin-focus: #bd6038;
+  color-scheme: dark;
+  --admin-bg: #020617;
+  --admin-panel: #0f172a;
+  --admin-card: #1e293b;
+  --admin-card-glass: rgb(30 41 59 / 78%);
+  --admin-line: #334155;
+  --admin-ink: #f1f5f9;
+  --admin-muted: #94a3b8;
+  --admin-indigo: #6366f1;
+  --admin-indigo-strong: #4f46e5;
+  --admin-rose: #f43f5e;
+  --admin-focus: #818cf8;
+  font-family: "Fira GO", Inter, "Segoe UI", sans-serif;
 }
 
 *,
 *::before,
-*::after {
-  box-sizing: border-box;
-}
+*::after { box-sizing: border-box; }
 
-html,
-body {
-  width: 100%;
-  min-width: 320px;
-  overflow-x: hidden;
-}
-
-body {
-  background: var(--admin-paper);
-  color: var(--admin-ink);
-  font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+html, body {
+  width: 100%; min-width: 320px; min-height: 100%; overflow-x: hidden;
+  background: var(--admin-bg); color: var(--admin-ink);
+  font-family: "Fira GO", Inter, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
 }
+
+body { margin: 0; }
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--admin-bg); }
+::-webkit-scrollbar-thumb { background: var(--admin-line); border-radius: 999px; }
 
 #nc-root {
-  min-height: 100vh;
-  width: 100%;
-  min-width: 0;
+  min-height: 100vh; width: 100%; min-width: 0;
   color: var(--admin-ink);
-  font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+  font-family: "Fira GO", Inter, "Segoe UI", sans-serif;
+  animation: admin-enter 420ms cubic-bezier(.2,.75,.25,1) both;
 }
 
-#nc-root form {
-  width: 100%;
-  min-width: 0;
+#nc-root form { width: 100%; min-width: 0; max-width: 100%; }
+#nc-root h1, #nc-root h2, #nc-root h3, #nc-root h4 {
+  color: #fff; letter-spacing: -.025em;
 }
+#nc-root p, #nc-root small { color: var(--admin-muted); }
+#nc-root a { color: #a5b4fc; text-underline-offset: 3px; }
 
-#nc-root h1,
-#nc-root h2,
-#nc-root h3,
-#nc-root h4 {
-  color: var(--admin-ink);
-  letter-spacing: -0.02em;
-}
-
-#nc-root a {
-  color: var(--admin-accent);
-  text-underline-offset: 3px;
-}
-
-#nc-root nav a {
-  border-radius: 10px;
-  text-decoration: none;
-  transition: background-color 160ms ease, color 160ms ease;
-}
-
-#nc-root nav a:hover,
-#nc-root nav a[aria-current="page"],
-#nc-root nav a[aria-selected="true"] {
-  background: var(--admin-accent-soft);
-  color: var(--admin-accent);
-}
-
-#nc-root button,
-#nc-root [role="button"] {
-  border-radius: 10px;
-  font-family: inherit;
-  font-weight: 600;
-  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
-}
-
-#nc-root button:focus-visible,
-#nc-root [role="button"]:focus-visible,
-#nc-root a:focus-visible,
-#nc-root input:focus-visible,
-#nc-root select:focus-visible,
-#nc-root textarea:focus-visible {
-  outline: 2px solid var(--admin-focus);
-  outline-offset: 2px;
-}
-
-#nc-root input:not([type="checkbox"]):not([type="radio"]),
-#nc-root select,
-#nc-root textarea {
-  border: 1px solid var(--admin-line);
-  border-radius: 10px;
-  background: var(--admin-surface);
-  color: var(--admin-ink);
-  box-shadow: none;
-  font-family: inherit;
-  transition: border-color 160ms ease, box-shadow 160ms ease;
-}
-
-#nc-root input:not([type="checkbox"]):not([type="radio"]):focus,
-#nc-root select:focus,
-#nc-root textarea:focus {
-  border-color: var(--admin-focus);
-  box-shadow: 0 0 0 3px rgb(189 96 56 / 12%);
-}
-
-#nc-root label {
-  color: var(--admin-muted);
-  font-weight: 600;
-}
-
-#nc-root [role="dialog"],
-#nc-root [role="menu"] {
-  border-color: var(--admin-line);
-  border-radius: 14px;
-  box-shadow: 0 16px 48px rgb(48 45 41 / 12%);
-}
-
-/* OpenCart-inspired admin frame: dark navigation, white toolbar, light workspace. */
+/* Dark glass navigation and toolbar. */
 #nc-root [class*="SidebarContainer"] {
-  background: #1f2a35;
-  border-right: 0;
-  color: #eef2f5;
+  color: #cbd5e1; background: rgb(15 23 42 / 94%);
+  border-right: 1px solid rgb(51 65 85 / 75%);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
 }
-
-#nc-root [class*="SidebarContainer"] * {
-  color: inherit;
-}
-
+#nc-root [class*="SidebarContainer"] * { color: inherit; }
 #nc-root [class*="SidebarContainer"] a,
 #nc-root [class*="SidebarContainer"] button,
-#nc-root [class*="SidebarNav"] {
-  color: #d5dee6;
+#nc-root [class*="SidebarNav"] { color: #94a3b8; }
+#nc-root [class*="SidebarContainer"] a,
+#nc-root nav a {
+  border-radius: 12px; text-decoration: none;
+  transition: background-color 180ms ease, color 180ms ease, transform 180ms ease;
 }
-
 #nc-root [class*="SidebarContainer"] a:hover,
 #nc-root [class*="SidebarContainer"] a[aria-current="page"],
-#nc-root [class*="SidebarContainer"] a[aria-selected="true"] {
-  background: #2e4050;
-  color: #ffffff;
+#nc-root [class*="SidebarContainer"] a[aria-selected="true"],
+#nc-root nav a[aria-current="page"],
+#nc-root nav a[aria-selected="true"] {
+  color: #fff; background: linear-gradient(110deg, rgb(79 70 229 / 35%), rgb(99 102 241 / 14%));
+  box-shadow: inset 0 0 0 1px rgb(129 140 248 / 20%), 0 0 22px -12px rgb(99 102 241 / 85%);
 }
+#nc-root [class*="SidebarContainer"] a:hover { color: #fff; background: rgb(51 65 85 / 75%); }
 
 #nc-root [class*="AppHeader"] {
-  background: #ffffff;
-  border-bottom: 1px solid var(--admin-line);
-  box-shadow: 0 2px 12px rgb(31 42 53 / 5%);
+  color: var(--admin-ink); background: rgb(15 23 42 / 88%);
+  border-bottom: 1px solid rgb(51 65 85 / 75%);
+  box-shadow: 0 8px 28px rgb(2 6 23 / 20%);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
 }
-
 #nc-root [class*="AppMainContainer"],
-#nc-root [class*="CollectionContainer"] {
-  background: var(--admin-paper);
-}
-
+#nc-root [class*="CollectionContainer"] { background: var(--admin-bg); color: var(--admin-ink); }
 #nc-root [class*="CollectionMain"],
-#nc-root [class*="ControlPaneContainer"] {
-  border-color: var(--admin-line);
-}
-
 #nc-root [class*="ControlPaneContainer"],
-#nc-root [class*="EditorControlBar"] {
-  background: #ffffff;
+#nc-root [class*="ToolbarContainer"] { border-color: rgb(51 65 85 / 75%); }
+#nc-root [class*="ControlPaneContainer"],
+#nc-root [class*="EditorControlBar"],
+#nc-root [class*="ToolbarContainer"] { background: var(--admin-panel); }
+
+/* Cards and list rows get the reference page's rounded, translucent surfaces. */
+#nc-root [class*="CollectionPage"],
+#nc-root [class*="CollectionMain"],
+#nc-root [class*="ControlPaneContainer"] { color: var(--admin-ink); }
+#nc-root [class*="CollectionCard"],
+#nc-root [class*="EntryCard"],
+#nc-root [class*="Card"],
+#nc-root [class*="ListItem"] {
+  color: var(--admin-ink); background: var(--admin-card-glass);
+  border-color: rgb(255 255 255 / 8%); border-radius: 16px;
+  transition: border-color 180ms ease, background-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+}
+#nc-root [class*="CollectionCard"]:hover,
+#nc-root [class*="EntryCard"]:hover,
+#nc-root [class*="ListItem"]:hover {
+  border-color: rgb(99 102 241 / 48%); background: #263449;
+  transform: translateY(-1px); box-shadow: 0 12px 28px rgb(2 6 23 / 24%);
 }
 
-#nc-root [class*="ToolbarContainer"] {
-  border-color: var(--admin-line);
+#nc-root button, #nc-root [role="button"] {
+  border-radius: 11px; color: var(--admin-ink); font-family: inherit; font-weight: 600;
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease,
+    box-shadow 180ms ease, transform 180ms ease;
+}
+#nc-root button:hover, #nc-root [role="button"]:hover { border-color: #475569; }
+#nc-root button:active, #nc-root [role="button"]:active { transform: scale(.98); }
+#nc-root button:focus-visible, #nc-root [role="button"]:focus-visible,
+#nc-root a:focus-visible, #nc-root input:focus-visible, #nc-root select:focus-visible,
+#nc-root textarea:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
+
+#nc-root input:not([type="checkbox"]):not([type="radio"]),
+#nc-root select, #nc-root textarea {
+  border: 1px solid #334155; border-radius: 11px; background: #0f172a;
+  color: #f1f5f9; box-shadow: none; font-family: inherit;
+  transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+}
+#nc-root input::placeholder, #nc-root textarea::placeholder { color: #64748b; }
+#nc-root input:not([type="checkbox"]):not([type="radio"]):focus,
+#nc-root select:focus, #nc-root textarea:focus {
+  border-color: var(--admin-indigo); background: #111c32;
+  box-shadow: 0 0 0 3px rgb(99 102 241 / 20%);
+}
+#nc-root label { color: #cbd5e1; font-weight: 600; }
+#nc-root [role="dialog"], #nc-root [role="menu"] {
+  color: var(--admin-ink); background: #1e293b; border: 1px solid var(--admin-line);
+  border-radius: 18px; box-shadow: 0 24px 70px rgb(0 0 0 / 45%);
+  animation: admin-modal-in 220ms cubic-bezier(.2,.75,.25,1) both;
 }
 
-#nc-root img {
-  max-width: 100%;
-}
-
-/* Keep the product editor readable: Decap renders its fields as a long form. */
-#nc-root form {
-  max-width: 100%;
-  min-width: 0;
-}
-
+#nc-root img { max-width: 100%; border-radius: 10px; }
 #nc-root form label {
-  display: block;
-  max-width: 100%;
-  margin: 0 0 8px;
-  line-height: 1.45;
-  white-space: normal;
-  overflow-wrap: anywhere;
+  display: block; max-width: 100%; margin: 0 0 8px; line-height: 1.45;
+  white-space: normal; overflow-wrap: anywhere;
 }
-
 #nc-root form input:not([type="checkbox"]):not([type="radio"]),
-#nc-root form select,
-#nc-root form textarea {
-  display: block;
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  min-height: 46px;
-  margin: 0 0 10px;
-  padding: 11px 12px;
-  line-height: 1.45;
+#nc-root form select, #nc-root form textarea {
+  display: block; width: 100%; max-width: 100%; min-width: 0; min-height: 46px;
+  margin: 0 0 10px; padding: 11px 12px; line-height: 1.45;
 }
-
-#nc-root form textarea {
-  min-height: 132px;
-  resize: vertical;
+#nc-root form textarea { min-height: 132px; resize: vertical; }
+#nc-root form button, #nc-root form [role="button"] {
+  max-width: 100%; min-width: 0; height: auto; padding: 10px 14px;
+  line-height: 1.35; white-space: normal; overflow-wrap: anywhere;
 }
-
-#nc-root form button,
-#nc-root form [role="button"] {
-  max-width: 100%;
-  min-width: 0;
-  height: auto;
-  padding: 10px 14px;
-  line-height: 1.35;
-  white-space: normal;
-  overflow-wrap: anywhere;
-}
-
 #nc-root form fieldset {
-  min-width: 0;
-  max-width: 100%;
-  margin: 0 0 18px;
-  padding: 16px;
-  border: 1px solid var(--admin-line);
-  border-radius: 12px;
-  background: #fff;
+  min-width: 0; max-width: 100%; margin: 0 0 18px; padding: 16px;
+  border: 1px solid rgb(255 255 255 / 9%); border-radius: 16px;
+  background: rgb(30 41 59 / 58%);
 }
+#nc-root form p { max-width: 100%; margin: 6px 0 12px; color: var(--admin-muted); line-height: 1.5; overflow-wrap: anywhere; }
 
-#nc-root form p {
-  max-width: 100%;
-  margin: 6px 0 12px;
-  color: var(--admin-muted);
-  line-height: 1.5;
-  overflow-wrap: anywhere;
+@keyframes admin-enter {
+  from { opacity: 0; transform: translateY(7px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes admin-modal-in {
+  from { opacity: 0; transform: translateY(8px) scale(.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 @media (max-width: 700px) {
-  body {
-    font-size: 16px;
-    -webkit-text-size-adjust: 100%;
-  }
-
+  body { font-size: 16px; -webkit-text-size-adjust: 100%; }
   #nc-root input:not([type="checkbox"]):not([type="radio"]),
-  #nc-root select,
-  #nc-root textarea {
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-    min-height: 48px;
-    font-size: 16px;
-    touch-action: manipulation;
-    padding: 10px 12px;
+  #nc-root select, #nc-root textarea {
+    width: 100%; max-width: 100%; min-width: 0; min-height: 48px;
+    padding: 10px 12px; font-size: 16px; touch-action: manipulation;
   }
-
-  #nc-root textarea {
-    min-height: 120px;
+  #nc-root textarea { min-height: 120px; }
+  #nc-root form, #nc-root main, #nc-root [role="main"], #nc-root fieldset,
+  #nc-root [class*="Editor"], #nc-root [class*="editor"],
+  #nc-root [class*="ControlPane"], #nc-root [class*="WidgetControl"],
+  #nc-root [class*="Widget"] { min-width: 0 !important; max-width: 100%; }
+  #nc-root form { padding-inline: 12px; }
+  #nc-root form fieldset { padding: 12px; margin-bottom: 14px; }
+  #nc-root form label { margin-bottom: 7px; }
+  #nc-root fieldset { width: 100%; }
+  #nc-root [class*="Toolbar"], #nc-root [class*="toolbar"] {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
   }
-
-  #nc-root form,
-  #nc-root main,
-  #nc-root [role="main"],
-  #nc-root fieldset,
-  #nc-root [class*="Editor"],
-  #nc-root [class*="editor"],
-  #nc-root [class*="ControlPane"],
-  #nc-root [class*="WidgetControl"],
-  #nc-root [class*="Widget"] {
-    min-width: 0 !important;
-    max-width: 100%;
-  }
-
-  #nc-root form {
-    padding-inline: 12px;
-  }
-
-  #nc-root form fieldset {
-    padding: 12px;
-    margin-bottom: 14px;
-  }
-
-  #nc-root form label {
-    margin-bottom: 7px;
-  }
-
-  #nc-root fieldset {
-    width: 100%;
-  }
-
-  #nc-root [class*="Toolbar"],
-  #nc-root [class*="toolbar"] {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
-  }
-
-  #nc-root form button,
-  #nc-root form [role="button"] {
-    width: auto;
-    min-height: 44px;
-  }
-
-  #nc-root [class*="CollectionContainer"] {
-    display: flex;
-    flex-direction: column;
-  }
-
-  #nc-root [class*="SidebarContainer"] {
-    position: static;
-    width: 100%;
-    max-width: 100%;
-  }
-
-  #nc-root [class*="CollectionMain"] {
-    width: 100%;
-    margin-top: 16px;
-    padding-left: 0;
-  }
-
-  #nc-root [class*="EditorContainer"],
-  #nc-root [class*="ControlPaneContainer"],
-  #nc-root [class*="ToolbarContainer"] {
-    width: 100%;
-    min-width: 0 !important;
-  }
-
-  #nc-root button,
-  #nc-root [role="button"] {
-    min-height: 46px;
-    touch-action: manipulation;
-  }
-
-  #nc-root [role="dialog"] {
-    max-width: calc(100vw - 24px);
-    max-height: calc(100vh - 24px);
-    overflow: auto;
-  }
-
-  #nc-root nav a {
-    min-height: 44px;
-    display: flex;
-    align-items: center;
-  }
+  #nc-root form button, #nc-root form [role="button"] { width: auto; min-height: 44px; }
+  #nc-root [class*="CollectionContainer"] { display: flex; flex-direction: column; }
+  #nc-root [class*="SidebarContainer"] { position: static; width: 100%; max-width: 100%; border-right: 0; border-bottom: 1px solid var(--admin-line); }
+  #nc-root [class*="CollectionMain"] { width: 100%; margin-top: 16px; padding-left: 0; }
+  #nc-root [class*="EditorContainer"], #nc-root [class*="ControlPaneContainer"],
+  #nc-root [class*="ToolbarContainer"] { width: 100%; min-width: 0 !important; }
+  #nc-root button, #nc-root [role="button"] { min-height: 46px; touch-action: manipulation; }
+  #nc-root [role="dialog"] { max-width: calc(100vw - 24px); max-height: calc(100vh - 24px); overflow: auto; }
+  #nc-root nav a { min-height: 44px; display: flex; align-items: center; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    scroll-behavior: auto !important;
-    transition-duration: 0.01ms !important;
-  }
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }

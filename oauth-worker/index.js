@@ -1,4 +1,3 @@
-const CMS_ORIGIN = "https://pupsystores-glitch.github.io";
 const STATE_COOKIE = "pupsy_oauth_state";
 
 export default {
@@ -99,24 +98,43 @@ async function finishOAuth(request, url, env) {
 function callbackSuccess(token) {
   const authMessage = `authorization:github:success:${JSON.stringify({ provider: "github", token })}`;
   const safeMessage = JSON.stringify(authMessage).replaceAll("<", "\\u003c");
-  const origin = JSON.stringify(CMS_ORIGIN);
   const html = `<!doctype html>
 <html lang="ka"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PUPSY CMS ავტორიზაცია</title></head>
 <body><p>ავტორიზაცია დასრულდა. ეს ფანჯარა დაიხურება…</p>
 <script>
 (() => {
-  const allowedOrigin = ${origin};
   const authMessage = ${safeMessage};
   if (!window.opener) {
     document.body.textContent = "CMS-ის ფანჯარა ვერ მოიძებნა. დახურე ეს ფანჯარა და თავიდან სცადე.";
     return;
   }
-  window.opener.postMessage("authorizing:github", allowedOrigin);
+  let completed = false;
+  const handshakeTimeout = setTimeout(() => {
+    if (completed) return;
+    document.body.textContent = "GitHub-თან ავტორიზაცია დასრულდა, მაგრამ CMS-თან კავშირი ვერ შედგა. განაახლე CMS გვერდი და თავიდან სცადე.";
+  }, 10000);
+  // This handshake carries no credentials. It lets the popup learn its
+  // opener's real origin, including local development ports.
+  window.opener.postMessage("authorizing:github", "*");
   window.addEventListener("message", (event) => {
-    if (event.source !== window.opener || event.origin !== allowedOrigin) return;
-    window.opener.postMessage(authMessage, allowedOrigin);
+    if (event.source !== window.opener || event.data !== "authorizing:github") return;
+    if (!isAllowedCmsOrigin(event.origin)) return;
+    completed = true;
+    clearTimeout(handshakeTimeout);
+    window.opener.postMessage(authMessage, event.origin);
     window.close();
-  }, { once: true });
+  });
+
+  function isAllowedCmsOrigin(value) {
+    if (value === "https://pupsystores-glitch.github.io") return true;
+    try {
+      const origin = new URL(value);
+      return origin.protocol === "http:" &&
+        (origin.hostname === "localhost" || origin.hostname === "127.0.0.1");
+    } catch {
+      return false;
+    }
+  }
 })();
 </script></body></html>`;
 
