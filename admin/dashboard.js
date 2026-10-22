@@ -34,6 +34,7 @@ let currentLayout = 'list';
 let products = [];
 let mediaFiles = [];
 let collectionFiles = {};
+const stagedProductImageUploads = new Map();
 let accessToken = sessionStorage.getItem('pupsy_github_token') || '';
 let authPopup = null;
 
@@ -165,7 +166,12 @@ async function githubRequest(path, options = {}) {
     },
   });
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.message || `GitHub API შეცდომა (${response.status})`);
+  if (!response.ok) {
+    const error = new Error(data.message || `GitHub API შეცდომა (${response.status})`);
+    error.status = response.status;
+    error.details = data.errors || [];
+    throw error;
+  }
   return data;
 }
 
@@ -189,18 +195,25 @@ async function githubFile(path) {
 }
 
 async function commitJson(path, data) {
-  const latest = await githubFile(path);
-  const result = await githubRequest(`/repos/${GITHUB_REPO}/contents/${path}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      message: `Update ${path.split('/').pop()} from PUPSY CMS`,
-      content: encodeBase64Utf8(`${JSON.stringify(data, null, 2)}\n`),
-      sha: latest.sha,
-      branch: GITHUB_BRANCH,
-    }),
-  });
-  return result.content.sha;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const latest = await githubFile(path);
+    try {
+      const result = await githubRequest(`/repos/${GITHUB_REPO}/contents/${path}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: `Update ${path.split('/').pop()} from PUPSY CMS`,
+          content: encodeBase64Utf8(`${JSON.stringify(data, null, 2)}\n`),
+          sha: latest.sha,
+          branch: GITHUB_BRANCH,
+        }),
+      });
+      return result.content.sha;
+    } catch (error) {
+      if (error.status !== 409 || attempt === 2) throw error;
+      await new Promise(resolve => setTimeout(resolve, 400 * (attempt + 1)));
+    }
+  }
 }
 
 async function loadMediaFiles() {
@@ -298,6 +311,8 @@ function setProductLayout(layout) {
 function openAddProductModal() {
   document.getElementById('modal-title').textContent = 'ახალი პროდუქტის დამატება';
   document.getElementById('product-form').reset();
+  resetProductSaveStatus();
+  stagedProductImageUploads.clear();
   document.getElementById('form-product-id').value = '';
   document.getElementById('form-product-collection').value = activeCollectionId;
   detailFieldsCollectionId = null;
@@ -311,6 +326,8 @@ function openEditProductModal(id) {
   const product = products.find(item => item.id === id);
   if (!product) return;
   document.getElementById('product-form').reset();
+  resetProductSaveStatus();
+  stagedProductImageUploads.clear();
   document.getElementById('modal-title').textContent = 'პროდუქტის რედაქტირება';
   document.getElementById('form-product-id').value = product.id;
   document.getElementById('form-product-title').value = product.title;
@@ -356,6 +373,13 @@ function closeProductModal() {
   document.body.classList.remove('modal-open');
 }
 function closeModal() { closeProductModal(); }
+
+function resetProductSaveStatus() {
+  const status = document.getElementById('product-save-status');
+  if (!status) return;
+  status.textContent = '';
+  status.className = 'hidden rounded-xl border px-3.5 py-3 text-xs leading-relaxed';
+}
 
 function updateCategoryDetailFields() {
   const collectionId = document.getElementById('form-product-collection').value;
@@ -449,13 +473,34 @@ function productsForCollection(collectionId) {
 async function saveProductForm(event) {
   event.preventDefault();
   const saveButton = event.submitter;
-  if (saveButton) { saveButton.disabled = true; saveButton.textContent = 'ინახება…'; }
+  const status = document.getElementById('product-save-status');
+  const isEditing = Boolean(document.getElementById('form-product-id').value);
+  const setSaveStatus = (message, isError = false) => {
+    status.textContent = message;
+    status.className = `rounded-xl border px-3.5 py-3 text-xs leading-relaxed ${isError ? 'border-rose-500/40 bg-rose-500/10 text-rose-200' : 'border-indigo-500/30 bg-indigo-500/10 text-indigo-200'}`;
+  };
+  if (saveButton) { saveButton.disabled = true; saveButton.textContent = 'იტვირთება…'; }
+  setSaveStatus('მონაცემები მზადდება…');
   try {
     const id = document.getElementById('form-product-id').value;
     const existing = products.find(product => product.id === id);
     const targetId = document.getElementById('form-product-collection').value;
     const targetCollection = collections.find(collection => collection.id === targetId);
-    const uploadedImages = await Promise.all([...document.getElementById('form-product-files').files].map(uploadProductImage));
+    if (!targetCollection) throw new Error('აირჩიე პროდუქტის კატეგორია.');
+    const selectedFiles = [...document.getElementById('form-product-files').files];
+    const uploadedImages = [];
+    for (let index = 0; index < selectedFiles.length; index += 1) {
+      setSaveStatus(`ფოტო იტვირთება (${index + 1}/${selectedFiles.length})…`);
+      const file = selectedFiles[index];
+      if (!stagedProductImageUploads.has(file)) {
+        const upload = uploadProductImage(file).catch(error => {
+          stagedProductImageUploads.delete(file);
+          throw error;
+        });
+        stagedProductImageUploads.set(file, upload);
+      }
+      uploadedImages.push(await stagedProductImageUploads.get(file));
+    }
     const imageLinks = [...document.querySelectorAll('[data-photo-link]')].map(input => input.value.trim()).filter(Boolean);
     const values = {
       title: document.getElementById('form-product-title').value.trim(),
@@ -470,6 +515,7 @@ async function saveProductForm(event) {
       materialCare: document.getElementById('form-product-material-care').value.trim(),
     };
     const raw = productToRaw(existing, targetCollection, values, !existing);
+    setSaveStatus('პროდუქტის მონაცემები GitHub-ზე ინახება…');
     if (existing && existing.collectionId !== targetId) {
       const oldData = collectionFiles[existing.collectionId].data;
       oldData.products = productsForCollection(existing.collectionId).filter((_, index) => index !== existing.index);
@@ -486,13 +532,20 @@ async function saveProductForm(event) {
       collectionFiles[targetId].data.products = [...productsForCollection(targetId), raw];
     }
     await commitJson(`products/categories/${targetCollection.file}`, collectionFiles[targetId].data);
+    stagedProductImageUploads.clear();
     closeProductModal();
-    await initializeDashboard();
     showToast(existing ? 'პროდუქტი განახლდა' : 'პროდუქტი დაემატა');
+    try {
+      await initializeDashboard();
+    } catch (error) {
+      showToast(`პროდუქტი GitHub-ზე აიტვირთა, მაგრამ სია ვერ განახლდა: ${error.message}`, 'error', 9000);
+    }
   } catch (error) {
-    showToast(error.message || 'პროდუქტის შენახვა ვერ მოხერხდა');
+    const message = error.message || 'პროდუქტის ატვირთვა ვერ მოხერხდა.';
+    setSaveStatus(`ვერ აიტვირთა: ${message} მონაცემები ფორმაში დარჩა — შეასწორე პრობლემა და თავიდან სცადე.`, true);
+    showToast(message, 'error', 9000);
   } finally {
-    if (saveButton) { saveButton.disabled = false; saveButton.textContent = 'შენახვა'; }
+    if (saveButton) { saveButton.disabled = false; saveButton.textContent = isEditing ? 'ცვლილებების შენახვა' : 'ატვირთვა'; }
   }
 }
 
@@ -551,13 +604,13 @@ function copyMediaUrl(url) {
     .catch(() => showToast('URL-ის კოპირება ვერ მოხერხდა'));
 }
 
-function showToast(message) {
+function showToast(message, type = 'success', duration = 3200) {
   const container = document.getElementById('toast-container');
   const toast = document.createElement('div');
-  toast.className = 'bg-slate-900 border border-slate-700 text-slate-100 px-3.5 py-2.5 rounded-xl shadow-2xl text-xs font-semibold flex items-center gap-2 transform transition-all duration-300 translate-y-2 opacity-0 pointer-events-auto';
+  toast.className = `bg-slate-900 border ${type === 'error' ? 'border-rose-500/50' : 'border-slate-700'} text-slate-100 px-3.5 py-2.5 rounded-xl shadow-2xl text-xs font-semibold flex items-center gap-2 transform transition-all duration-300 translate-y-2 opacity-0 pointer-events-auto`;
   const icon = document.createElement('i');
-  icon.dataset.lucide = 'check-circle-2';
-  icon.className = 'w-4 h-4 text-emerald-400';
+  icon.dataset.lucide = type === 'error' ? 'alert-circle' : 'check-circle-2';
+  icon.className = `w-4 h-4 ${type === 'error' ? 'text-rose-400' : 'text-emerald-400'}`;
   const text = document.createElement('span');
   text.textContent = message;
   toast.append(icon, text);
@@ -567,5 +620,5 @@ function showToast(message) {
   setTimeout(() => {
     toast.classList.add('opacity-0', 'translate-y-2');
     setTimeout(() => toast.remove(), 300);
-  }, 3200);
+  }, duration);
 }
