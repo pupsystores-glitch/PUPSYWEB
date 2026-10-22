@@ -304,6 +304,25 @@
       .filter((item) => item.querySelector("[data-collapsible-content]"));
   }
 
+  function hideSizeIndicators(sizeBlock) {
+    const buttons = document.querySelector(".radio__buttons[data-variant-buttons]");
+    const selector = buttons?.closest(".radio__fieldset");
+    if (selector) {
+      selector.hidden = true;
+      selector.style.setProperty("display", "none", "important");
+      selector.querySelectorAll('input[type="radio"]').forEach((input) => { input.disabled = true; });
+    }
+    const sizeBlocks = new Set([
+      sizeBlock,
+      ...productAccordions().filter((block) => /ზომ|size|მოცულობა/i.test(block.querySelector("summary")?.textContent || "")),
+    ]);
+    sizeBlocks.forEach((block) => {
+      if (!block) return;
+      block.hidden = true;
+      block.style.setProperty("display", "none", "important");
+    });
+  }
+
   function accordionContent(block) {
     const content = block?.querySelector("[data-collapsible-content]");
     return content?.querySelector("toggle-ellipsis [data-content]") || content;
@@ -388,15 +407,7 @@
     const hasNoSize = /არ\s*აქვს/i.test(currentSize);
     const hasSizeDetails = Boolean(String(product.sizeDetails || "").trim());
     if (hasNoSize) {
-      const selector = buttons?.closest(".radio__fieldset");
-      if (selector) {
-        selector.hidden = true;
-        selector.querySelectorAll('input[type="radio"]').forEach((input) => { input.disabled = true; });
-      }
-      if (sizeBlock) {
-        sizeBlock.hidden = true;
-        sizeBlock.style.setProperty("display", "none", "important");
-      }
+      hideSizeIndicators(sizeBlock);
       return;
     }
     if (categoryId !== "harnesses") {
@@ -486,10 +497,7 @@
     const benefitsBlock = accordions[2] || findAccordion(/benefit/);
     const materialBlock = accordions[3] || findAccordion(/material/);
     const noSize = /არ\s*აქვს/i.test(String(product.size || "").trim());
-    if (noSize && sizeBlock) {
-      sizeBlock.hidden = true;
-      sizeBlock.style.setProperty("display", "none", "important");
-    }
+    if (noSize) hideSizeIndicators(sizeBlock);
     else if (product.sizeDetails) setAccordionText(sizeBlock, product.sizeDetails);
     else if (categoryId === "harnesses") {
       const sizeContent = accordionContent(sizeBlock);
