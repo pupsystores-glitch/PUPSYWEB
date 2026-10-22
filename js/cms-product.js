@@ -149,6 +149,7 @@
       const source = new URL(assetUrl(path.trim()));
       const canResize = /\/cdn\/shop\/files\/|cdn\.shopify\.com/i.test(source.hostname + source.pathname);
       if (photo) {
+        photo.style.setProperty("--aspect-ratio", "1");
         photo.dataset.zoomImage = originalSrc;
         photo.dataset.imageSrc = originalSrc;
         photo.dataset.imageWidth = "1600";
