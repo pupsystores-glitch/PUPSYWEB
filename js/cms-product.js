@@ -245,9 +245,19 @@
       .find((item) => selector.test(item.querySelector("summary")?.textContent || ""));
   }
 
+  function productAccordions() {
+    return [...document.querySelectorAll(".product__content .product__block--accordion")]
+      .filter((item) => item.querySelector("[data-collapsible-content]"));
+  }
+
+  function accordionContent(block) {
+    const content = block?.querySelector("[data-collapsible-content]");
+    return content?.querySelector("toggle-ellipsis [data-content]") || content;
+  }
+
   function setAccordion(selector, values) {
     const block = findAccordion(selector);
-    const content = block?.querySelector("[data-collapsible-content]");
+    const content = accordionContent(block);
     if (!content || !values.length) return;
     content.replaceChildren(...values.map((value) => {
       const p = document.createElement("p");
@@ -258,13 +268,14 @@
 
   function setAccordionText(block, text, asBullets = false) {
     if (!block) return;
-    const content = block.querySelector("[data-collapsible-content]");
+    const content = accordionContent(block);
     const lines = String(text || "").split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
     if (!content || !lines.length) {
       block.hidden = true;
       return;
     }
     block.hidden = false;
+    block.style.removeProperty("display");
     content.replaceChildren();
     if (asBullets) {
       const intro = lines[0].endsWith(":") ? lines.shift() : "";
@@ -320,7 +331,20 @@
   function setSelectedSize(product, categoryId, sizeBlock) {
     const buttons = document.querySelector(".radio__buttons[data-variant-buttons]");
     const currentSize = String(product.size || "").trim();
+    const hasNoSize = /არ\s*აქვს/i.test(currentSize);
     const hasSizeDetails = Boolean(String(product.sizeDetails || "").trim());
+    if (hasNoSize) {
+      const selector = buttons?.closest(".radio__fieldset");
+      if (selector) {
+        selector.hidden = true;
+        selector.querySelectorAll('input[type="radio"]').forEach((input) => { input.disabled = true; });
+      }
+      if (sizeBlock) {
+        sizeBlock.hidden = true;
+        sizeBlock.style.setProperty("display", "none", "important");
+      }
+      return;
+    }
     if (categoryId !== "harnesses") {
       const selector = buttons?.closest(".radio__fieldset");
       if (selector) {
@@ -398,16 +422,22 @@
 
     setSelectedColors(product);
     setGallery(product);
+    const accordions = productAccordions();
     setAccordion(/აღწერა/, String(product.description || "აღწერა დამატებული არ არის.").split(/\n{2,}/).map((s) => s.trim()).filter(Boolean));
     const collectionPath = catalogFiles.find((catalog) => catalog.category === product.category)?.path || "";
     const categoryId = collectionPath.match(/categories\/([^/.]+)/)?.[1] || "harnesses";
     const titles = { ...categoryDetailTitles[categoryId], ...(product.detailsLabels || {}) };
-    const sizeBlock = findAccordion(/ზომები|მოცულობა/);
-    const benefitsBlock = findAccordion(/მთავარი უპირატესობები/);
-    const materialBlock = findAccordion(/მასალა და მოვლა/);
-    if (product.sizeDetails) setAccordionText(sizeBlock, product.sizeDetails);
+    const sizeBlock = accordions[1] || findAccordion(/size/);
+    const benefitsBlock = accordions[2] || findAccordion(/benefit/);
+    const materialBlock = accordions[3] || findAccordion(/material/);
+    const noSize = /არ\s*აქვს/i.test(String(product.size || "").trim());
+    if (noSize && sizeBlock) {
+      sizeBlock.hidden = true;
+      sizeBlock.style.setProperty("display", "none", "important");
+    }
+    else if (product.sizeDetails) setAccordionText(sizeBlock, product.sizeDetails);
     else if (categoryId === "harnesses") {
-      const sizeContent = sizeBlock?.querySelector("[data-collapsible-content]");
+      const sizeContent = accordionContent(sizeBlock);
       if (sizeContent) sizeContent.innerHTML = sizeGuideHtml;
     } else if (product.size && product.size !== "არ აქვს") {
       setAccordionText(sizeBlock, `არჩეული ზომა: ${product.size}`);
@@ -420,6 +450,16 @@
     setAccordionTitle(sizeBlock, titles.size);
     setAccordionTitle(benefitsBlock, titles.benefits);
     setAccordionTitle(materialBlock, titles.material);
+
+    // Refresh accordion heights after injecting CMS content.
+    accordions.forEach((block, index) => {
+      const details = block.querySelector("[data-collapsible]");
+      const body = details?.querySelector("[data-collapsible-body]");
+      if (!details || !body || block.hidden) return;
+      const shouldOpen = index === 0;
+      details.setAttribute("open", String(shouldOpen));
+      body.style.height = shouldOpen ? "auto" : "";
+    });
 
     const backLink = document.querySelector("a[href*='shop.html']");
     if (backLink) backLink.href = new URL("shop.html", baseUrl).href;
