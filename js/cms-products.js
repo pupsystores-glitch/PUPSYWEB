@@ -10,7 +10,6 @@
     { path: "products/categories/toys.json", category: "სათამაშოები" },
   ];
   const baseUrl = new URL(".", document.baseURI);
-  const productUrl = new URL("harnes1.html", baseUrl).href + "?cmsProduct=";
   const georgianToLatin = {
     ა: "a", ბ: "b", გ: "g", დ: "d", ე: "e", ვ: "v", ზ: "z", თ: "t",
     ი: "i", კ: "k", ლ: "l", მ: "m", ნ: "n", ო: "o", პ: "p", ჟ: "zh",
@@ -69,7 +68,7 @@
   function renderCard(product) {
     const card = document.createElement("a");
     card.className = "cms-product-card";
-    card.href = productUrl + encodeURIComponent(productSlug(product));
+    card.href = new URL(`product-pages/${encodeURIComponent(productSlug(product))}.html`, baseUrl).href;
 
     const image = document.createElement("img");
     image.className = "cms-product-card__image";

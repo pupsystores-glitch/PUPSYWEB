@@ -2,7 +2,8 @@
   "use strict";
 
   const params = new URLSearchParams(location.search);
-  const id = params.get("cmsProduct");
+  const routeName = decodeURIComponent(location.pathname.split("/").pop() || "").replace(/\.html$/i, "");
+  const id = params.get("cmsProduct") || (!/^(harnes1|index)$/i.test(routeName) ? routeName : "");
   if (!id) return;
 
   const baseUrl = new URL(".", document.baseURI);

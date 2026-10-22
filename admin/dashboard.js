@@ -63,6 +63,47 @@ function uniqueProductSlug(title, currentId) {
   return `${base}-${suffix}`;
 }
 
+function productRouteStub() {
+  return '<!doctype html><html lang="ka"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PUPSY პროდუქტი</title></head><body><script src="../js/cms-product-route.js" defer></script></body></html>\n';
+}
+
+async function saveProductRoute(slug) {
+  const path = `product-pages/${slug}.html`;
+  let sha;
+  try {
+    sha = (await githubRequest(`/repos/${GITHUB_REPO}/contents/${path}?ref=${GITHUB_BRANCH}`)).sha;
+  } catch (error) {
+    if (error.status !== 404) throw error;
+  }
+  await githubRequest(`/repos/${GITHUB_REPO}/contents/${path}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      message: `Update product page ${slug}`,
+      content: encodeBase64Utf8(productRouteStub()),
+      ...(sha ? { sha } : {}),
+      branch: GITHUB_BRANCH,
+    }),
+  });
+}
+
+async function deleteProductRoute(slug) {
+  if (!slug) return;
+  const path = `product-pages/${slug}.html`;
+  let route;
+  try {
+    route = await githubRequest(`/repos/${GITHUB_REPO}/contents/${path}?ref=${GITHUB_BRANCH}`);
+  } catch (error) {
+    if (error.status === 404) return;
+    throw error;
+  }
+  await githubRequest(`/repos/${GITHUB_REPO}/contents/${path}`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: `Delete product page ${slug}`, sha: route.sha, branch: GITHUB_BRANCH }),
+  });
+}
+
 window.addEventListener('load', () => {
   lucide.createIcons();
   document.getElementById('github-login-button').addEventListener('click', loginWithGithub);
@@ -626,6 +667,7 @@ async function saveProductForm(event) {
   try {
     const id = document.getElementById('form-product-id').value;
     const existing = products.find(product => product.id === id);
+    const previousSlug = existing?.raw?.slug || '';
     const targetId = document.getElementById('form-product-collection').value;
     const targetCollection = collections.find(collection => collection.id === targetId);
     if (!targetCollection) throw new Error('აირჩიე პროდუქტის კატეგორია.');
@@ -675,6 +717,8 @@ async function saveProductForm(event) {
       collectionFiles[targetId].data.products = [...productsForCollection(targetId), raw];
     }
     await commitJson(`products/categories/${targetCollection.file}`, collectionFiles[targetId].data);
+    await saveProductRoute(raw.slug);
+    if (previousSlug && previousSlug !== raw.slug) await deleteProductRoute(previousSlug);
     stagedProductImageUploads.clear();
     closeProductModal();
     showToast(existing ? 'პროდუქტი განახლდა' : 'პროდუქტი დაემატა');
@@ -700,6 +744,7 @@ async function deleteProduct(id) {
     const file = collectionFiles[product.collectionId];
     file.data.products = productsForCollection(product.collectionId).filter((_, index) => index !== product.index);
     await commitJson(`products/categories/${collection.file}`, file.data);
+    await deleteProductRoute(product.raw?.slug);
     await initializeDashboard();
     showToast('პროდუქტი წაიშალა');
   } catch (error) { showToast(error.message || 'პროდუქტის წაშლა ვერ მოხერხდა'); }
