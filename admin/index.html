@@ -306,22 +306,59 @@
                     </div>
                 </div>
 
-                <!-- Size / Sub-category -->
+                <!-- Size selection -->
                 <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1">ზომა / მახასიათებელი</label>
-                    <input type="text" id="form-product-size" placeholder="მაგ: S / M / L ზომა, წითელი"
-                           class="w-full px-3.5 py-2.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-all">
+                    <label for="form-product-size" class="block text-xs font-semibold text-slate-300 mb-1">ზომა</label>
+                    <select id="form-product-size"
+                            class="w-full px-3.5 py-2.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-100 focus:outline-none focus:border-indigo-500 transition-all">
+                        <option value="არ აქვს">არ აქვს</option>
+                        <option value="ძალიან პატარა">ძალიან პატარა</option>
+                        <option value="პატარა">პატარა</option>
+                        <option value="საშუალო">საშუალო</option>
+                        <option value="დიდი">დიდი</option>
+                    </select>
+                    <p class="text-[10px] text-slate-500 mt-1">აირჩიე პროდუქტის გვერდზე მითითებული ზომა.</p>
                 </div>
 
-                <!-- Image URL Input with Preview -->
-                <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1">სურათის URL</label>
-                    <div class="flex gap-2">
-                        <input type="text" id="form-product-image" onchange="updateModalImagePreview()" placeholder="https://... or /PUPSYWEB/images/uploads/..."
-                               class="flex-1 px-3.5 py-2.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-all">
-                        <div class="w-10 h-10 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center overflow-hidden shrink-0">
+                <!-- Color selection -->
+                <fieldset>
+                    <legend class="block text-xs font-semibold text-slate-300 mb-2">ფერი <span class="font-normal text-slate-500">(შეგიძლია რამდენიმე მონიშნო)</span></legend>
+                    <div id="form-product-colors" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        <label class="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 cursor-pointer hover:border-indigo-500/60 transition-all"><input type="checkbox" value="ყავისფერი" class="accent-indigo-500"> ყავისფერი</label>
+                        <label class="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 cursor-pointer hover:border-indigo-500/60 transition-all"><input type="checkbox" value="ტერაკოტა" class="accent-indigo-500"> ტერაკოტა</label>
+                        <label class="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 cursor-pointer hover:border-indigo-500/60 transition-all"><input type="checkbox" value="ლურჯი" class="accent-indigo-500"> ლურჯი</label>
+                        <label class="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 cursor-pointer hover:border-indigo-500/60 transition-all"><input type="checkbox" value="მწვანე" class="accent-indigo-500"> მწვანე</label>
+                        <label class="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 cursor-pointer hover:border-indigo-500/60 transition-all"><input type="checkbox" value="ლავანდისფერი" class="accent-indigo-500"> ლავანდისფერი</label>
+                        <label class="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 cursor-pointer hover:border-indigo-500/60 transition-all"><input type="checkbox" value="ვარდისფერი" class="accent-indigo-500"> ვარდისფერი</label>
+                        <label class="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 cursor-pointer hover:border-indigo-500/60 transition-all"><input type="checkbox" value="ღია ყავისფერი" class="accent-indigo-500"> ღია ყავისფერი</label>
+                        <label class="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 cursor-pointer hover:border-indigo-500/60 transition-all"><input type="checkbox" value="ბორდოსფერი" class="accent-indigo-500"> ბორდოსფერი</label>
+                        <label class="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 cursor-pointer hover:border-indigo-500/60 transition-all"><input type="checkbox" value="შავი" class="accent-indigo-500"> შავი</label>
+                    </div>
+                </fieldset>
+
+                <!-- Product photos: device upload or direct image links -->
+                <div class="space-y-3">
+                    <div>
+                        <label for="form-product-files" class="block text-xs font-semibold text-slate-300 mb-1">ფოტოები მოწყობილობიდან</label>
+                        <input type="file" id="form-product-files" accept="image/*" multiple onchange="updateModalImagePreview()"
+                               class="w-full px-3.5 py-2.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-300 file:mr-3 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-indigo-600 file:text-white file:text-xs hover:file:bg-indigo-500 transition-all">
+                        <p class="text-[10px] text-slate-500 mt-1">შეგიძლია გალერეიდან რამდენიმე ფოტოს მონიშვნა.</p>
+                    </div>
+                    <div class="border-t border-slate-800 pt-3">
+                        <label class="block text-xs font-semibold text-slate-300 mb-2">ან დაამატე ფოტოების პირდაპირი ბმულები</label>
+                        <div class="space-y-2">
+                            <input type="text" id="form-product-link-1" data-photo-link placeholder="ფოტოს ბმული 1 (https://...)" oninput="updateModalImagePreview()" class="w-full px-3.5 py-2.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-all">
+                            <input type="text" id="form-product-link-2" data-photo-link placeholder="ფოტოს ბმული 2 (არასავალდებულო)" oninput="updateModalImagePreview()" class="w-full px-3.5 py-2.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-all">
+                            <input type="text" id="form-product-link-3" data-photo-link placeholder="ფოტოს ბმული 3 (არასავალდებულო)" oninput="updateModalImagePreview()" class="w-full px-3.5 py-2.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-all">
+                            <input type="text" id="form-product-link-4" data-photo-link placeholder="ფოტოს ბმული 4 (არასავალდებულო)" oninput="updateModalImagePreview()" class="w-full px-3.5 py-2.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-all">
+                            <input type="text" id="form-product-link-5" data-photo-link placeholder="ფოტოს ბმული 5 (არასავალდებულო)" oninput="updateModalImagePreview()" class="w-full px-3.5 py-2.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-all">
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center overflow-hidden shrink-0">
                             <img id="form-image-preview" src="https://placehold.co/100x100/1e293b/94a3b8?text=IMG" class="w-full h-full object-cover">
                         </div>
+                        <span class="text-[10px] text-slate-500">პირველი ფოტო პროდუქტის მთავარ ფოტოდ გამოჩნდება.</span>
                     </div>
                 </div>
 
@@ -346,6 +383,6 @@
     </div>
 
     <!-- Application JavaScript State & Controller -->
-    <script src="dashboard.js?v=1"></script>
+    <script src="dashboard.js?v=2"></script>
 </body>
 </html>

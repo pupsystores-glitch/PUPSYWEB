@@ -37,7 +37,7 @@
       if (source.source === "gallery" && Array.isArray(source.images)) {
         images.push(...source.images);
       } else if (source.source === "links") {
-        images.push(source.link1, source.link2, source.link3, source.link4);
+        images.push(source.link1, source.link2, source.link3, source.link4, source.link5);
       }
     });
     if (!images.length) images.push(product.image, ...(Array.isArray(product.images) ? product.images : []));

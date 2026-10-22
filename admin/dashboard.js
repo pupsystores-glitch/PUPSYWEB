@@ -108,19 +108,29 @@ function handleLoadError(error) {
 }
 
 function productFromRaw(raw, collection, index) {
-  const gallery = (raw.photos || []).find(photo => photo.source === 'gallery');
-  const image = gallery?.images?.[0] || raw.image || raw.imageUrl || '';
+  const image = productPhotoUrls(raw)[0] || raw.image || raw.imageUrl || '';
   return {
     id: `${collection.id}:${index}`,
     collectionId: collection.id,
     title: raw.title || '',
     price: Number(raw.price || 0),
-    size: raw.size || (Array.isArray(raw.attributes) ? raw.attributes.join(', ') : ''),
+    size: raw.size || (Array.isArray(raw.attributes) ? raw.attributes.join(', ') : 'არ აქვს'),
+    colors: Array.isArray(raw.colors) ? raw.colors : [],
     image,
     desc: raw.description || '',
     raw,
     index,
   };
+}
+
+function productPhotoUrls(raw) {
+  const images = [];
+  (Array.isArray(raw.photos) ? raw.photos : []).forEach(photo => {
+    if (photo.source === 'gallery' && Array.isArray(photo.images)) images.push(...photo.images);
+    if (photo.source === 'links') images.push(photo.link1, photo.link2, photo.link3, photo.link4, photo.link5);
+  });
+  if (!images.length) images.push(raw.image, ...(Array.isArray(raw.images) ? raw.images : []));
+  return [...new Set(images.filter(value => typeof value === 'string' && value.trim()).map(value => value.trim()))];
 }
 
 async function githubRequest(path, options = {}) {
@@ -276,13 +286,35 @@ function openAddProductModal() {
 function openEditProductModal(id) {
   const product = products.find(item => item.id === id);
   if (!product) return;
+  document.getElementById('product-form').reset();
   document.getElementById('modal-title').textContent = 'პროდუქტის რედაქტირება';
   document.getElementById('form-product-id').value = product.id;
   document.getElementById('form-product-title').value = product.title;
   document.getElementById('form-product-collection').value = product.collectionId;
   document.getElementById('form-product-price').value = product.price;
-  document.getElementById('form-product-size').value = product.size || '';
-  document.getElementById('form-product-image').value = product.image || '';
+  const sizeSelect = document.getElementById('form-product-size');
+  if (product.size && ![...sizeSelect.options].some(option => option.value === product.size)) {
+    sizeSelect.add(new Option(product.size, product.size, true, true), 1);
+  }
+  sizeSelect.value = product.size || 'არ აქვს';
+  const colorOptions = document.getElementById('form-product-colors');
+  product.colors.forEach(color => {
+    if ([...colorOptions.querySelectorAll('input[type="checkbox"]')].some(input => input.value === color)) return;
+    const label = document.createElement('label');
+    label.className = 'flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 cursor-pointer hover:border-indigo-500/60 transition-all';
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.value = color;
+    checkbox.className = 'accent-indigo-500';
+    label.append(checkbox, document.createTextNode(` ${color}`));
+    colorOptions.append(label);
+  });
+  document.querySelectorAll('#form-product-colors input[type="checkbox"]').forEach(input => {
+    input.checked = product.colors.includes(input.value);
+  });
+  productPhotoUrls(product.raw).slice(0, 5).forEach((url, index) => {
+    document.getElementById(`form-product-link-${index + 1}`).value = url;
+  });
   document.getElementById('form-product-desc').value = product.desc || '';
   updateModalImagePreview();
   document.getElementById('product-modal').classList.remove('hidden');
@@ -292,8 +324,14 @@ function closeProductModal() { document.getElementById('product-modal').classLis
 function closeModal() { closeProductModal(); }
 
 function updateModalImagePreview() {
-  const value = document.getElementById('form-product-image').value.trim();
-  document.getElementById('form-image-preview').src = value || 'https://placehold.co/100x100/1e293b/94a3b8?text=IMG';
+  const selectedFile = document.getElementById('form-product-files').files[0];
+  const firstLink = [...document.querySelectorAll('[data-photo-link]')].map(input => input.value.trim()).find(Boolean);
+  const preview = document.getElementById('form-image-preview');
+  if (selectedFile) {
+    preview.src = URL.createObjectURL(selectedFile);
+    return;
+  }
+  preview.src = firstLink || 'https://placehold.co/100x100/1e293b/94a3b8?text=IMG';
 }
 
 function populateModalCollectionSelect() {
@@ -308,18 +346,29 @@ function productToRaw(product, collection, values, isNew) {
   raw.price = values.price;
   raw.description = values.desc;
   raw.size = values.size;
+  raw.colors = values.colors;
   raw.published = raw.published ?? true;
-  if (values.image) {
-    const photos = Array.isArray(raw.photos) ? raw.photos.map(photo => ({ ...photo })) : [];
-    const gallery = photos.find(photo => photo.source === 'gallery');
-    if (gallery) {
-      const images = [...(gallery.images || [])];
-      images[0] = values.image;
-      gallery.images = images;
-    } else photos.unshift({ source: 'gallery', images: [values.image] });
-    raw.photos = photos;
+  const photos = [];
+  if (values.uploadedImages.length) photos.push({ source: 'gallery', images: values.uploadedImages });
+  if (values.imageLinks.length) {
+    photos.push(Object.fromEntries([['source', 'links'], ...values.imageLinks.map((url, index) => [`link${index + 1}`, url])]));
   }
+  raw.photos = photos;
+  if (values.uploadedImages[0] || values.imageLinks[0]) raw.image = values.uploadedImages[0] || values.imageLinks[0];
+  else delete raw.image;
   return raw;
+}
+
+async function uploadProductImage(file) {
+  if (!file.type.startsWith('image/')) throw new Error('აირჩიე მხოლოდ ფოტოსურათის ფაილები.');
+  const safeName = file.name.normalize('NFKD').replace(/[^a-zA-Z0-9._-]+/g, '-') || 'photo';
+  const filename = `${Date.now()}-${crypto.randomUUID()}-${safeName}`;
+  const content = encodeBase64Utf8FromBytes(await file.arrayBuffer());
+  await githubRequest(`/repos/${GITHUB_REPO}/contents/images/uploads/${encodeURIComponent(filename)}`, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: `Upload ${filename} from PUPSY CMS`, content, branch: GITHUB_BRANCH }),
+  });
+  return `/PUPSYWEB/images/uploads/${encodeURIComponent(filename)}`;
 }
 
 function productsForCollection(collectionId) {
@@ -335,11 +384,15 @@ async function saveProductForm(event) {
     const existing = products.find(product => product.id === id);
     const targetId = document.getElementById('form-product-collection').value;
     const targetCollection = collections.find(collection => collection.id === targetId);
+    const uploadedImages = await Promise.all([...document.getElementById('form-product-files').files].map(uploadProductImage));
+    const imageLinks = [...document.querySelectorAll('[data-photo-link]')].map(input => input.value.trim()).filter(Boolean);
     const values = {
       title: document.getElementById('form-product-title').value.trim(),
       price: Number(document.getElementById('form-product-price').value),
-      size: document.getElementById('form-product-size').value.trim(),
-      image: document.getElementById('form-product-image').value.trim(),
+      size: document.getElementById('form-product-size').value,
+      colors: [...document.querySelectorAll('#form-product-colors input[type="checkbox"]:checked')].map(input => input.value),
+      uploadedImages,
+      imageLinks,
       desc: document.getElementById('form-product-desc').value.trim(),
     };
     const raw = productToRaw(existing, targetCollection, values, !existing);
