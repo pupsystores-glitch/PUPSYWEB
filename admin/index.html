@@ -72,6 +72,25 @@
         .active-tab-glow {
             box-shadow: 0 0 20px -5px rgba(99, 102, 241, 0.5);
         }
+        #product-modal {
+            overscroll-behavior: contain;
+        }
+        #product-modal > div {
+            min-height: 0;
+            max-height: min(90vh, 900px);
+            max-height: min(90dvh, 900px);
+        }
+        #product-form {
+            min-height: 0;
+            flex: 1 1 auto;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+            touch-action: pan-y;
+        }
+        body.modal-open {
+            overflow: hidden;
+            overscroll-behavior: none;
+        }
     </style>
 </head>
 <body class="h-full flex flex-col bg-slate-950 text-slate-100 antialiased overflow-x-hidden">
@@ -264,10 +283,10 @@
 
     <!-- Modal Dialog: Add / Edit Product -->
     <div id="product-modal" class="fixed inset-0 z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/80 backdrop-blur-md transition-opacity">
-        <div class="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in slide-in-from-bottom duration-200">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col min-h-0 max-h-[90vh] animate-in slide-in-from-bottom duration-200">
 
             <!-- Modal Header -->
-            <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/80">
+            <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/80 shrink-0">
                 <div class="flex items-center gap-2">
                     <div class="w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
                         <i data-lucide="box" class="w-4 h-4"></i>
@@ -280,7 +299,7 @@
             </div>
 
             <!-- Modal Form -->
-            <form id="product-form" onsubmit="saveProductForm(event)" class="p-5 space-y-4 overflow-y-auto">
+            <form id="product-form" onsubmit="saveProductForm(event)" class="p-5 space-y-4 flex-1 min-h-0 overflow-y-auto overscroll-contain">
                 <input type="hidden" id="form-product-id">
 
                 <!-- Title Input -->
@@ -294,7 +313,7 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-semibold text-slate-300 mb-1">კოლექცია *</label>
-                        <select id="form-product-collection" required class="w-full px-3 py-2.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-100 focus:outline-none focus:border-indigo-500 transition-all">
+                        <select id="form-product-collection" required onchange="updateCategoryDetailFields()" class="w-full px-3 py-2.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-100 focus:outline-none focus:border-indigo-500 transition-all">
                             <!-- Populated dynamically -->
                         </select>
                     </div>
@@ -369,6 +388,25 @@
                               class="w-full px-3.5 py-2.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-all resize-none"></textarea>
                 </div>
 
+                <div class="border-t border-slate-800 pt-4 space-y-3">
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-200">დამატებითი ინფორმაცია პროდუქტის გვერდისთვის</h4>
+                        <p class="text-[10px] text-slate-500 mt-1">თითოეული ტექსტი ამ პროდუქტის გვერდზე ცალკე სექციაში გამოჩნდება. ჩამოწერე თითოეული მახასიათებელი ახალ ხაზზე.</p>
+                    </div>
+                    <div>
+                        <label id="form-product-size-details-label" for="form-product-size-details" class="block text-xs font-semibold text-slate-300 mb-1">ზომები</label>
+                        <textarea id="form-product-size-details" rows="4" placeholder="მიუთითე ზომები და გაზომვები..." class="w-full px-3.5 py-2.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-all resize-y"></textarea>
+                    </div>
+                    <div>
+                        <label id="form-product-benefits-label" for="form-product-benefits" class="block text-xs font-semibold text-slate-300 mb-1">მთავარი უპირატესობები</label>
+                        <textarea id="form-product-benefits" rows="4" placeholder="ჩაწერე თითოეული უპირატესობა ცალკე ხაზზე..." class="w-full px-3.5 py-2.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-all resize-y"></textarea>
+                    </div>
+                    <div>
+                        <label id="form-product-material-label" for="form-product-material-care" class="block text-xs font-semibold text-slate-300 mb-1">მასალა და მოვლა</label>
+                        <textarea id="form-product-material-care" rows="4" placeholder="მიუთითე მასალა და მოვლის ინსტრუქცია..." class="w-full px-3.5 py-2.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-all resize-y"></textarea>
+                    </div>
+                </div>
+
                 <!-- Actions -->
                 <div class="pt-3 border-t border-slate-800 flex items-center justify-end gap-2">
                     <button type="button" onclick="closeProductModal()" class="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:bg-slate-800 transition-all">
@@ -383,6 +421,6 @@
     </div>
 
     <!-- Application JavaScript State & Controller -->
-    <script src="dashboard.js?v=2"></script>
+    <script src="dashboard.js?v=4"></script>
 </body>
 </html>

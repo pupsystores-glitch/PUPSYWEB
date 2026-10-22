@@ -14,6 +14,14 @@
     { path: "products/categories/hygiene-care.json", category: "ჰიგიენა & მოვლა" },
     { path: "products/categories/toys.json", category: "სათამაშოები" },
   ];
+  const categoryDetailTitles = {
+    harnesses: { size: "ზომები", benefits: "მთავარი უპირატესობები", material: "მასალა და მოვლა" },
+    collars: { size: "საყელურის ზომები", benefits: "მთავარი უპირატესობები", material: "მასალა და მოვლა" },
+    leashes: { size: "საბელის ზომები და სიგრძე", benefits: "მთავარი უპირატესობები", material: "მასალა და მოვლა" },
+    accessories: { size: "ზომა და მახასიათებლები", benefits: "მთავარი უპირატესობები", material: "მასალა და მოვლა" },
+    "hygiene-care": { size: "მოცულობა და გამოყენება", benefits: "მახასიათებლები", material: "შემადგენლობა და გამოყენება" },
+    toys: { size: "ზომა და მახასიათებლები", benefits: "თამაშის უპირატესობები", material: "მასალა და მოვლა" },
+  };
   const georgianToLatin = {
     ა: "a", ბ: "b", გ: "g", დ: "d", ე: "e", ვ: "v", ზ: "z", თ: "t",
     ი: "i", კ: "k", ლ: "l", მ: "m", ნ: "n", ო: "o", პ: "p", ჟ: "zh",
@@ -232,9 +240,13 @@
     }
   }
 
-  function setAccordion(selector, values) {
-    const block = [...document.querySelectorAll(".product__content .product__block--accordion")]
+  function findAccordion(selector) {
+    return [...document.querySelectorAll(".product__content .product__block--accordion")]
       .find((item) => selector.test(item.querySelector("summary")?.textContent || ""));
+  }
+
+  function setAccordion(selector, values) {
+    const block = findAccordion(selector);
     const content = block?.querySelector("[data-collapsible-content]");
     if (!content || !values.length) return;
     content.replaceChildren(...values.map((value) => {
@@ -242,6 +254,56 @@
       p.textContent = value;
       return p;
     }));
+  }
+
+  function setAccordionText(block, text, asBullets = false) {
+    if (!block) return;
+    const content = block.querySelector("[data-collapsible-content]");
+    const lines = String(text || "").split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+    if (!content || !lines.length) {
+      block.hidden = true;
+      return;
+    }
+    block.hidden = false;
+    content.replaceChildren();
+    if (asBullets) {
+      const intro = lines[0].endsWith(":") ? lines.shift() : "";
+      if (intro) {
+        const paragraph = document.createElement("p");
+        paragraph.textContent = intro;
+        content.append(paragraph);
+      }
+      const list = document.createElement("ul");
+      lines.forEach((line) => {
+        const item = document.createElement("li");
+        item.textContent = line.replace(/^[•*-]\s*/, "");
+        list.append(item);
+      });
+      if (list.childElementCount) content.append(list);
+      return;
+    }
+    String(text).split(/\r?\n\s*\r?\n/).map((paragraph) => paragraph.trim()).filter(Boolean).forEach((value) => {
+      const paragraph = document.createElement("p");
+      const guideLinkText = "ზომების ყველა გზამკვლევი: guide.html";
+      if (value.includes(guideLinkText)) {
+        const [before, after] = value.split(guideLinkText);
+        paragraph.append(document.createTextNode(before));
+        const link = document.createElement("a");
+        link.href = new URL("guide.html", baseUrl).href;
+        link.textContent = "ზომების ყველა გზამკვლევის ნახვა";
+        paragraph.append(link, document.createTextNode(after));
+      } else {
+        paragraph.textContent = value;
+      }
+      paragraph.style.whiteSpace = "pre-line";
+      content.append(paragraph);
+    });
+  }
+
+  function setAccordionTitle(block, title) {
+    const summary = block?.querySelector("summary");
+    const textNode = summary && [...summary.childNodes].find((node) => node.nodeType === Node.TEXT_NODE);
+    if (textNode && title) textNode.textContent = title;
   }
 
   const sizeGuideHtml = `
@@ -255,19 +317,29 @@
       <p><a href="guide.html">ზომების ყველა გზამკვლევის ნახვა</a></p>
     </div>`;
 
-  function setSelectedSize(product) {
+  function setSelectedSize(product, categoryId, sizeBlock) {
     const buttons = document.querySelector(".radio__buttons[data-variant-buttons]");
-    const sizeBlock = [...document.querySelectorAll(".product__content .product__block--accordion")]
-      .find((item) => /ზომები/.test(item.querySelector("summary")?.textContent || ""));
-    if (String(product.size || "").trim() === "არ აქვს") {
+    const currentSize = String(product.size || "").trim();
+    const hasSizeDetails = Boolean(String(product.sizeDetails || "").trim());
+    if (categoryId !== "harnesses") {
       const selector = buttons?.closest(".radio__fieldset");
       if (selector) {
         selector.hidden = true;
         selector.querySelectorAll('input[type="radio"]').forEach((input) => { input.disabled = true; });
       }
-      if (sizeBlock) sizeBlock.hidden = true;
+      if (sizeBlock) sizeBlock.hidden = !hasSizeDetails && (!currentSize || currentSize === "არ აქვს");
       return;
     }
+    if (currentSize === "არ აქვს" || !currentSize) {
+      const selector = buttons?.closest(".radio__fieldset");
+      if (selector) {
+        selector.hidden = true;
+        selector.querySelectorAll('input[type="radio"]').forEach((input) => { input.disabled = true; });
+      }
+      if (sizeBlock) sizeBlock.hidden = !hasSizeDetails;
+      return;
+    }
+    if (sizeBlock) sizeBlock.hidden = false;
     if (!buttons) return;
 
     const sizes = ["ძალიან პატარა", "პატარა", "საშუალო", "დიდი"];
@@ -327,11 +399,27 @@
     setSelectedColors(product);
     setGallery(product);
     setAccordion(/აღწერა/, String(product.description || "აღწერა დამატებული არ არის.").split(/\n{2,}/).map((s) => s.trim()).filter(Boolean));
-    const sizeBlock = [...document.querySelectorAll(".product__content .product__block--accordion")]
-      .find((item) => /ზომები/.test(item.querySelector("summary")?.textContent || ""));
-    const sizeContent = sizeBlock?.querySelector("[data-collapsible-content]");
-    if (sizeContent) sizeContent.innerHTML = sizeGuideHtml;
-    setSelectedSize(product);
+    const collectionPath = catalogFiles.find((catalog) => catalog.category === product.category)?.path || "";
+    const categoryId = collectionPath.match(/categories\/([^/.]+)/)?.[1] || "harnesses";
+    const titles = { ...categoryDetailTitles[categoryId], ...(product.detailsLabels || {}) };
+    const sizeBlock = findAccordion(/ზომები|მოცულობა/);
+    const benefitsBlock = findAccordion(/მთავარი უპირატესობები/);
+    const materialBlock = findAccordion(/მასალა და მოვლა/);
+    if (product.sizeDetails) setAccordionText(sizeBlock, product.sizeDetails);
+    else if (categoryId === "harnesses") {
+      const sizeContent = sizeBlock?.querySelector("[data-collapsible-content]");
+      if (sizeContent) sizeContent.innerHTML = sizeGuideHtml;
+    } else if (product.size && product.size !== "არ აქვს") {
+      setAccordionText(sizeBlock, `არჩეული ზომა: ${product.size}`);
+    }
+    if (product.benefits) setAccordionText(benefitsBlock, product.benefits, true);
+    else if (categoryId !== "harnesses" && benefitsBlock) benefitsBlock.hidden = true;
+    if (product.materialCare) setAccordionText(materialBlock, product.materialCare);
+    else if (categoryId !== "harnesses" && materialBlock) materialBlock.hidden = true;
+    setSelectedSize(product, categoryId, sizeBlock);
+    setAccordionTitle(sizeBlock, titles.size);
+    setAccordionTitle(benefitsBlock, titles.benefits);
+    setAccordionTitle(materialBlock, titles.material);
 
     const backLink = document.querySelector("a[href*='shop.html']");
     if (backLink) backLink.href = new URL("shop.html", baseUrl).href;

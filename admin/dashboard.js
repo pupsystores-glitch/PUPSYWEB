@@ -11,7 +11,25 @@ const collections = [
   { id: 'toys', file: 'toys.json', name: 'სათამაშოები', icon: 'gamepad-2', desc: 'ინტერაქტიული და რბილი სათამაშოები' },
 ];
 
+const categoryDetails = {
+  harnesses: {
+    sizeTitle: 'ზომები', benefitsTitle: 'მთავარი უპირატესობები', materialTitle: 'მასალა და მოვლა',
+    sizePlaceholder: 'მაგ: კისერი 27–42 სმ; მკერდი 38–55 სმ',
+    defaults: {
+      size: 'ძალიან პატარა\nკისრის გარშემოწერილობა: 18–32 სმ | 7–12.5 დუიმი\nმუცლის გარშემოწერილობა: 32–40 სმ | 12.5–15.5 დუიმი\n\nპატარა\nკისრის გარშემოწერილობა: 27–42 სმ | 10.5–16.5 დუიმი\nმუცლის გარშემოწერილობა: 38–55 სმ | 15–21.5 დუიმი\n\nსაშუალო\nკისრის გარშემოწერილობა: 34–52 სმ | 13–20 დუიმი\nმუცლის გარშემოწერილობა: 47–70 სმ | 18.5–27.5 დუიმი\n\nდიდი\nკისრის გარშემოწერილობა: 45–62 სმ | 17.5–24 დუიმი\nმუცლის გარშემოწერილობა: 62–95 სმ | 24–37 დუიმი\n\nთუ ზომებს შორის ხართ, აირჩიეთ უფრო დიდი ზომა.\nდიდი ზომის ძაღლებისთვის, რომლებიც ქაჩავენ, წელსამაგრს არ გირჩევთ.\nზომების ყველა გზამკვლევი: guide.html',
+      benefits: 'რატომ მოგეწონებათ:\nსუნთქვადი და რბილი საფენი მკერდის არეში\nრეგულირების ოთხი წერტილი ზუსტი და კომფორტული მორგებისთვის\nY-ს ფორმის წინა ნაწილი კისერზე ზეწოლის გარეშე\nღია ოქროსფერი D-რგოლი დახვეწილი იერისთვის\nფერადი შესაკრავები სუფთა და თანამედროვე იერს ქმნის',
+      material: 'დამზადებულია პრემიუმ ნეილონის თასმებისა და რბილი, სუნთქვადი მიტონგის ქსოვილისგან.',
+    },
+  },
+  collars: { sizeTitle: 'საყელურის ზომები', benefitsTitle: 'მთავარი უპირატესობები', materialTitle: 'მასალა და მოვლა', sizePlaceholder: 'მიუთითე კისრის გარშემოწერილობა და საყელურის სიგანე.' },
+  leashes: { sizeTitle: 'საბელის ზომები და სიგრძე', benefitsTitle: 'მთავარი უპირატესობები', materialTitle: 'მასალა და მოვლა', sizePlaceholder: 'მიუთითე საბელის სიგრძე და სიგანე.' },
+  accessories: { sizeTitle: 'ზომა და მახასიათებლები', benefitsTitle: 'მთავარი უპირატესობები', materialTitle: 'მასალა და მოვლა', sizePlaceholder: 'მიუთითე პროდუქტის ზომა ან სხვა მახასიათებელი.' },
+  'hygiene-care': { sizeTitle: 'მოცულობა და გამოყენება', benefitsTitle: 'მახასიათებლები', materialTitle: 'შემადგენლობა და გამოყენება', sizePlaceholder: 'მიუთითე მოცულობა, ზომა ან გამოყენების დოზა.' },
+  toys: { sizeTitle: 'ზომა და მახასიათებლები', benefitsTitle: 'თამაშის უპირატესობები', materialTitle: 'მასალა და მოვლა', sizePlaceholder: 'მიუთითე სათამაშოს ზომა და შინაური ცხოველის შესაბამისი ზომა.' },
+};
+
 let activeCollectionId = 'collars';
+let detailFieldsCollectionId = null;
 let currentLayout = 'list';
 let products = [];
 let mediaFiles = [];
@@ -116,6 +134,9 @@ function productFromRaw(raw, collection, index) {
     price: Number(raw.price || 0),
     size: raw.size || (Array.isArray(raw.attributes) ? raw.attributes.join(', ') : 'არ აქვს'),
     colors: Array.isArray(raw.colors) ? raw.colors : [],
+    sizeDetails: raw.sizeDetails || '',
+    benefits: raw.benefits || '',
+    materialCare: raw.materialCare || '',
     image,
     desc: raw.description || '',
     raw,
@@ -279,7 +300,10 @@ function openAddProductModal() {
   document.getElementById('product-form').reset();
   document.getElementById('form-product-id').value = '';
   document.getElementById('form-product-collection').value = activeCollectionId;
+  detailFieldsCollectionId = null;
+  updateCategoryDetailFields();
   document.getElementById('form-image-preview').src = 'https://placehold.co/100x100/1e293b/94a3b8?text=IMG';
+  document.body.classList.add('modal-open');
   document.getElementById('product-modal').classList.remove('hidden');
 }
 
@@ -316,12 +340,50 @@ function openEditProductModal(id) {
     document.getElementById(`form-product-link-${index + 1}`).value = url;
   });
   document.getElementById('form-product-desc').value = product.desc || '';
+  const defaults = categoryDetails[product.collectionId]?.defaults || {};
+  document.getElementById('form-product-size-details').value = product.sizeDetails || defaults.size || '';
+  document.getElementById('form-product-benefits').value = product.benefits || defaults.benefits || '';
+  document.getElementById('form-product-material-care').value = product.materialCare || defaults.material || '';
+  detailFieldsCollectionId = product.collectionId;
+  updateCategoryDetailFields();
   updateModalImagePreview();
+  document.body.classList.add('modal-open');
   document.getElementById('product-modal').classList.remove('hidden');
 }
 
-function closeProductModal() { document.getElementById('product-modal').classList.add('hidden'); }
+function closeProductModal() {
+  document.getElementById('product-modal').classList.add('hidden');
+  document.body.classList.remove('modal-open');
+}
 function closeModal() { closeProductModal(); }
+
+function updateCategoryDetailFields() {
+  const collectionId = document.getElementById('form-product-collection').value;
+  const settings = categoryDetails[collectionId] || categoryDetails.accessories;
+  document.getElementById('form-product-size-details-label').textContent = settings.sizeTitle;
+  document.getElementById('form-product-benefits-label').textContent = settings.benefitsTitle;
+  document.getElementById('form-product-material-label').textContent = settings.materialTitle;
+  document.getElementById('form-product-size-details').placeholder = settings.sizePlaceholder;
+
+  if (!document.getElementById('form-product-id').value && detailFieldsCollectionId && detailFieldsCollectionId !== collectionId) {
+    const previousDefaults = categoryDetails[detailFieldsCollectionId]?.defaults || {};
+    const nextDefaults = settings.defaults || {};
+    const fields = [
+      ['form-product-size-details', previousDefaults.size || '', nextDefaults.size || ''],
+      ['form-product-benefits', previousDefaults.benefits || '', nextDefaults.benefits || ''],
+      ['form-product-material-care', previousDefaults.material || '', nextDefaults.material || ''],
+    ];
+    fields.forEach(([id, previous, next]) => {
+      const field = document.getElementById(id);
+      if (!field.value.trim() || field.value === previous) field.value = next;
+    });
+  } else if (!document.getElementById('form-product-id').value && !detailFieldsCollectionId) {
+    document.getElementById('form-product-size-details').value = settings.defaults?.size || '';
+    document.getElementById('form-product-benefits').value = settings.defaults?.benefits || '';
+    document.getElementById('form-product-material-care').value = settings.defaults?.material || '';
+  }
+  detailFieldsCollectionId = collectionId;
+}
 
 function updateModalImagePreview() {
   const selectedFile = document.getElementById('form-product-files').files[0];
@@ -347,6 +409,15 @@ function productToRaw(product, collection, values, isNew) {
   raw.description = values.desc;
   raw.size = values.size;
   raw.colors = values.colors;
+  raw.sizeDetails = values.sizeDetails;
+  raw.benefits = values.benefits;
+  raw.materialCare = values.materialCare;
+  const detailSettings = categoryDetails[collection.id] || categoryDetails.accessories;
+  raw.detailsLabels = {
+    size: detailSettings.sizeTitle,
+    benefits: detailSettings.benefitsTitle,
+    material: detailSettings.materialTitle,
+  };
   raw.published = raw.published ?? true;
   const photos = [];
   if (values.uploadedImages.length) photos.push({ source: 'gallery', images: values.uploadedImages });
@@ -394,6 +465,9 @@ async function saveProductForm(event) {
       uploadedImages,
       imageLinks,
       desc: document.getElementById('form-product-desc').value.trim(),
+      sizeDetails: document.getElementById('form-product-size-details').value.trim(),
+      benefits: document.getElementById('form-product-benefits').value.trim(),
+      materialCare: document.getElementById('form-product-material-care').value.trim(),
     };
     const raw = productToRaw(existing, targetCollection, values, !existing);
     if (existing && existing.collectionId !== targetId) {
