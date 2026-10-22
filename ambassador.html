@@ -14452,7 +14452,7 @@
 
 
                       <div class="menu__item  child">
-                        <a href="https://furlou.myshopify.com/a/buzzbassador/ambassador-page" data-top-link="" class="navlink navlink--toplevel">
+                        <a href="ambassador.html" data-top-link="" class="navlink navlink--toplevel">
                           <span class="navtext">ამბასადორები</span>
                         </a>
 
@@ -14615,7 +14615,7 @@
                             </div>
                             <div class="sliderule__wrapper">
                               <div class="sliderow" role="button" data-animates="0" data-animation="drawer-items-fade" data-animation-delay="900" data-animation-duration="500">
-                                <a class="sliderow__title" href="https://furlou.myshopify.com/a/buzzbassador/ambassador-page">
+                                <a class="sliderow__title" href="ambassador.html">
                                   <span>ამბასადორები</span>
                                 </a>
                               </div>
@@ -14867,7 +14867,7 @@
                             </div>
                             <div class="sliderule__wrapper">
                               <div class="sliderow" role="button" data-animates="0" data-animation="drawer-items-fade" data-animation-delay="900" data-animation-duration="500">
-                                <a class="sliderow__title" href="https://furlou.myshopify.com/a/buzzbassador/ambassador-page">
+                                <a class="sliderow__title" href="ambassador.html">
                                   <span>ამბასადორები</span>
                                 </a>
                               </div>
@@ -15232,6 +15232,193 @@ A true staple...">
   </div>
   <!-- END sections: group-pre-footer -->
 
+  <!-- Temporary ambassador video section. Add video URLs to the data-video-url attributes when ready. -->
+  <style>
+    .ambassador-video-section {
+      padding: 56px 24px;
+      background: #f7f2ee;
+      text-align: center;
+    }
+    .ambassador-video-section__inner { max-width: 1100px; margin: 0 auto; }
+    .ambassador-video-section__title { margin: 0 0 28px; color: #292321; }
+    .ambassador-video-section__grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 20px;
+    }
+    .ambassador-video-slot {
+      min-height: 220px;
+      display: grid;
+      align-content: center;
+      justify-items: center;
+      gap: 12px;
+      padding: 24px;
+      border-radius: 14px;
+      background: #a86f61;
+      color: #fff;
+      cursor: pointer;
+      border: 0;
+      font: inherit;
+      transition: transform .2s ease, box-shadow .2s ease;
+    }
+    .ambassador-video-slot:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(50, 35, 30, .16); }
+    .ambassador-video-slot:focus-visible { outline: 3px solid #292321; outline-offset: 4px; }
+    .ambassador-managed-video { min-height: 0; padding: 12px; }
+    .ambassador-managed-video video { width: 100%; aspect-ratio: 4 / 5; max-height: 380px; object-fit: cover; pointer-events: none; }
+    .ambassador-video-slot:nth-child(2) { background: #8d7167; }
+    .ambassador-video-slot__icon { font-size: 34px; line-height: 1; }
+    .ambassador-video-slot__label { font-size: 18px; font-weight: 600; }
+    @media (max-width: 640px) {
+      .ambassador-video-section { padding: 36px 18px; }
+      .ambassador-video-section__grid { grid-template-columns: 1fr; gap: 14px; }
+      .ambassador-video-slot { min-height: 190px; }
+    }
+    .ambassador-media-viewer[hidden] { display: none; }
+    .ambassador-media-viewer {
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+      display: grid;
+      grid-template-columns: 56px minmax(0, 1fr) 56px;
+      align-items: center;
+      justify-items: center;
+      gap: 18px;
+      padding: 24px;
+      background: rgba(8, 10, 18, .94);
+    }
+    .ambassador-media-viewer__content {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: min(100%, 1000px);
+      height: min(78vh, 720px);
+      overflow: hidden;
+      border-radius: 12px;
+      background: #a86f61;
+      color: #fff;
+    }
+    .ambassador-media-viewer__content video,
+    .ambassador-media-viewer__content img { width: 100%; height: 100%; object-fit: contain; }
+    .ambassador-media-viewer__placeholder { font-size: clamp(22px, 4vw, 34px); font-weight: 600; text-align: center; }
+    .ambassador-media-viewer__close,
+    .ambassador-media-viewer__nav {
+      display: grid;
+      place-items: center;
+      width: 48px;
+      height: 48px;
+      border: 1px solid rgba(255,255,255,.35);
+      border-radius: 50%;
+      background: rgba(255,255,255,.95);
+      color: #222;
+      font: 32px/1 Arial, sans-serif;
+      cursor: pointer;
+    }
+    .ambassador-media-viewer__close { position: absolute; top: 18px; right: 18px; z-index: 1; }
+    @media (max-width: 600px) {
+      .ambassador-media-viewer { grid-template-columns: 42px minmax(0, 1fr) 42px; gap: 8px; padding: 12px; }
+      .ambassador-media-viewer__content { height: 72vh; }
+      .ambassador-media-viewer__nav { width: 42px; height: 42px; }
+      .ambassador-media-viewer__close { top: 10px; right: 10px; }
+    }
+  </style>
+  <section class="ambassador-video-section" aria-labelledby="ambassador-video-title">
+    <div class="ambassador-video-section__inner">
+      <h2 class="ambassador-video-section__title" id="ambassador-video-title">ამბასადორების ვიდეოები</h2>
+      <div class="ambassador-video-section__grid">
+        <button type="button" class="ambassador-video-slot" data-video-slot="1" data-video-url="" aria-label="ვიდეოს გადიდება">
+          <span class="ambassador-video-slot__icon" aria-hidden="true">▶</span>
+          <span class="ambassador-video-slot__label">ვიდეო მალე დაემატება</span>
+        </button>
+        <button type="button" class="ambassador-video-slot" data-video-slot="2" data-video-url="" aria-label="ვიდეოს გადიდება">
+          <span class="ambassador-video-slot__icon" aria-hidden="true">▶</span>
+          <span class="ambassador-video-slot__label">ვიდეო მალე დაემატება</span>
+        </button>
+      </div>
+    </div>
+  </section>
+  <div class="ambassador-media-viewer" id="ambassador-media-viewer" role="dialog" aria-modal="true" aria-label="ამბასადორების მედია" hidden>
+    <button class="ambassador-media-viewer__close" type="button" aria-label="დახურვა">×</button>
+    <button class="ambassador-media-viewer__nav" type="button" data-viewer-step="-1" aria-label="წინა">‹</button>
+    <div class="ambassador-media-viewer__content" aria-live="polite"></div>
+    <button class="ambassador-media-viewer__nav" type="button" data-viewer-step="1" aria-label="შემდეგი">›</button>
+  </div>
+  <script>
+    (() => {
+      const getSlots = () => [...document.querySelectorAll('.ambassador-video-slot')];
+      const viewer = document.getElementById('ambassador-media-viewer');
+      const content = viewer?.querySelector('.ambassador-media-viewer__content');
+      if (!viewer || !content) return;
+      let activeIndex = 0;
+      let lastFocused = null;
+
+      const render = () => {
+        const slots = getSlots();
+        const slot = slots[activeIndex];
+        if (!slot) return;
+        const videoUrl = slot.dataset.videoUrl;
+        const imageUrl = slot.dataset.imageUrl;
+        content.replaceChildren();
+        if (videoUrl) {
+          const video = document.createElement('video');
+          video.src = videoUrl;
+          video.controls = true;
+          video.autoplay = true;
+          video.playsInline = true;
+          content.append(video);
+        } else if (imageUrl) {
+          const image = document.createElement('img');
+          image.src = imageUrl;
+          image.alt = slot.querySelector('.ambassador-video-slot__label')?.textContent || '';
+          content.append(image);
+        } else {
+          content.style.backgroundColor = getComputedStyle(slot).backgroundColor;
+          const placeholder = document.createElement('span');
+          placeholder.className = 'ambassador-media-viewer__placeholder';
+          placeholder.textContent = slot.querySelector('.ambassador-video-slot__label')?.textContent || 'ვიდეო მალე დაემატება';
+          content.append(placeholder);
+        }
+      };
+      const open = (index) => {
+        const slots = getSlots();
+        if (!slots.length) return;
+        activeIndex = index;
+        lastFocused = document.activeElement;
+        render();
+        viewer.hidden = false;
+        document.body.style.overflow = 'hidden';
+        viewer.querySelector('.ambassador-media-viewer__close').focus();
+      };
+      const close = () => {
+        viewer.hidden = true;
+        content.querySelector('video')?.pause();
+        document.body.style.overflow = '';
+        lastFocused?.focus();
+      };
+      document.querySelector('.ambassador-video-section__grid')?.addEventListener('click', (event) => {
+        const slot = event.target.closest('.ambassador-video-slot');
+        if (slot) open(getSlots().indexOf(slot));
+      });
+      viewer.querySelector('.ambassador-media-viewer__close').addEventListener('click', close);
+      viewer.querySelectorAll('[data-viewer-step]').forEach((button) => button.addEventListener('click', () => {
+        const slots = getSlots();
+        if (!slots.length) return;
+        activeIndex = (activeIndex + Number(button.dataset.viewerStep) + slots.length) % slots.length;
+        render();
+      }));
+      viewer.addEventListener('click', (event) => { if (event.target === viewer) close(); });
+      document.addEventListener('keydown', (event) => {
+        if (viewer.hidden) return;
+        if (event.key === 'Escape') close();
+        if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+          const slots = getSlots();
+          if (!slots.length) return;
+          activeIndex = (activeIndex + (event.key === 'ArrowRight' ? 1 : -1) + slots.length) % slots.length;
+          render();
+        }
+      });
+    })();
+  </script>
+
   <footer class="footer-sections">
     <!-- BEGIN sections: group-footer -->
     <div id="shopify-section-sections--20657885511868__footer" class="shopify-section shopify-section-group-group-footer"><!-- /sections/footer.liquid -->
@@ -15278,7 +15465,7 @@ A true staple...">
                     <li><a href="/pages/about">ჩვენ შესახებ</a></li>
                     
                     
-                    <li><a href="https://furlou.myshopify.com/a/buzzbassador/ambassador-page">ამბასადორები</a></li>
+                    <li><a href="ambassador.html">ამბასადორები</a></li>
                   </ul>
                 </div>
               </details>
@@ -24303,4 +24490,5 @@ This shoot with @pollycreativestudios was such a fun one, and we have so much mo
 })();
 </script>
 
+<script defer src="js/page-videos.js?v=1"></script>
 <script defer src="js/remove-header-icons.js?v=1"></script></body></html>

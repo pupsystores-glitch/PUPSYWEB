@@ -240,6 +240,60 @@
     }
   }
 
+  function setProductVideo(product) {
+    document.querySelector(".cms-product-video")?.remove();
+    const value = String(product.videoUrl || "").trim();
+    const gallery = document.querySelector(".product__slides[data-product-media-list]");
+    const productImagesElement = gallery?.closest("product-images");
+    if (!value || !productImagesElement) return;
+
+    let url;
+    try {
+      url = new URL(value, baseUrl);
+      if (url.protocol !== "https:" && url.protocol !== "http:") return;
+      url.protocol = "https:";
+    } catch (_) {
+      return;
+    }
+
+    const host = url.hostname.replace(/^www\./, "").toLowerCase();
+    let embedUrl = "";
+    if (["youtube.com", "m.youtube.com", "youtube-nocookie.com"].includes(host) || host === "youtu.be") {
+      const videoId = host === "youtu.be"
+        ? url.pathname.split("/").filter(Boolean)[0]
+        : (url.searchParams.get("v") || url.pathname.match(/\/(?:embed|shorts|live)\/([^/?]+)/)?.[1]);
+      if (videoId) embedUrl = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}`;
+    } else if (host === "vimeo.com" || host === "player.vimeo.com") {
+      const videoId = url.pathname.match(/\/(?:video\/)?(\d+)/)?.[1];
+      if (videoId) embedUrl = `https://player.vimeo.com/video/${videoId}`;
+    }
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "cms-product-video";
+    wrapper.style.cssText = "position:relative;width:100%;margin-top:16px;overflow:hidden;border-radius:var(--radius, 12px);background:#111;aspect-ratio:16/9";
+    if (/\.(mp4|webm|ogg)(?:$|[?#])/i.test(url.href)) {
+      const video = document.createElement("video");
+      video.src = url.href;
+      video.controls = true;
+      video.playsInline = true;
+      video.preload = "metadata";
+      video.style.cssText = "display:block;width:100%;height:100%;object-fit:contain";
+      wrapper.append(video);
+    } else {
+      const frame = document.createElement("iframe");
+      frame.src = embedUrl || url.href;
+      frame.title = `${product.title || "Product"} video`;
+      frame.loading = "lazy";
+      frame.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
+      frame.allowFullscreen = true;
+      frame.referrerPolicy = "strict-origin-when-cross-origin";
+      frame.setAttribute("sandbox", "allow-scripts allow-same-origin allow-presentation");
+      frame.style.cssText = "position:absolute;inset:0;width:100%;height:100%;border:0";
+      wrapper.append(frame);
+    }
+    gallery.insertAdjacentElement("afterend", wrapper);
+  }
+
   function findAccordion(selector) {
     return [...document.querySelectorAll(".product__content .product__block--accordion")]
       .find((item) => selector.test(item.querySelector("summary")?.textContent || ""));
@@ -422,6 +476,7 @@
 
     setSelectedColors(product);
     setGallery(product);
+    setProductVideo(product);
     const accordions = productAccordions();
     setAccordion(/აღწერა/, String(product.description || "აღწერა დამატებული არ არის.").split(/\n{2,}/).map((s) => s.trim()).filter(Boolean));
     const collectionPath = catalogFiles.find((catalog) => catalog.category === product.category)?.path || "";

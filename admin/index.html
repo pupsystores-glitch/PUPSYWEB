@@ -136,6 +136,10 @@
                     <i data-lucide="image" class="w-3.5 h-3.5"></i>
                     <span>მედია</span>
                 </button>
+                <button id="tab-videos-btn" onclick="switchMainTab('videos')" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 text-slate-400 hover:text-white transition-all">
+                    <i data-lucide="video" class="w-3.5 h-3.5"></i>
+                    <span>ვიდეოები</span>
+                </button>
             </div>
 
             <!-- User Avatar -->
@@ -282,6 +286,39 @@
             </div>
         </div>
 
+        <div id="videos-view" class="hidden space-y-5">
+            <section class="glass-card rounded-2xl border border-slate-800 p-5 space-y-4">
+                <div>
+                    <h2 class="text-base font-bold text-white">ვიდეოების სექციები</h2>
+                    <p class="mt-1 text-xs text-slate-400">აირჩიე გვერდი, ჩასვი პირდაპირი ვიდეოს ბმული და მიუთითე მოკლე ტექსტი, რომელიც ვიდეოს ქვემოთ გამოჩნდება.</p>
+                </div>
+                <div>
+                    <label for="page-videos-page" class="mb-1 block text-xs font-semibold text-slate-300">გვერდი</label>
+                    <select id="page-videos-page" onchange="renderPageVideos()" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-xs text-slate-100 focus:border-indigo-500 focus:outline-none">
+                        <option value="index.html">მთავარი გვერდი</option>
+                        <option value="about.html">ჩვენ შესახებ</option>
+                        <option value="ambassador.html">ამბასადორები</option>
+                    </select>
+                </div>
+                <div id="page-videos-list" class="space-y-2"></div>
+                <form id="page-video-form" onsubmit="savePageVideo(event)" class="space-y-3 border-t border-slate-800 pt-4">
+                    <input type="hidden" id="page-video-id">
+                    <div>
+                        <label for="page-video-url" class="mb-1 block text-xs font-semibold text-slate-300">ვიდეოს პირდაპირი ბმული</label>
+                        <input id="page-video-url" type="url" required placeholder="https://...mp4 ან .mov" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label for="page-video-caption" class="mb-1 block text-xs font-semibold text-slate-300">მოკლე ტექსტი ვიდეოს ქვემოთ</label>
+                        <input id="page-video-caption" type="text" required maxlength="120" placeholder="მაგალითად: @furlou_" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none">
+                    </div>
+                    <div class="flex justify-end gap-2">
+                        <button id="page-video-cancel" type="button" onclick="resetPageVideoForm()" class="hidden rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-400 hover:text-white">გაუქმება</button>
+                        <button id="page-video-submit" type="submit" class="rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-indigo-500">ვიდეოს დამატება</button>
+                    </div>
+                </form>
+            </section>
+        </div>
+
     </main>
 
     <!-- Modal Dialog: Add / Edit Product -->
@@ -384,6 +421,13 @@
                     </div>
                 </div>
 
+                <div>
+                    <label for="form-product-video" class="block text-xs font-semibold text-slate-300 mb-1">ვიდეოს ბმული (არასავალდებულო)</label>
+                    <input type="url" id="form-product-video" placeholder="YouTube, Vimeo ან MP4-ის ბმული (https://...)"
+                           class="w-full px-3.5 py-2.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-all">
+                    <p class="text-[10px] text-slate-500 mt-1">ვიდეო პროდუქტის გვერდზე ფოტოებთან ერთად გამოჩნდება.</p>
+                </div>
+
                 <!-- Description -->
                 <div>
                     <label class="block text-xs font-semibold text-slate-300 mb-1">აღწერა</label>
@@ -416,7 +460,7 @@
                     <button type="button" onclick="closeProductModal()" class="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:bg-slate-800 transition-all">
                         გაუქმება
                     </button>
-                    <button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 active:scale-95 transition-all">
+                    <button id="product-submit-button" type="submit" class="px-5 py-2.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 active:scale-95 transition-all">
                         ატვირთვა
                     </button>
                 </div>
@@ -425,6 +469,6 @@
     </div>
 
     <!-- Application JavaScript State & Controller -->
-    <script src="dashboard.js?v=7"></script>
+    <script src="dashboard.js?v=8"></script>
 </body>
 </html>

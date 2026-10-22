@@ -34,6 +34,7 @@ let currentLayout = 'list';
 let products = [];
 let mediaFiles = [];
 let collectionFiles = {};
+let pageVideosData = { pages: {} };
 const stagedProductImageUploads = new Map();
 let accessToken = sessionStorage.getItem('pupsy_github_token') || '';
 let authPopup = null;
@@ -106,6 +107,8 @@ async function initializeDashboard() {
   }));
   products = results.flat();
   try { mediaFiles = await loadMediaFiles(); } catch { mediaFiles = []; }
+  const pageVideosFile = await githubFile('content/page-videos.json');
+  pageVideosData = pageVideosFile.data || { pages: {} };
 
   const firstWithProducts = collections.find(collection => products.some(product => product.collectionId === collection.id));
   if (!products.some(product => product.collectionId === activeCollectionId) && firstWithProducts) {
@@ -114,6 +117,7 @@ async function initializeDashboard() {
   populateModalCollectionSelect();
   selectCollection(activeCollectionId);
   renderMediaGallery();
+  renderPageVideos();
   document.getElementById('auth-screen').classList.add('hidden');
   lucide.createIcons();
 }
@@ -224,17 +228,123 @@ async function loadMediaFiles() {
 }
 
 function switchMainTab(tab) {
-  const contentsView = document.getElementById('contents-view');
-  const mediaView = document.getElementById('media-view');
-  const contentsButton = document.getElementById('tab-contents-btn');
-  const mediaButton = document.getElementById('tab-media-btn');
   const selected = 'px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all bg-indigo-600 text-white active-tab-glow';
   const idle = 'px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 text-slate-400 hover:text-white transition-all';
-  const showMedia = tab === 'media';
-  contentsView.classList.toggle('hidden', showMedia);
-  mediaView.classList.toggle('hidden', !showMedia);
-  contentsButton.className = showMedia ? idle : selected;
-  mediaButton.className = showMedia ? selected : idle;
+  ['contents', 'media', 'videos'].forEach(view => {
+    document.getElementById(`${view}-view`).classList.toggle('hidden', view !== tab);
+    document.getElementById(`tab-${view}-btn`).className = view === tab ? selected : idle;
+  });
+}
+
+function currentVideoPage() {
+  return document.getElementById('page-videos-page').value;
+}
+
+function pageVideoList() {
+  const page = currentVideoPage();
+  pageVideosData.pages ||= {};
+  pageVideosData.pages[page] ||= [];
+  return pageVideosData.pages[page];
+}
+
+function renderPageVideos() {
+  const container = document.getElementById('page-videos-list');
+  if (!container) return;
+  const videos = pageVideoList();
+  container.replaceChildren();
+  if (!videos.length) {
+    const empty = document.createElement('p');
+    empty.className = 'rounded-xl border border-dashed border-slate-800 px-4 py-5 text-center text-xs text-slate-500';
+    empty.textContent = 'ამ გვერდზე დამატებული ვიდეო ჯერ არ არის.';
+    container.append(empty);
+    return;
+  }
+  videos.forEach(video => {
+    const row = document.createElement('div');
+    row.className = 'flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-3';
+    const details = document.createElement('div');
+    details.className = 'min-w-0 flex-1';
+    const caption = document.createElement('p');
+    caption.className = 'truncate text-xs font-semibold text-slate-200';
+    caption.textContent = video.caption;
+    const url = document.createElement('p');
+    url.className = 'truncate text-[10px] text-slate-500';
+    url.textContent = video.url;
+    details.append(caption, url);
+    const edit = document.createElement('button');
+    edit.type = 'button';
+    edit.className = 'rounded-lg px-2.5 py-2 text-[10px] font-semibold text-indigo-300 hover:bg-slate-800';
+    edit.textContent = 'კორექტირება';
+    edit.addEventListener('click', () => editPageVideo(video.id));
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'rounded-lg px-2.5 py-2 text-[10px] font-semibold text-rose-300 hover:bg-slate-800';
+    remove.textContent = 'წაშლა';
+    remove.addEventListener('click', () => deletePageVideo(video.id));
+    row.append(details, edit, remove);
+    container.append(row);
+  });
+}
+
+function editPageVideo(id) {
+  const video = pageVideoList().find(item => item.id === id);
+  if (!video) return;
+  document.getElementById('page-video-id').value = video.id;
+  document.getElementById('page-video-url').value = video.url;
+  document.getElementById('page-video-caption').value = video.caption;
+  document.getElementById('page-video-submit').textContent = 'ცვლილების შენახვა';
+  document.getElementById('page-video-cancel').classList.remove('hidden');
+  document.getElementById('page-video-url').focus();
+}
+
+function resetPageVideoForm() {
+  document.getElementById('page-video-form').reset();
+  document.getElementById('page-video-id').value = '';
+  document.getElementById('page-video-submit').textContent = 'ვიდეოს დამატება';
+  document.getElementById('page-video-cancel').classList.add('hidden');
+}
+
+async function savePageVideo(event) {
+  event.preventDefault();
+  const url = document.getElementById('page-video-url').value.trim();
+  const caption = document.getElementById('page-video-caption').value.trim();
+  let parsedUrl;
+  try { parsedUrl = new URL(url); } catch { return showToast('შეიყვანე სწორი ვიდეოს ბმული.'); }
+  if (parsedUrl.protocol !== 'https:') return showToast('ვიდეოს ბმული უნდა იწყებოდეს https://-ით.');
+  const page = currentVideoPage();
+  const previous = JSON.stringify(pageVideosData);
+  const videos = pageVideoList();
+  const id = document.getElementById('page-video-id').value;
+  if (id) {
+    const existing = videos.find(video => video.id === id);
+    if (existing) Object.assign(existing, { url, caption });
+  } else {
+    videos.push({ id: crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`, url, caption });
+  }
+  await persistPageVideos(previous);
+}
+
+async function deletePageVideo(id) {
+  const previous = JSON.stringify(pageVideosData);
+  pageVideosData.pages[currentVideoPage()] = pageVideoList().filter(video => video.id !== id);
+  await persistPageVideos(previous);
+}
+
+async function persistPageVideos(previous) {
+  const button = document.getElementById('page-video-submit');
+  button.disabled = true;
+  try {
+    await commitJson('content/page-videos.json', pageVideosData);
+    resetPageVideoForm();
+    renderPageVideos();
+    showToast('ვიდეოების სექცია განახლდა.');
+  } catch (error) {
+    pageVideosData = JSON.parse(previous);
+    renderPageVideos();
+    showToast(error.message || 'ვიდეო ვერ შეინახა.');
+  } finally {
+    button.disabled = false;
+  }
 }
 
 function renderCollectionChips(filteredCollections = null) {
@@ -310,6 +420,7 @@ function setProductLayout(layout) {
 
 function openAddProductModal() {
   document.getElementById('modal-title').textContent = 'ახალი პროდუქტის დამატება';
+  document.getElementById('product-submit-button').textContent = 'ატვირთვა';
   document.getElementById('product-form').reset();
   resetProductSaveStatus();
   stagedProductImageUploads.clear();
@@ -329,10 +440,12 @@ function openEditProductModal(id) {
   resetProductSaveStatus();
   stagedProductImageUploads.clear();
   document.getElementById('modal-title').textContent = 'პროდუქტის რედაქტირება';
+  document.getElementById('product-submit-button').textContent = 'კორექტირება';
   document.getElementById('form-product-id').value = product.id;
   document.getElementById('form-product-title').value = product.title;
   document.getElementById('form-product-collection').value = product.collectionId;
   document.getElementById('form-product-price').value = product.price;
+  document.getElementById('form-product-video').value = product.raw.videoUrl || '';
   const sizeSelect = document.getElementById('form-product-size');
   if (product.size && ![...sizeSelect.options].some(option => option.value === product.size)) {
     sizeSelect.add(new Option(product.size, product.size, true, true), 1);
@@ -431,6 +544,7 @@ function productToRaw(product, collection, values, isNew) {
   if (isNew || raw.slug) raw.slug = raw.slug || `product-${Date.now()}`;
   raw.price = values.price;
   raw.description = values.desc;
+  raw.videoUrl = values.videoUrl;
   raw.size = values.size;
   raw.colors = values.colors;
   raw.sizeDetails = values.sizeDetails;
@@ -475,11 +589,12 @@ async function saveProductForm(event) {
   const saveButton = event.submitter;
   const status = document.getElementById('product-save-status');
   const isEditing = Boolean(document.getElementById('form-product-id').value);
+  const actionLabel = isEditing ? 'კორექტირება' : 'ატვირთვა';
   const setSaveStatus = (message, isError = false) => {
     status.textContent = message;
     status.className = `rounded-xl border px-3.5 py-3 text-xs leading-relaxed ${isError ? 'border-rose-500/40 bg-rose-500/10 text-rose-200' : 'border-indigo-500/30 bg-indigo-500/10 text-indigo-200'}`;
   };
-  if (saveButton) { saveButton.disabled = true; saveButton.textContent = 'იტვირთება…'; }
+  if (saveButton) { saveButton.disabled = true; saveButton.textContent = isEditing ? 'კორექტირდება…' : 'იტვირთება…'; }
   setSaveStatus('მონაცემები მზადდება…');
   try {
     const id = document.getElementById('form-product-id').value;
@@ -509,6 +624,7 @@ async function saveProductForm(event) {
       colors: [...document.querySelectorAll('#form-product-colors input[type="checkbox"]:checked')].map(input => input.value),
       uploadedImages,
       imageLinks,
+      videoUrl: document.getElementById('form-product-video').value.trim(),
       desc: document.getElementById('form-product-desc').value.trim(),
       sizeDetails: document.getElementById('form-product-size-details').value.trim(),
       benefits: document.getElementById('form-product-benefits').value.trim(),
@@ -545,7 +661,7 @@ async function saveProductForm(event) {
     setSaveStatus(`ვერ აიტვირთა: ${message} მონაცემები ფორმაში დარჩა — შეასწორე პრობლემა და თავიდან სცადე.`, true);
     showToast(message, 'error', 9000);
   } finally {
-    if (saveButton) { saveButton.disabled = false; saveButton.textContent = 'ატვირთვა'; }
+    if (saveButton) { saveButton.disabled = false; saveButton.textContent = actionLabel; }
   }
 }
 
