@@ -606,6 +606,7 @@ function productToRaw(product, collection, values, isNew) {
   const raw = { ...(product?.raw || {}) };
   const titleChanged = raw.title !== values.title;
   raw.category = collection.name;
+  raw.categoryId = collection.id;
   raw.title = values.title;
   if (isNew || !raw.slug || titleChanged || /^product-\d+$/.test(raw.slug)) {
     raw.slug = uniqueProductSlug(values.title, product?.id);

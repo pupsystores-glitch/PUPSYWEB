@@ -20,7 +20,7 @@
       box-sizing: border-box;
       margin: 0 auto 16px;
       padding: 18px 46px 18px 18px;
-      border: 1px solid #c09488 !important;
+      border: 1px solid #8A4D2E !important;
       border-radius: 8px;
       background: #eadbd7 !important;
       color: #3f302c !important;

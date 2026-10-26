@@ -8,12 +8,12 @@
 
   const baseUrl = new URL(".", document.baseURI);
   const catalogFiles = [
-    { path: "products/categories/harnesses.json", category: "წელსამაგრები" },
-    { path: "products/categories/collars.json", category: "საყელური" },
-    { path: "products/categories/leashes.json", category: "საბელი" },
-    { path: "products/categories/accessories.json", category: "აქსესუარები" },
-    { path: "products/categories/hygiene-care.json", category: "ჰიგიენა & მოვლა" },
-    { path: "products/categories/toys.json", category: "სათამაშოები" },
+    { id: "harnesses", path: "products/categories/harnesses.json", category: "წელსამაგრები" },
+    { id: "collars", path: "products/categories/collars.json", category: "საყელური" },
+    { id: "leashes", path: "products/categories/leashes.json", category: "საბელი" },
+    { id: "accessories", path: "products/categories/accessories.json", category: "აქსესუარები" },
+    { id: "hygiene-care", path: "products/categories/hygiene-care.json", category: "ჰიგიენა & მოვლა" },
+    { id: "toys", path: "products/categories/toys.json", category: "სათამაშოები" },
   ];
   const categoryDetailTitles = {
     harnesses: { size: "ზომები", benefits: "მთავარი უპირატესობები", material: "მასალა და მოვლა" },
@@ -307,13 +307,7 @@
   }
 
   function hideSizeIndicators(sizeBlock) {
-    const buttons = document.querySelector(".radio__buttons[data-variant-buttons]");
-    const selector = buttons?.closest(".radio__fieldset");
-    if (selector) {
-      selector.hidden = true;
-      selector.style.setProperty("display", "none", "important");
-      selector.querySelectorAll('input[type="radio"]').forEach((input) => { input.disabled = true; });
-    }
+    hideVariantSizeSelector();
     const sizeBlocks = new Set([
       sizeBlock,
       ...productAccordions().filter((block) => /ზომ|size|მოცულობა/i.test(block.querySelector("summary")?.textContent || "")),
@@ -323,6 +317,17 @@
       block.hidden = true;
       block.style.setProperty("display", "none", "important");
     });
+  }
+
+  function hideVariantSizeSelector() {
+    const buttons = document.querySelector(".radio__buttons[data-variant-buttons]");
+    const fieldset = buttons?.closest(".radio__fieldset");
+    const selector = fieldset?.closest(".product__block--lines") || fieldset;
+    if (selector) {
+      selector.hidden = true;
+      selector.style.setProperty("display", "none", "important");
+    }
+    buttons?.querySelectorAll('input[type="radio"]').forEach((input) => { input.disabled = true; });
   }
 
   function accordionContent(block) {
@@ -408,25 +413,17 @@
     const currentSize = String(product.size || "").trim();
     const hasNoSize = /არ\s*აქვს/i.test(currentSize);
     const hasSizeDetails = Boolean(String(product.sizeDetails || "").trim());
+    if (categoryId !== "harnesses") {
+      hideVariantSizeSelector();
+      if (sizeBlock && !hasSizeDetails && (hasNoSize || !currentSize)) sizeBlock.hidden = true;
+      return;
+    }
     if (hasNoSize) {
       hideSizeIndicators(sizeBlock);
       return;
     }
-    if (categoryId !== "harnesses") {
-      const selector = buttons?.closest(".radio__fieldset");
-      if (selector) {
-        selector.hidden = true;
-        selector.querySelectorAll('input[type="radio"]').forEach((input) => { input.disabled = true; });
-      }
-      if (sizeBlock) sizeBlock.hidden = !hasSizeDetails && (!currentSize || currentSize === "არ აქვს");
-      return;
-    }
     if (currentSize === "არ აქვს" || !currentSize) {
-      const selector = buttons?.closest(".radio__fieldset");
-      if (selector) {
-        selector.hidden = true;
-        selector.querySelectorAll('input[type="radio"]').forEach((input) => { input.disabled = true; });
-      }
+      hideVariantSizeSelector();
       if (sizeBlock) sizeBlock.hidden = !hasSizeDetails;
       return;
     }
@@ -492,20 +489,28 @@
     setProductVideo(product);
     const accordions = productAccordions();
     setAccordion(/აღწერა/, String(product.description || "აღწერა დამატებული არ არის.").split(/\n{2,}/).map((s) => s.trim()).filter(Boolean));
-    const collectionPath = catalogFiles.find((catalog) => catalog.category === product.category)?.path || "";
-    const categoryId = collectionPath.match(/categories\/([^/.]+)/)?.[1] || "harnesses";
+    const collection = catalogFiles.find((catalog) =>
+      catalog.id === product.categoryId || catalog.category === product.category
+    );
+    const categoryId = collection?.id || collection?.path.match(/categories\/([^/.]+)/)?.[1] || "harnesses";
     const titles = { ...categoryDetailTitles[categoryId], ...(product.detailsLabels || {}) };
     const sizeBlock = accordions[1] || findAccordion(/size/);
     const benefitsBlock = accordions[2] || findAccordion(/benefit/);
     const materialBlock = accordions[3] || findAccordion(/material/);
     const noSize = /არ\s*აქვს/i.test(String(product.size || "").trim());
-    if (noSize) hideSizeIndicators(sizeBlock);
-    else if (product.sizeDetails) setAccordionText(sizeBlock, product.sizeDetails);
-    else if (categoryId === "harnesses") {
-      const sizeContent = accordionContent(sizeBlock);
-      if (sizeContent) sizeContent.innerHTML = sizeGuideHtml;
-    } else if (product.size && product.size !== "არ აქვს") {
-      setAccordionText(sizeBlock, `არჩეული ზომა: ${product.size}`);
+    if (categoryId === "harnesses") {
+      if (noSize) hideSizeIndicators(sizeBlock);
+      else if (product.sizeDetails) setAccordionText(sizeBlock, product.sizeDetails);
+      else {
+        const sizeContent = accordionContent(sizeBlock);
+        if (sizeContent) sizeContent.innerHTML = sizeGuideHtml;
+      }
+    } else {
+      const sizeText = [!noSize && product.size ? `ზომა: ${product.size}` : "", product.sizeDetails]
+        .filter(Boolean)
+        .join("\n\n");
+      if (sizeText) setAccordionText(sizeBlock, sizeText);
+      else if (sizeBlock) sizeBlock.hidden = true;
     }
     if (product.benefits) setAccordionText(benefitsBlock, product.benefits, true);
     else if (categoryId !== "harnesses" && benefitsBlock) benefitsBlock.hidden = true;
@@ -517,14 +522,17 @@
     setAccordionTitle(materialBlock, titles.material);
 
     // Refresh accordion heights after injecting CMS content.
-    accordions.forEach((block, index) => {
+    accordions.forEach((block) => {
       const details = block.querySelector("[data-collapsible]");
       const body = details?.querySelector("[data-collapsible-body]");
       if (!details || !body || block.hidden) return;
-      const shouldOpen = index === 0;
-      details.setAttribute("open", String(shouldOpen));
-      body.style.height = shouldOpen ? "auto" : "";
+      details.removeAttribute("open");
+      body.style.height = "";
+      body.style.removeProperty("max-height");
+      body.style.removeProperty("overflow");
     });
+
+    window.initializePupsyReadMore?.(document);
 
     const backLink = document.querySelector("a[href*='shop.html']");
     if (backLink) backLink.href = new URL("shop.html", baseUrl).href;
@@ -540,6 +548,7 @@
         return (Array.isArray(data.products) ? data.products : []).map((product) => ({
           ...product,
           category: catalog.category,
+          categoryId: catalog.id,
         }));
       }));
       const product = catalogs.flat()
