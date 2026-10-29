@@ -9,8 +9,9 @@
 .cms-products__grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 22px 16px; }
 .cms-products__empty { padding: 24px 0; color: #716a63; }
 .cms-products__empty[hidden] { display: none; }
-.cms-product-card { display: block; color: inherit; text-decoration: none; }
+.cms-product-card { display: block; position: relative; color: inherit; text-decoration: none; }
 .cms-product-card__image { display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: cover; background: #f5f1ed; }
+.cms-product-card__badge { position: absolute; top: 10px; right: 10px; z-index: 2; padding: 7px 10px; border-radius: 999px; background: #8a4d2e; color: #fff; font-size: 11px; font-weight: 700; line-height: 1.2; text-align: center; box-shadow: 0 2px 8px rgba(40, 28, 20, .2); }
 .cms-product-card__details { display: flex; flex-direction: column; gap: 6px; padding-top: 12px; }
 .cms-product-card__title { font-size: 16px; }
 .cms-product-card__price { font-weight: 600; }

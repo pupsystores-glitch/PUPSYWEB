@@ -202,6 +202,7 @@ function productFromRaw(raw, collection, index) {
     collectionId: collection.id,
     title: raw.title || '',
     price: Number(raw.price || 0),
+    comingSoon: raw.comingSoon === true,
     size: raw.size || (Array.isArray(raw.attributes) ? raw.attributes.join(', ') : 'არ აქვს'),
     colors: Array.isArray(raw.colors) ? raw.colors : [],
     sizeDetails: raw.sizeDetails || '',
@@ -490,6 +491,7 @@ function openAddProductModal() {
   resetProductSaveStatus();
   stagedProductImageUploads.clear();
   document.getElementById('form-product-id').value = '';
+  document.getElementById('form-product-coming-soon').checked = false;
   document.getElementById('form-product-collection').value = activeCollectionId;
   detailFieldsCollectionId = null;
   updateCategoryDetailFields();
@@ -510,6 +512,7 @@ function openEditProductModal(id) {
   document.getElementById('form-product-title').value = product.title;
   document.getElementById('form-product-collection').value = product.collectionId;
   document.getElementById('form-product-price').value = product.price;
+  document.getElementById('form-product-coming-soon').checked = product.comingSoon === true;
   document.getElementById('form-product-video').value = product.raw.videoUrl || '';
   const sizeSelect = document.getElementById('form-product-size');
   if (product.size && ![...sizeSelect.options].some(option => option.value === product.size)) {
@@ -608,6 +611,7 @@ function productToRaw(product, collection, values, isNew) {
   raw.category = collection.name;
   raw.categoryId = collection.id;
   raw.title = values.title;
+  raw.comingSoon = values.comingSoon === true;
   if (isNew || !raw.slug || titleChanged || /^product-\d+$/.test(raw.slug)) {
     raw.slug = uniqueProductSlug(values.title, product?.id);
   }
@@ -690,6 +694,7 @@ async function saveProductForm(event) {
     const values = {
       title: document.getElementById('form-product-title').value.trim(),
       price: Number(document.getElementById('form-product-price').value),
+      comingSoon: document.getElementById('form-product-coming-soon').checked,
       size: document.getElementById('form-product-size').value,
       colors: [...document.querySelectorAll('#form-product-colors input[type="checkbox"]:checked')].map(input => input.value),
       uploadedImages,

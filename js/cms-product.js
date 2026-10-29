@@ -467,6 +467,18 @@
     const title = document.querySelector(".product__title [data-zoom-caption]") || document.querySelector(".product__title");
     if (title) title.textContent = product.title || "PUPSY პროდუქტი";
 
+    const titleWrapper = document.querySelector(".product__title__wrapper");
+    titleWrapper?.querySelector("[data-cms-coming-soon]")?.remove();
+    if (product.comingSoon === true && titleWrapper) {
+      const badge = document.createElement("span");
+      badge.dataset.cmsComingSoon = "";
+      badge.className = "cms-product-coming-soon";
+      badge.textContent = "მალე დაგვემატება";
+      badge.setAttribute("role", "status");
+      badge.style.cssText = "display:inline-flex;align-items:center;width:max-content;margin:8px 0 12px;padding:8px 14px;border-radius:999px;background:#8a4d2e;color:#fff;font-size:13px;font-weight:700;line-height:1.2;";
+      titleWrapper.append(badge);
+    }
+
     const price = document.querySelector("[data-product-price]");
     if (price) {
       const icon = price.querySelector("img");

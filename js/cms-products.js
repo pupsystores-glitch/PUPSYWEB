@@ -88,6 +88,14 @@
     image.loading = "lazy";
     card.append(image);
 
+    if (product.comingSoon === true) {
+      const badge = document.createElement("span");
+      badge.className = "cms-product-card__badge";
+      badge.textContent = "მალე დაგვემატება";
+      badge.setAttribute("role", "status");
+      card.append(badge);
+    }
+
     const details = document.createElement("span");
     details.className = "cms-product-card__details";
     const title = document.createElement("span");
