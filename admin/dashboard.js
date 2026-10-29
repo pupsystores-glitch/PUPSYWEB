@@ -354,23 +354,23 @@ function bindEditorFrame() {
       const anchor = event.target.closest('a[href]');
       const card = event.target.closest('.cms-product-card, [class*="product-card"], [class*="product-item"]')
         || anchor?.closest('.cms-product-card, [class*="product-card"], [class*="product-item"]');
-      const isProductLink = Boolean(anchor && (/product-pages\/|\/products?\//i.test(anchor.href) || card));
-      if (isProductLink && !event.editorParentPick) {
+      const isLink = Boolean(anchor);
+      if (isLink && !event.editorParentPick) {
         if (editorProductClick.href === anchor.href) editorProductClick.count += 1;
         else {
           clearTimeout(editorProductClick.timer);
           editorProductClick = { href: anchor.href, count: 1, timer: 0 };
         }
         clearTimeout(editorProductClick.timer);
-        if (editorProductClick.count < 3) {
+        if (editorProductClick.count < 5) {
           event.preventDefault();
           event.stopImmediatePropagation();
-          const remaining = 3 - editorProductClick.count;
-          document.getElementById('site-editor-status').textContent = `პროდუქტის გვერდის გასახსნელად კიდევ ${remaining} დაჭერა.`;
+          const remaining = 5 - editorProductClick.count;
+          document.getElementById('site-editor-status').textContent = `ლინკის გასახსნელად კიდევ ${remaining} დაჭერა.`;
           const currentHref = editorProductClick.href;
           editorProductClick.timer = setTimeout(() => {
             if (editorProductClick.href === currentHref) editorProductClick = { href: '', count: 0, timer: 0 };
-          }, 3000);
+          }, 5000);
         } else {
           clearTimeout(editorProductClick.timer);
           editorProductClick = { href: '', count: 0, timer: 0 };
