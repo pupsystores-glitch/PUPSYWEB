@@ -28,7 +28,9 @@
         }
       ],
       "image": "/PUPSYWEB/images/uploads/1792700233693-5c085778-6fc9-4ce8-9eb7-72e7458b2ccf-IMG_9279.png",
-      "videoUrl": ""
+      "videoUrl": "",
+      "categoryId": "accessories",
+      "comingSoon": true
     },
     {
       "category": "აქსესუარები",
