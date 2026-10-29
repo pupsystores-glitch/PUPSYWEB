@@ -20,7 +20,7 @@
       if (index > 0) {
         const logo = document.createElement("img");
         logo.className = "lari-currency-logo";
-        logo.src = new URL("Lari_logo.png", imageBase).href;
+        logo.src = new URL("Lari_logo_tight.png", imageBase).href;
         logo.alt = "GEL";
         logo.setAttribute("aria-label", "Georgian lari");
         fragment.append(logo);

@@ -485,10 +485,10 @@
       const icon = price.querySelector("img") || document.createElement("img");
       price.replaceChildren();
       icon.className = "lari-currency-logo cms-product-page__currency";
-      icon.src = assetUrl("images/Lari_logo.png");
+      icon.src = assetUrl("images/Lari_logo_tight.png");
       icon.alt = "";
       icon.setAttribute("aria-hidden", "true");
-      icon.style.cssText = "display:block;width:.82em;height:.82em;flex:0 0 .82em;object-fit:contain;margin:0;vertical-align:middle;transform:translateY(-1px);";
+      icon.style.cssText = "display:block;width:.9em;height:.9em;flex:0 0 .9em;object-fit:contain;margin:0;vertical-align:middle;";
       price.classList.add("cms-product-page__price");
       price.style.display = "inline-flex";
       price.style.alignItems = "center";

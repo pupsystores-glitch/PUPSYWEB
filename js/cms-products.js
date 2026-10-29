@@ -121,10 +121,10 @@
     price.className = "cms-product-card__price";
     const currency = document.createElement("img");
     currency.className = "lari-currency-logo cms-product-card__currency";
-    currency.src = new URL("images/Lari_logo.png", baseUrl).href;
+      currency.src = new URL("images/Lari_logo_tight.png", baseUrl).href;
     currency.alt = "";
     currency.setAttribute("aria-hidden", "true");
-    currency.style.cssText = "display:block;width:.82em;height:.82em;flex:0 0 .82em;margin:0;object-fit:contain;transform:translateY(-1px);";
+    currency.style.cssText = "display:block;width:.9em;height:.9em;flex:0 0 .9em;margin:0;object-fit:contain;";
     const amount = document.createElement("span");
     amount.style.cssText = "display:block;line-height:inherit;";
     amount.textContent = formatPrice(product.price);
