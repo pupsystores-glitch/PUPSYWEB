@@ -322,12 +322,24 @@ function initializeVoteStatsView() {
   view.innerHTML = '<section class="glass-card rounded-2xl border border-slate-800 p-5 space-y-4"><div class="flex items-start justify-between gap-3"><div><h2 class="text-base font-bold text-white">მალე დაგვემატება — ხმები</h2><p class="mt-1 text-xs text-slate-400">ხმები და მომხმარებლების საკონტაქტო ინფორმაცია.</p></div><button id="vote-stats-refresh" class="shrink-0 rounded-xl border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-800">განახლება</button></div><p id="vote-stats-status" class="text-xs text-slate-400">აირჩიეთ „განახლება“ მონაცემების ჩასატვირთად.</p><div id="vote-stats-products" class="space-y-2"></div><h3 class="pt-3 border-t border-slate-800 text-xs font-bold uppercase tracking-wider text-slate-300">შეტყობინების მოთხოვნები</h3><div id="vote-stats-leads" class="space-y-2"></div></section>';
   main.append(view);
   const contactedHeading = document.createElement('h3');
-  contactedHeading.className = 'pt-3 border-t border-slate-800 text-xs font-bold uppercase tracking-wider text-slate-300';
+  contactedHeading.className = 'flex items-center justify-between gap-3 border-t border-slate-800 pt-5 text-sm font-semibold text-slate-100';
   contactedHeading.textContent = 'უკვე დაკავშირებული';
+  const contactedCount = document.createElement('span');
+  contactedCount.id = 'vote-stats-contacted-count';
+  contactedCount.className = 'inline-flex min-w-8 justify-center rounded-full border border-emerald-800/70 bg-emerald-950/60 px-2.5 py-1 text-[11px] font-bold text-emerald-300';
+  contactedHeading.append(contactedCount);
   const contactedNode = document.createElement('div');
   contactedNode.id = 'vote-stats-contacted';
-  contactedNode.className = 'space-y-2';
-  document.getElementById('vote-stats-leads').parentElement.append(contactedHeading, contactedNode);
+  contactedNode.className = 'space-y-2.5';
+  const leadsNode = document.getElementById('vote-stats-leads');
+  const pendingHeading = leadsNode.previousElementSibling;
+  pendingHeading.className = 'flex items-center justify-between gap-3 border-t border-slate-800 pt-5 text-sm font-semibold text-slate-100';
+  const pendingCount = document.createElement('span');
+  pendingCount.id = 'vote-stats-pending-count';
+  pendingCount.className = 'inline-flex min-w-8 justify-center rounded-full border border-amber-800/70 bg-amber-950/50 px-2.5 py-1 text-[11px] font-bold text-amber-300';
+  pendingHeading.append(pendingCount);
+  leadsNode.className = 'space-y-2.5';
+  leadsNode.parentElement.append(contactedHeading, contactedNode);
   document.getElementById('vote-stats-refresh').addEventListener('click', loadVoteStats);
   if (window.lucide) lucide.createIcons();
 }
@@ -346,6 +358,9 @@ async function loadVoteStats() {
     productsNode.replaceChildren();
     leadsNode.replaceChildren();
     contactedNode.replaceChildren();
+    const leadItems = data.leads || [];
+    document.getElementById('vote-stats-pending-count').textContent = leadItems.filter(item => !item.contactedAt).length;
+    document.getElementById('vote-stats-contacted-count').textContent = leadItems.filter(item => item.contactedAt).length;
     (data.products || []).forEach(item => {
       const row = document.createElement('div');
       row.className = 'flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-3 text-xs';
@@ -365,30 +380,32 @@ async function loadVoteStats() {
     });
     (data.leads || []).forEach(item => {
       const row = document.createElement('div');
-      row.className = 'flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-3 text-xs';
+      const contacted = Boolean(item.contactedAt);
+      row.className = `group flex flex-wrap items-center gap-3 rounded-2xl border p-3 text-xs transition-colors sm:flex-nowrap sm:p-4 ${contacted ? 'border-emerald-900/60 bg-emerald-950/20' : 'border-slate-700/80 bg-slate-950/60 hover:border-slate-600'}`;
       const product = products.find(candidate =>
         candidate.raw?.slug === item.productId || productSlugFromTitle(candidate.title) === item.productId
       ) || products.find(candidate => candidate.title === item.title);
       const image = document.createElement('img');
-      image.className = 'h-16 w-16 shrink-0 rounded-xl border border-slate-700 object-cover bg-slate-900';
+      image.className = 'h-14 w-14 shrink-0 rounded-xl border border-slate-700/80 object-cover bg-slate-900';
       image.alt = product ? `${product.title} — მთავარი ფოტო` : item.title;
       image.src = product?.image
         ? new URL(product.image, new URL('../', window.location.href)).href
         : 'https://placehold.co/128x128/1e293b/94a3b8?text=IMG';
       image.onerror = () => { image.src = 'https://placehold.co/128x128/1e293b/94a3b8?text=IMG'; };
       const details = document.createElement('div');
-      details.className = 'min-w-0 flex-1';
-      const title = document.createElement('p'); title.className = 'font-semibold text-slate-100'; title.textContent = item.title;
-      const contact = document.createElement('p'); contact.className = 'mt-1 text-slate-300'; contact.textContent = item.contact;
-      const date = document.createElement('p'); date.className = 'mt-1 text-[10px] text-slate-500'; date.textContent = item.createdAt;
+      details.className = 'min-w-0 flex-1 basis-40';
+      const title = document.createElement('p'); title.className = 'truncate font-semibold text-slate-100'; title.textContent = item.title;
+      const contact = document.createElement('p'); contact.className = 'mt-1 break-all text-sm font-medium text-slate-200'; contact.textContent = item.contact;
+      const date = document.createElement('p'); date.className = 'mt-1.5 text-[10px] text-slate-500'; date.textContent = item.createdAt;
       details.append(title, contact, date);
-      const contacted = Boolean(item.contactedAt);
       const statusButton = document.createElement('button');
       statusButton.type = 'button';
-      statusButton.className = 'shrink-0 rounded-lg border border-slate-700 px-2.5 py-2 text-[10px] font-semibold text-slate-200 hover:bg-slate-800';
-      statusButton.textContent = contacted ? 'მონიშვნის გაუქმება' : 'უკვე დავუკავშირდი';
+      statusButton.className = contacted
+        ? 'w-full shrink-0 rounded-xl border border-slate-700/80 bg-slate-900/60 px-3 py-2.5 text-[11px] font-semibold text-slate-300 transition hover:border-slate-500 hover:text-white sm:w-auto'
+        : 'w-full shrink-0 rounded-xl border border-emerald-700/70 bg-emerald-500/10 px-3 py-2.5 text-[11px] font-semibold text-emerald-300 transition hover:border-emerald-500 hover:bg-emerald-500/20 sm:w-auto';
+      statusButton.textContent = contacted ? 'დაბრუნება აქტიურ სიაში' : 'მონიშნე დაკავშირებულად';
       statusButton.addEventListener('click', () => updateLeadContactStatus(item.voteId, !contacted, statusButton));
-      row.append(details, image, statusButton);
+      row.append(image, details, statusButton);
       (contacted ? contactedNode : leadsNode).append(row);
     });
     if (!(data.leads || []).some(item => item.contactedAt)) {
