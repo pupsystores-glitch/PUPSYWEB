@@ -315,6 +315,7 @@ let editorSelection = null;
 let editorLoadedPage = '';
 let editorSelectedNode = null;
 let editorProductClick = { href: '', count: 0, timer: 0 };
+const boundEditorDocuments = new WeakSet();
 
 function loadEditorPage(force = false) {
   const page = document.getElementById('site-editor-page')?.value;
@@ -343,8 +344,11 @@ function bindEditorFrame() {
   try {
     const doc = frame.contentDocument;
     if (!doc) return;
+    if (boundEditorDocuments.has(doc)) return;
+    boundEditorDocuments.add(doc);
     doc.querySelectorAll('body *').forEach(element => { element.style.cursor = 'crosshair'; });
     doc.addEventListener('click', event => {
+      document.getElementById('site-editor-status').textContent = '';
       const clicked = event.target.closest('img, video, h1, h2, h3, h4, h5, p, button, a, li, span, strong, label, summary, section, article, div');
       const anchor = event.target.closest('a[href]');
       const card = anchor?.closest('.cms-product-card, [class*="product-card"], [class*="product-item"]');
@@ -358,8 +362,13 @@ function bindEditorFrame() {
         clearTimeout(editorProductClick.timer);
         if (editorProductClick.count < 3) {
           event.preventDefault();
-          event.stopPropagation();
-          editorProductClick.timer = setTimeout(() => { editorProductClick.href = ''; editorProductClick.count = 0; }, 2200);
+          event.stopImmediatePropagation();
+          const remaining = 3 - editorProductClick.count;
+          document.getElementById('site-editor-status').textContent = `პროდუქტის გვერდის გასახსნელად კიდევ ${remaining} დაჭერა.`;
+          const currentHref = editorProductClick.href;
+          editorProductClick.timer = setTimeout(() => {
+            if (editorProductClick.href === currentHref) editorProductClick = { href: '', count: 0, timer: 0 };
+          }, 3000);
         } else {
           clearTimeout(editorProductClick.timer);
           editorProductClick = { href: '', count: 0, timer: 0 };
@@ -369,7 +378,7 @@ function bindEditorFrame() {
         clearTimeout(editorProductClick.timer);
         editorProductClick = { href: '', count: 0, timer: 0 };
         event.preventDefault();
-        event.stopPropagation();
+        event.stopImmediatePropagation();
       }
       const element = clicked || event.target;
       if (!(element instanceof doc.defaultView.HTMLElement)) return;
@@ -440,7 +449,6 @@ function bindEditorFrame() {
       document.getElementById('site-editor-save-text').disabled = !editorSelection.canEditText;
       document.getElementById('site-editor-save-text').classList.toggle('opacity-40', !editorSelection.canEditText);
       document.querySelector('#site-editor-text-tools label').textContent = editorSelection.canEditText ? 'Edit text' : 'Section selected';
-      document.getElementById('site-editor-status').textContent = '';
     }, true);
   } catch {
     document.getElementById('site-editor-status').textContent = 'ამ გვერდის გადახედვა ვერ ჩაიტვირთა.';
