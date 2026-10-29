@@ -557,7 +557,7 @@
       if (!window.PupsyComingSoonVotes) {
         await new Promise((resolve, reject) => {
           const script = document.createElement("script");
-          script.src = new URL("js/coming-soon-votes.js?v=3", baseUrl).href;
+          script.src = new URL("js/coming-soon-votes.js?v=4", baseUrl).href;
           script.onload = resolve;
           script.onerror = reject;
           document.head.append(script);

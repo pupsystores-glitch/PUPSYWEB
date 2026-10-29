@@ -45,6 +45,7 @@
         if (!response.ok) throw new Error(result.error || "ვერ მოხერხდა შენახვა. სცადეთ თავიდან.");
         dialog.querySelector(".csv-dialog__form").hidden = true;
         dialog.querySelector(".csv-dialog__success").hidden = false;
+        dialog.querySelector(".csv-dialog__card").classList.add("is-success");
       } catch (err) {
         error.textContent = err.message;
       } finally {
@@ -60,6 +61,7 @@
     dialog.querySelector(".csv-dialog__product").textContent = title;
     dialog.querySelector(".csv-dialog__form").hidden = false;
     dialog.querySelector(".csv-dialog__success").hidden = true;
+    dialog.querySelector(".csv-dialog__card").classList.remove("is-success");
     dialog.querySelector(".csv-dialog__error").textContent = "";
     dialog.querySelector("#csv-contact").value = "";
     dialog.classList.add("is-open");
@@ -127,6 +129,7 @@
     .csv-dialog__form{display:grid;gap:9px;margin-top:18px}.csv-dialog__form label{font-size:12px;font-weight:700}.csv-dialog__form input{width:100%;box-sizing:border-box;padding:12px;border:1px solid #ddcec3;border-radius:10px;background:#fff;color:#2d2824;font:inherit;font-size:14px;outline:none}.csv-dialog__form input:focus{border-color:#a86f4c;box-shadow:0 0 0 3px #a86f4c24}.csv-dialog__error{color:#a93226!important;font-size:12px!important}.csv-dialog__submit{border:0;border-radius:10px;padding:12px;background:#8a4d2e;color:#fff;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer}.csv-dialog__submit:disabled{opacity:.6}.csv-dialog__skip{border:0;padding:8px;background:transparent;color:#71675f;font-family:inherit;font-size:12px;font-weight:500;cursor:pointer}.csv-dialog__privacy{font-size:10px!important;color:#83766d!important}.csv-dialog__success[hidden]{display:none}.csv-dialog__success{display:flex;flex-direction:column;align-items:center;gap:15px;margin:26px 0 8px!important;text-align:center;animation:csv-success-arrive .42s cubic-bezier(.2,.8,.25,1) both}.csv-dialog__success p{margin:0!important;color:#31734a!important;font-size:16px!important;font-weight:700}.csv-dialog__success-icon{display:grid;place-items:center;width:82px;height:82px;border-radius:50%;background:#22a45a;box-shadow:0 0 0 9px #22a45a1c;animation:csv-check-pop .55s cubic-bezier(.18,.85,.32,1.3) both}.csv-dialog__success-icon svg{width:48px;height:48px;overflow:visible}.csv-dialog__success-icon path{fill:none;stroke:#fff;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:42;stroke-dashoffset:42;animation:csv-check-draw .42s .2s ease-out forwards}@keyframes csv-success-arrive{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}@keyframes csv-check-pop{from{opacity:0;transform:scale(.45)}to{opacity:1;transform:scale(1)}}@keyframes csv-check-draw{to{stroke-dashoffset:0}}
     @media(prefers-reduced-motion:reduce){.csv-dialog,.csv-dialog__card,.csv-vote__button,.csv-dialog__success,.csv-dialog__success-icon,.csv-dialog__success-icon path{animation:none;transition:none}.csv-dialog__success-icon path{stroke-dashoffset:0}}
   `;
+  style.textContent += ".csv-dialog__form[hidden]{display:none}.csv-dialog__card.is-success>:not(.csv-dialog__success):not(.csv-dialog__close){display:none}.csv-dialog__card.is-success .csv-dialog__success{margin:8px 0!important}";
   document.head.append(style);
   window.PupsyComingSoonVotes = { mount };
 })();
