@@ -11,6 +11,7 @@ export default {
       if (url.pathname === "/api/votes" && request.method === "POST") return castVote(request, env);
       if (url.pathname === "/api/votes" && request.method === "GET") return getVoteCount(url, request, env);
       if (url.pathname === "/api/contacts" && request.method === "POST") return saveContact(request, env);
+      if (url.pathname === "/api/contacts/status" && request.method === "POST") return updateContactStatus(request, env);
       if (url.pathname === "/api/stats" && request.method === "GET") return getVoteStats(request, env);
       return apiResponse({ error: "Not found" }, 404, request);
     }
@@ -94,6 +95,26 @@ async function saveContact(request, env) {
   return apiResponse({ saved: true }, 200, request);
 }
 
+async function updateContactStatus(request, env) {
+  const body = await readJson(request);
+  const voteId = typeof body?.voteId === "string" ? body.voteId : "";
+  const token = (request.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
+  if (!token) return apiResponse({ error: "Admin authorization required." }, 401, request);
+  if (!/^[0-9a-f-]{36}$/i.test(voteId) || typeof body?.contacted !== "boolean") {
+    return apiResponse({ error: "Invalid contact status." }, 400, request);
+  }
+  const repoResponse = await fetch(`https://api.github.com/repos/${REPO}`, {
+    headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "PUPSY-votes" },
+  });
+  if (!repoResponse.ok) return apiResponse({ error: "GitHub admin authorization failed." }, 403, request);
+  const repo = await repoResponse.json();
+  if (!repo.permissions?.push && !repo.permissions?.admin) return apiResponse({ error: "Repository write access required." }, 403, request);
+  const result = await env.VOTES_DB.prepare("UPDATE vote_contacts SET contacted_at = CASE WHEN ? THEN datetime('now') ELSE NULL END WHERE vote_id = ?")
+    .bind(body.contacted ? 1 : 0, voteId).run();
+  if (!result.meta?.changes) return apiResponse({ error: "Contact request not found." }, 404, request);
+  return apiResponse({ saved: true, contacted: body.contacted }, 200, request);
+}
+
 async function getVoteStats(request, env) {
   const token = (request.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
   if (!token) return apiResponse({ error: "Admin authorization required." }, 401, request);
@@ -108,7 +129,7 @@ async function getVoteStats(request, env) {
     FROM votes v LEFT JOIN vote_contacts c ON c.vote_id = v.id
     GROUP BY v.product_id ORDER BY votes DESC, title`).all();
   const leads = await env.VOTES_DB.prepare(`SELECT v.product_id AS productId, v.product_title AS title,
-      c.contact AS contact, c.created_at AS createdAt
+      c.vote_id AS voteId, c.contact AS contact, c.created_at AS createdAt, c.contacted_at AS contactedAt
     FROM vote_contacts c JOIN votes v ON v.id = c.vote_id ORDER BY c.created_at DESC`).all();
   return apiResponse({ products: results || [], leads: leads.results || [] }, 200, request);
 }

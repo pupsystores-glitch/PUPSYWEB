@@ -321,6 +321,13 @@ function initializeVoteStatsView() {
   view.className = 'hidden space-y-5';
   view.innerHTML = '<section class="glass-card rounded-2xl border border-slate-800 p-5 space-y-4"><div class="flex items-start justify-between gap-3"><div><h2 class="text-base font-bold text-white">მალე დაგვემატება — ხმები</h2><p class="mt-1 text-xs text-slate-400">ხმები და მომხმარებლების საკონტაქტო ინფორმაცია.</p></div><button id="vote-stats-refresh" class="shrink-0 rounded-xl border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-800">განახლება</button></div><p id="vote-stats-status" class="text-xs text-slate-400">აირჩიეთ „განახლება“ მონაცემების ჩასატვირთად.</p><div id="vote-stats-products" class="space-y-2"></div><h3 class="pt-3 border-t border-slate-800 text-xs font-bold uppercase tracking-wider text-slate-300">შეტყობინების მოთხოვნები</h3><div id="vote-stats-leads" class="space-y-2"></div></section>';
   main.append(view);
+  const contactedHeading = document.createElement('h3');
+  contactedHeading.className = 'pt-3 border-t border-slate-800 text-xs font-bold uppercase tracking-wider text-slate-300';
+  contactedHeading.textContent = 'უკვე დაკავშირებული';
+  const contactedNode = document.createElement('div');
+  contactedNode.id = 'vote-stats-contacted';
+  contactedNode.className = 'space-y-2';
+  document.getElementById('vote-stats-leads').parentElement.append(contactedHeading, contactedNode);
   document.getElementById('vote-stats-refresh').addEventListener('click', loadVoteStats);
   if (window.lucide) lucide.createIcons();
 }
@@ -329,7 +336,8 @@ async function loadVoteStats() {
   const status = document.getElementById('vote-stats-status');
   const productsNode = document.getElementById('vote-stats-products');
   const leadsNode = document.getElementById('vote-stats-leads');
-  if (!status || !productsNode || !leadsNode) return;
+  const contactedNode = document.getElementById('vote-stats-contacted');
+  if (!status || !productsNode || !leadsNode || !contactedNode) return;
   status.textContent = 'მონაცემები იტვირთება…';
   try {
     const response = await fetch(`${OAUTH_BASE}/api/stats`, { headers: { Authorization: `Bearer ${accessToken}` } });
@@ -337,6 +345,7 @@ async function loadVoteStats() {
     if (!response.ok) throw new Error(data.error || 'სტატისტიკის ჩატვირთვა ვერ მოხერხდა.');
     productsNode.replaceChildren();
     leadsNode.replaceChildren();
+    contactedNode.replaceChildren();
     (data.products || []).forEach(item => {
       const row = document.createElement('div');
       row.className = 'flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-3 text-xs';
@@ -373,10 +382,29 @@ async function loadVoteStats() {
       const contact = document.createElement('p'); contact.className = 'mt-1 text-slate-300'; contact.textContent = item.contact;
       const date = document.createElement('p'); date.className = 'mt-1 text-[10px] text-slate-500'; date.textContent = item.createdAt;
       details.append(title, contact, date);
-      row.append(details, image); leadsNode.append(row);
+      const contacted = Boolean(item.contactedAt);
+      const statusButton = document.createElement('button');
+      statusButton.type = 'button';
+      statusButton.className = 'shrink-0 rounded-lg border border-slate-700 px-2.5 py-2 text-[10px] font-semibold text-slate-200 hover:bg-slate-800';
+      statusButton.textContent = contacted ? 'მონიშვნის გაუქმება' : 'უკვე დავუკავშირდი';
+      statusButton.addEventListener('click', () => updateLeadContactStatus(item.voteId, !contacted, statusButton));
+      row.append(details, image, statusButton);
+      (contacted ? contactedNode : leadsNode).append(row);
     });
+    if (!(data.leads || []).some(item => item.contactedAt)) {
+      const empty = document.createElement('p');
+      empty.className = 'text-xs text-slate-500';
+      empty.textContent = 'დაკავშირებული მომხმარებლები ჯერ არ არის.';
+      contactedNode.append(empty);
+    }
     if (!(data.products || []).length) {
       const empty = document.createElement('p'); empty.className = 'text-xs text-slate-500'; empty.textContent = 'ხმები ჯერ არ არის.'; productsNode.append(empty);
+    }
+    if ((data.leads || []).length && !(data.leads || []).some(item => !item.contactedAt)) {
+      const empty = document.createElement('p');
+      empty.className = 'text-xs text-slate-500';
+      empty.textContent = 'ყველა საკონტაქტო მომხმარებელს უკვე დაუკავშირდით.';
+      leadsNode.append(empty);
     }
     if (!(data.leads || []).length) {
       const empty = document.createElement('p'); empty.className = 'text-xs text-slate-500'; empty.textContent = 'საკონტაქტო მოთხოვნები ჯერ არ არის.'; leadsNode.append(empty);
@@ -384,6 +412,25 @@ async function loadVoteStats() {
     status.textContent = `პროდუქტები: ${(data.products || []).length} · ჯამური ხმები: ${(data.products || []).reduce((sum, item) => sum + Number(item.votes || 0), 0)}`;
   } catch (error) {
     status.textContent = error.message || 'სტატისტიკის ჩატვირთვა ვერ მოხერხდა.';
+  }
+}
+
+async function updateLeadContactStatus(voteId, contacted, button) {
+  if (!voteId) return;
+  const status = document.getElementById('vote-stats-status');
+  button.disabled = true;
+  try {
+    const response = await fetch(`${OAUTH_BASE}/api/contacts/status`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+      body: JSON.stringify({ voteId, contacted }),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'კონტაქტის სტატუსის შენახვა ვერ მოხერხდა.');
+    await loadVoteStats();
+  } catch (error) {
+    if (status) status.textContent = error.message || 'კონტაქტის სტატუსის შენახვა ვერ მოხერხდა.';
+    button.disabled = false;
   }
 }
 
