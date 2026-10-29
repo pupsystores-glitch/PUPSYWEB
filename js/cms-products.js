@@ -124,7 +124,7 @@
       currency.src = new URL("images/Lari_logo_tight.png", baseUrl).href;
     currency.alt = "";
     currency.setAttribute("aria-hidden", "true");
-    currency.style.cssText = "display:block;width:.68em;height:.68em;flex:0 0 .68em;margin:0;object-fit:contain;transform:translateY(-.04em);";
+    currency.style.cssText = "display:block;width:.68em;height:.68em;flex:0 0 .68em;margin:0;object-fit:contain;transform:translateY(-.12em);";
     const amount = document.createElement("span");
     amount.style.cssText = "display:block;line-height:inherit;";
     amount.textContent = formatPrice(product.price);

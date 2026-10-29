@@ -51,7 +51,7 @@
       margin-inline-end: .1em;
       object-fit: contain;
       vertical-align: 0em;
-      transform: translateY(-.04em);
+      transform: translateY(-.12em);
     }
   `;
   document.head.append(styles);

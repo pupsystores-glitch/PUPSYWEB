@@ -488,7 +488,7 @@
       icon.src = assetUrl("images/Lari_logo_tight.png");
       icon.alt = "";
       icon.setAttribute("aria-hidden", "true");
-      icon.style.cssText = "display:block;width:.68em;height:.68em;flex:0 0 .68em;object-fit:contain;margin:0;vertical-align:middle;transform:translateY(-.04em);";
+      icon.style.cssText = "display:block;width:.68em;height:.68em;flex:0 0 .68em;object-fit:contain;margin:0;vertical-align:middle;transform:translateY(-.12em);";
       price.classList.add("cms-product-page__price");
       price.style.display = "inline-flex";
       price.style.alignItems = "center";
