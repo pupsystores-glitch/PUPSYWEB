@@ -488,7 +488,7 @@
       icon.src = assetUrl("images/Lari_logo_tight.png");
       icon.alt = "";
       icon.setAttribute("aria-hidden", "true");
-      icon.style.cssText = "display:block;width:.9em;height:.9em;flex:0 0 .9em;object-fit:contain;margin:0;vertical-align:middle;";
+      icon.style.cssText = "display:block;width:.9em;height:.9em;flex:0 0 .9em;object-fit:contain;margin:0;vertical-align:middle;transform:translateY(-.08em);";
       price.classList.add("cms-product-page__price");
       price.style.display = "inline-flex";
       price.style.alignItems = "center";
@@ -498,7 +498,7 @@
       amountNode.style.cssText = "display:block;line-height:inherit;";
       const amount = Number(product.price);
       if (Number.isFinite(amount)) {
-        amountNode.textContent = new Intl.NumberFormat("ka-GE", {
+        amountNode.textContent = new Intl.NumberFormat("en-US", {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
         }).format(amount);

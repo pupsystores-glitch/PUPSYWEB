@@ -53,7 +53,7 @@
   function formatPrice(value) {
     const amount = Number(value);
     if (!Number.isFinite(amount)) return "";
-    return new Intl.NumberFormat("ka-GE", {
+    return new Intl.NumberFormat("en-US", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(amount);
@@ -124,7 +124,7 @@
       currency.src = new URL("images/Lari_logo_tight.png", baseUrl).href;
     currency.alt = "";
     currency.setAttribute("aria-hidden", "true");
-    currency.style.cssText = "display:block;width:.9em;height:.9em;flex:0 0 .9em;margin:0;object-fit:contain;";
+    currency.style.cssText = "display:block;width:.9em;height:.9em;flex:0 0 .9em;margin:0;object-fit:contain;transform:translateY(-.08em);";
     const amount = document.createElement("span");
     amount.style.cssText = "display:block;line-height:inherit;";
     amount.textContent = formatPrice(product.price);
