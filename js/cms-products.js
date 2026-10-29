@@ -103,7 +103,10 @@
       badge.className = "cms-product-card__badge";
       const badgeText = document.createElement("span");
       badgeText.className = "cms-product-card__badge-text";
+      badgeText.lang = "ka";
       badgeText.textContent = "მალე დაგვემატება";
+      badge.style.cssText = "position:absolute;top:10px;right:10px;z-index:2;display:flex;align-items:center;justify-content:center;box-sizing:border-box;width:140px;height:36px;max-width:calc(100% - 20px);padding:0 8px;border-radius:999px;background:#8a4d2e;color:#fff;font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;font-size:12px;font-weight:700;line-height:1;text-align:center;white-space:nowrap;text-size-adjust:100%;-webkit-text-size-adjust:100%;box-shadow:0 2px 8px rgba(40,28,20,.2);";
+      badgeText.style.cssText = "display:block;width:100%;margin:0;padding:0;font-family:inherit;font-size:inherit;font-weight:inherit;text-align:center;line-height:1;letter-spacing:0;transform:translateY(-.5px);";
       badge.append(badgeText);
       badge.setAttribute("role", "status");
       card.append(badge);
@@ -121,8 +124,11 @@
     currency.src = new URL("images/Lari_logo.png", baseUrl).href;
     currency.alt = "";
     currency.setAttribute("aria-hidden", "true");
+    currency.style.cssText = "display:block;width:.9em;height:.9em;flex:0 0 .9em;margin:0;object-fit:contain;transform:translateY(-1px);";
     const amount = document.createElement("span");
+    amount.style.cssText = "display:block;line-height:inherit;";
     amount.textContent = formatPrice(product.price);
+    price.style.cssText = "display:inline-flex;align-items:center;gap:.08em;font-weight:600;line-height:1.2;vertical-align:middle;";
     price.append(currency, amount);
     details.append(title, price);
     card.append(details);

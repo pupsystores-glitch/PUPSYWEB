@@ -488,13 +488,14 @@
       icon.src = assetUrl("images/Lari_logo.png");
       icon.alt = "";
       icon.setAttribute("aria-hidden", "true");
-      icon.style.cssText = "display:block;width:.9em;height:.9em;flex:0 0 .9em;object-fit:contain;margin:0;vertical-align:middle;transform:translateY(-.5px);";
+      icon.style.cssText = "display:block;width:.9em;height:.9em;flex:0 0 .9em;object-fit:contain;margin:0;vertical-align:middle;transform:translateY(-1px);";
       price.classList.add("cms-product-page__price");
       price.style.display = "inline-flex";
       price.style.alignItems = "center";
       price.style.gap = ".08em";
       price.style.lineHeight = "1.2";
       const amountNode = document.createElement("span");
+      amountNode.style.cssText = "display:block;line-height:inherit;";
       const amount = Number(product.price);
       if (Number.isFinite(amount)) {
         amountNode.textContent = new Intl.NumberFormat("ka-GE", {
