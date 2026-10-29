@@ -55,17 +55,17 @@
       "published": true,
       "photos": [
         {
-          "source": "gallery",
-          "images": [
-            "/PUPSYWEB/images/uploads/1793029275693-3593e7fd-67b9-405a-83d9-93fd6ff7f00a-IMG_9337.jpeg",
-            "/PUPSYWEB/images/uploads/1793029278540-92c3498c-da93-48b2-b589-fc8e9f6bec3e-IMG_9342.jpeg",
-            "/PUPSYWEB/images/uploads/1793029280385-9c277603-76e1-4ec7-a3b0-1fc9c54f1fc1-IMG_9338.jpeg",
-            "/PUPSYWEB/images/uploads/1793029282326-a28929fa-8eb4-4fa8-8533-8734aebe7d76-IMG_9339.jpeg",
-            "/PUPSYWEB/images/uploads/1793029284376-7a3e4f5f-cf90-471e-a18a-66c1d2eaa7c6-IMG_9340.jpeg"
-          ]
+          "source": "links",
+          "link1": "/PUPSYWEB/images/uploads/1793029275693-3593e7fd-67b9-405a-83d9-93fd6ff7f00a-IMG_9337.jpeg",
+          "link2": "/PUPSYWEB/images/uploads/1793029278540-92c3498c-da93-48b2-b589-fc8e9f6bec3e-IMG_9342.jpeg",
+          "link3": "/PUPSYWEB/images/uploads/1793029280385-9c277603-76e1-4ec7-a3b0-1fc9c54f1fc1-IMG_9338.jpeg",
+          "link4": "/PUPSYWEB/images/uploads/1793029282326-a28929fa-8eb4-4fa8-8533-8734aebe7d76-IMG_9339.jpeg",
+          "link5": "/PUPSYWEB/images/uploads/1793029284376-7a3e4f5f-cf90-471e-a18a-66c1d2eaa7c6-IMG_9340.jpeg"
         }
       ],
-      "image": "/PUPSYWEB/images/uploads/1793029275693-3593e7fd-67b9-405a-83d9-93fd6ff7f00a-IMG_9337.jpeg"
+      "image": "/PUPSYWEB/images/uploads/1793029275693-3593e7fd-67b9-405a-83d9-93fd6ff7f00a-IMG_9337.jpeg",
+      "categoryId": "accessories",
+      "comingSoon": true
     }
   ]
 }
