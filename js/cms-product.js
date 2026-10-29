@@ -484,15 +484,10 @@
     if (price) {
       const icon = price.querySelector("img") || document.createElement("img");
       price.replaceChildren();
-      icon.className = "cms-product-page__currency";
+      icon.className = "lari-currency-logo";
       icon.src = assetUrl("images/Lari_logo.png");
       icon.alt = "";
       icon.setAttribute("aria-hidden", "true");
-      icon.style.cssText = "display:block;width:1em;height:1em;flex:0 0 auto;object-fit:contain;";
-      price.classList.add("cms-product-page__price");
-      price.style.display = "inline-flex";
-      price.style.alignItems = "center";
-      price.style.gap = ".35em";
       price.append(icon);
       const amount = Number(product.price);
       if (Number.isFinite(amount)) {

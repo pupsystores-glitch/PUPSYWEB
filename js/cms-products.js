@@ -114,7 +114,7 @@
     const price = document.createElement("span");
     price.className = "cms-product-card__price";
     const currency = document.createElement("img");
-    currency.className = "cms-product-card__currency";
+    currency.className = "lari-currency-logo";
     currency.src = new URL("images/Lari_logo.png", baseUrl).href;
     currency.alt = "";
     currency.setAttribute("aria-hidden", "true");
