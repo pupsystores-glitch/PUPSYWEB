@@ -56,7 +56,7 @@
     return new Intl.NumberFormat("ka-GE", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }).format(amount) + " ₾";
+    }).format(amount);
   }
 
   function safeImagePath(path, width) {
@@ -113,7 +113,14 @@
     title.textContent = product.title || "პროდუქტი";
     const price = document.createElement("span");
     price.className = "cms-product-card__price";
-    price.textContent = formatPrice(product.price);
+    const currency = document.createElement("img");
+    currency.className = "cms-product-card__currency";
+    currency.src = new URL("images/Lari_logo.png", baseUrl).href;
+    currency.alt = "";
+    currency.setAttribute("aria-hidden", "true");
+    const amount = document.createElement("span");
+    amount.textContent = formatPrice(product.price);
+    price.append(currency, amount);
     details.append(title, price);
     card.append(details);
     if (product.comingSoon === true) {
