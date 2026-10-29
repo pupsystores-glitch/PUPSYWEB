@@ -46,12 +46,12 @@
   styles.textContent = `
     .lari-currency-logo {
       display: inline-block;
-      width: .9em;
-      height: .9em;
-      margin-inline-end: .08em;
+      width: .68em;
+      height: .68em;
+      margin-inline-end: .1em;
       object-fit: contain;
       vertical-align: 0em;
-      transform: translateY(-.08em);
+      transform: translateY(-.04em);
     }
   `;
   document.head.append(styles);

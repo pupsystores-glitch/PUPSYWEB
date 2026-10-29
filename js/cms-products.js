@@ -124,11 +124,11 @@
       currency.src = new URL("images/Lari_logo_tight.png", baseUrl).href;
     currency.alt = "";
     currency.setAttribute("aria-hidden", "true");
-    currency.style.cssText = "display:block;width:.9em;height:.9em;flex:0 0 .9em;margin:0;object-fit:contain;transform:translateY(-.08em);";
+    currency.style.cssText = "display:block;width:.68em;height:.68em;flex:0 0 .68em;margin:0;object-fit:contain;transform:translateY(-.04em);";
     const amount = document.createElement("span");
     amount.style.cssText = "display:block;line-height:inherit;";
     amount.textContent = formatPrice(product.price);
-    price.style.cssText = "display:inline-flex;align-items:center;gap:.03em;font-weight:600;line-height:1.2;vertical-align:middle;";
+    price.style.cssText = "display:inline-flex;align-items:center;gap:.1em;font-weight:600;line-height:1.2;vertical-align:middle;";
     price.append(currency, amount);
     details.append(title, price);
     card.append(details);

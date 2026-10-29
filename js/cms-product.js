@@ -488,11 +488,11 @@
       icon.src = assetUrl("images/Lari_logo_tight.png");
       icon.alt = "";
       icon.setAttribute("aria-hidden", "true");
-      icon.style.cssText = "display:block;width:.9em;height:.9em;flex:0 0 .9em;object-fit:contain;margin:0;vertical-align:middle;transform:translateY(-.08em);";
+      icon.style.cssText = "display:block;width:.68em;height:.68em;flex:0 0 .68em;object-fit:contain;margin:0;vertical-align:middle;transform:translateY(-.04em);";
       price.classList.add("cms-product-page__price");
       price.style.display = "inline-flex";
       price.style.alignItems = "center";
-      price.style.gap = ".03em";
+      price.style.gap = ".1em";
       price.style.lineHeight = "1.2";
       const amountNode = document.createElement("span");
       amountNode.style.cssText = "display:block;line-height:inherit;";
