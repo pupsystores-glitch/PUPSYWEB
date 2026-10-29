@@ -299,11 +299,269 @@ async function loadMediaFiles() {
 function switchMainTab(tab) {
   const selected = 'flex-1 min-w-0 justify-center px-2.5 py-2 rounded-xl text-[11px] sm:text-xs font-semibold flex items-center gap-1.5 transition-all bg-indigo-600 text-white active-tab-glow';
   const idle = 'flex-1 min-w-0 justify-center px-2.5 py-2 rounded-xl text-[11px] sm:text-xs font-semibold flex items-center gap-1.5 text-slate-400 hover:text-white transition-all';
-  ['contents', 'media', 'videos', 'stats'].forEach(view => {
+  ['contents', 'media', 'videos', 'stats', 'editor'].forEach(view => {
     document.getElementById(`${view}-view`).classList.toggle('hidden', view !== tab);
-    document.getElementById(`tab-${view}-btn`).className = view === tab ? selected : idle;
+    const button = document.getElementById(`tab-${view}-btn`);
+    if (button) button.className = view === tab ? selected : idle;
   });
+  document.getElementById('site-editor-open')?.classList.toggle('ring-2', tab === 'editor');
+  const main = document.querySelector('main');
+  if (main) main.style.maxWidth = tab === 'editor' ? 'none' : '';
+  if (tab === 'editor') loadEditorPage();
   if (tab === 'stats') loadVoteStats();
+}
+
+let editorSelection = null;
+let editorLoadedPage = '';
+
+function loadEditorPage(force = false) {
+  const page = document.getElementById('site-editor-page')?.value;
+  const frame = document.getElementById('site-editor-frame');
+  if (!page || !frame || (!force && editorLoadedPage === page)) return;
+  editorLoadedPage = page;
+  clearEditorSelection();
+  frame.src = `https://pupsystores-glitch.github.io/PUPSYWEB/${page}`;
+}
+
+function clearEditorSelection() {
+  editorSelection = null;
+  const preview = document.getElementById('site-editor-selected-image');
+  preview?.classList.add('hidden');
+  document.getElementById('site-editor-selection-hint').textContent = 'ფოტოს ასარჩევად დააჭირეთ მას გადახედვის ფანჯარაში.';
+  document.getElementById('site-editor-status').textContent = '';
+}
+
+function bindEditorFrame() {
+  const frame = document.getElementById('site-editor-frame');
+  try {
+    const doc = frame.contentDocument;
+    if (!doc) return;
+    doc.querySelectorAll('img, video').forEach(image => { image.style.cursor = 'crosshair'; });
+    doc.addEventListener('click', event => {
+      const image = event.target.closest('img, video');
+      if (!image) return;
+      event.preventDefault();
+      event.stopPropagation();
+      doc.querySelectorAll('img, video').forEach(item => { item.style.outline = ''; item.style.outlineOffset = ''; });
+      image.style.outline = '4px solid #f59e0b';
+      image.style.outlineOffset = '2px';
+      const sourceAttribute = ['src', 'data-src', 'data-original'].find(name => image.getAttribute(name));
+      if (!sourceAttribute) {
+        document.getElementById('site-editor-status').textContent = 'ამ ელემენტს ფოტოს მისამართი ვერ წავუკითხე.';
+        return;
+      }
+      const attributeValue = image.getAttribute(sourceAttribute);
+      editorSelection = {
+        page: document.getElementById('site-editor-page').value,
+        tagName: image.tagName.toLowerCase(),
+        sourceAttribute,
+        attributeValue,
+        resolvedSrc: image.currentSrc || image.src,
+        occurrence: [...doc.querySelectorAll('img, video')].filter(item => item.tagName.toLowerCase() === image.tagName.toLowerCase() && item.getAttribute(sourceAttribute) === attributeValue).indexOf(image),
+        alt: image.alt || '',
+      };
+      const preview = document.getElementById('site-editor-selected-image');
+      if (image.tagName.toLowerCase() === 'video') preview.classList.add('hidden');
+      else {
+        preview.src = image.currentSrc || image.src;
+        preview.classList.remove('hidden');
+      }
+      document.getElementById('site-editor-selection-hint').textContent = image.alt || (image.tagName.toLowerCase() === 'video' ? 'ვიდეო მონიშნულია.' : 'ფოტო მონიშნულია.');
+      document.getElementById('site-editor-status').textContent = '';
+    }, true);
+  } catch {
+    document.getElementById('site-editor-status').textContent = 'ამ გვერდის გადახედვა ვერ ჩაიტვირთა.';
+  }
+}
+
+document.getElementById('site-editor-frame')?.addEventListener('load', bindEditorFrame);
+
+function escapeHtmlAttribute(value) {
+  return String(value).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
+
+function findEditorImageTag(html, selection) {
+  const candidates = [];
+  const tagPattern = new RegExp(`<${selection.tagName || 'img'}\\b[^>]*>`, 'gi');
+  for (const match of html.matchAll(tagPattern)) {
+    const tag = match[0];
+    const attribute = new RegExp(`\\b${selection.sourceAttribute}\\s*=\\s*(["'])(.*?)\\1`, 'i').exec(tag);
+    if (attribute) {
+      const decoded = attribute[2].replace(/&amp;/g, '&').replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+      if (decoded === selection.attributeValue) candidates.push({ tag, index: match.index });
+    }
+  }
+  return candidates[selection.occurrence] || null;
+}
+
+function selectedProductPhoto(raw, selection) {
+  const known = new Set([selection.attributeValue, selection.resolvedSrc]);
+  const normalize = value => {
+    try { return new URL(value, window.location.origin).pathname.replace(/^\/PUPSYWEB\//, ''); } catch { return value; }
+  };
+  const wanted = new Set([...known].map(normalize));
+  const visit = value => {
+    if (typeof value === 'string') return wanted.has(normalize(value));
+    if (Array.isArray(value)) return value.some(visit);
+    if (value && typeof value === 'object') return Object.values(value).some(visit);
+    return false;
+  };
+  return visit(raw);
+}
+
+function updateProductPhotoReferences(raw, selection, replacement) {
+  const normalize = value => {
+    try { return new URL(value, window.location.origin).pathname.replace(/^\/PUPSYWEB\//, ''); } catch { return value; }
+  };
+  const wanted = new Set([selection.attributeValue, selection.resolvedSrc].map(normalize));
+  const visit = (value, parent, key) => {
+    if (Array.isArray(value)) {
+      for (let index = value.length - 1; index >= 0; index--) {
+        if (typeof value[index] === 'string' && wanted.has(normalize(value[index]))) {
+          if (replacement == null) value.splice(index, 1); else value[index] = replacement;
+        } else visit(value[index], value, index);
+      }
+    } else if (value && typeof value === 'object') {
+      for (const [childKey, child] of Object.entries(value)) {
+        if (typeof child === 'string' && wanted.has(normalize(child))) {
+          if (replacement == null) delete value[childKey]; else value[childKey] = replacement;
+        } else visit(child, value, childKey);
+      }
+    }
+  };
+  visit(raw, null, null);
+}
+
+async function saveEditorPageImage(replacement, remove = false) {
+  if (!editorSelection) throw new Error('ჯერ აირჩიეთ ფოტო საიტის გადახედვაში.');
+  const path = editorSelection.page;
+  const result = await githubRequest(`/repos/${GITHUB_REPO}/contents/${encodeURIComponent(path).replace(/%2F/g, '/')}?ref=${GITHUB_BRANCH}`);
+  if (typeof result.content === 'string') {
+    let html;
+    if (typeof result.content === 'string') html = decodeBase64Utf8(result.content);
+    else if (result.download_url) html = await fetch(result.download_url).then(response => {
+      if (!response.ok) throw new Error('გვერდის წყაროს წაკითხვა ვერ მოხერხდა.');
+      return response.text();
+    });
+    else html = '';
+    const match = findEditorImageTag(html, editorSelection);
+    if (match) {
+      const { tag, index: imageIndex } = match;
+      let targetMarkup = tag;
+      const pictureStart = html.lastIndexOf('<picture', imageIndex);
+      const pictureEnd = html.indexOf('</picture>', imageIndex);
+      const inPicture = pictureStart >= 0 && pictureEnd >= imageIndex;
+      const targetStart = inPicture ? pictureStart : imageIndex;
+      if (inPicture) targetMarkup = html.slice(pictureStart, pictureEnd + '</picture>'.length);
+      else if (editorSelection.tagName === 'video') {
+        const closing = html.indexOf('</video>', imageIndex);
+        if (closing >= imageIndex) targetMarkup = html.slice(imageIndex, closing + '</video>'.length);
+      }
+      let updated;
+      if (remove) updated = html.slice(0, targetStart) + html.slice(targetStart + targetMarkup.length);
+      else if (/^video\//i.test(replacement.type || '')) {
+        const src = escapeHtmlAttribute(replacement.url);
+        const className = /\bclass\s*=\s*(["'])(.*?)\1/i.exec(tag)?.[2] || '';
+        const style = /\bstyle\s*=\s*(["'])(.*?)\1/i.exec(tag)?.[2] || '';
+        const dimensions = ['width', 'height'].map(name => {
+          const match = new RegExp(`\\b${name}\\s*=\\s*(["'])(.*?)\\1`, 'i').exec(tag);
+          return match ? ` ${name}="${escapeHtmlAttribute(match[2])}"` : '';
+        }).join('');
+        const video = `<video src="${src}" class="${escapeHtmlAttribute(className)}" style="${escapeHtmlAttribute(style)}"${dimensions} controls playsinline muted loop></video>`;
+        updated = html.slice(0, targetStart) + video + html.slice(targetStart + targetMarkup.length);
+      } else if (editorSelection.tagName === 'video') {
+        const attrs = ['class', 'style', 'width', 'height', 'alt'].map(name => {
+          const match = new RegExp(`\\b${name}\\s*=\\s*(["'])(.*?)\\1`, 'i').exec(tag);
+          return match ? ` ${name}="${escapeHtmlAttribute(match[2])}"` : '';
+        }).join('');
+        const image = `<img src="${escapeHtmlAttribute(replacement.url)}"${attrs}>`;
+        updated = html.slice(0, targetStart) + image + html.slice(targetStart + targetMarkup.length);
+      } else {
+        const srcName = editorSelection.sourceAttribute;
+        const attrPattern = new RegExp(`\\s${srcName}\\s*=\\s*(["'])(.*?)\\1`, 'i');
+        let updatedTag = tag.replace(attrPattern, '').replace(/\s+srcset\s*=\s*(["']).*?\1/i, '').replace(/\s+data-(?:src|original)\s*=\s*(["']).*?\1/gi, '').replace(/\s*\/?>(?=$)/, '') + ` src="${escapeHtmlAttribute(replacement.url)}">`;
+        let updatedMarkup = targetMarkup.replace(tag, updatedTag);
+        if (inPicture) updatedMarkup = updatedMarkup.replace(/<source\b[^>]*>/gi, '');
+        updated = html.slice(0, targetStart) + updatedMarkup + html.slice(targetStart + targetMarkup.length);
+      }
+      await githubRequest(`/repos/${GITHUB_REPO}/contents/${encodeURIComponent(path).replace(/%2F/g, '/')}?ref=${GITHUB_BRANCH}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: `${remove ? 'Remove' : 'Replace'} image on ${path}`, content: encodeBase64Utf8(updated), sha: result.sha, branch: GITHUB_BRANCH }),
+      });
+      return;
+    }
+  }
+
+  for (const collection of collections) {
+    const filePath = `products/categories/${collection.file}`;
+    const file = await githubFile(filePath);
+    const product = file.data.products?.find(item => selectedProductPhoto(item, editorSelection));
+    if (!product) continue;
+    const isVideo = !remove && /^video\//i.test(replacement.type || '');
+    if (editorSelection.tagName === 'video') {
+      updateProductPhotoReferences(product, editorSelection, null);
+      if (!remove && isVideo) {
+        product.visualEditorVideoUrl = replacement.url;
+        product.videoUrl = replacement.url;
+      } else if (!remove) product.image = replacement.url;
+      if (product.videoUrl === editorSelection.attributeValue || product.videoUrl === editorSelection.resolvedSrc) delete product.videoUrl;
+      if (remove || !isVideo) delete product.visualEditorVideoUrl;
+    } else if (isVideo) {
+      updateProductPhotoReferences(product, editorSelection, null);
+      product.visualEditorVideoUrl = replacement.url;
+      product.videoUrl = replacement.url;
+    } else {
+      updateProductPhotoReferences(product, editorSelection, remove ? null : replacement.url);
+      if (product.visualEditorVideoUrl) {
+        if (product.videoUrl === product.visualEditorVideoUrl) delete product.videoUrl;
+        delete product.visualEditorVideoUrl;
+      }
+    }
+    await commitJson(filePath, file.data);
+    return;
+  }
+  throw new Error('არჩეული ფოტო გვერდის HTML-ში ან პროდუქტის მონაცემებში ვერ მოიძებნა. შესაძლოა ის CSS ფონის სურათი იყოს.');
+}
+
+async function uploadEditorMedia(file) {
+  const safeName = file.name.normalize('NFKD').replace(/[^a-zA-Z0-9._-]+/g, '-');
+  const filename = `${Date.now()}-${safeName}`;
+  const content = encodeBase64Utf8FromBytes(await file.arrayBuffer());
+  await githubRequest(`/repos/${GITHUB_REPO}/contents/images/uploads/${encodeURIComponent(filename)}`, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: `Upload ${filename} from visual editor`, content, branch: GITHUB_BRANCH }),
+  });
+  return { url: `/PUPSYWEB/images/uploads/${encodeURIComponent(filename)}`, type: file.type };
+}
+
+async function replaceEditorImage() {
+  const status = document.getElementById('site-editor-status');
+  const file = document.getElementById('site-editor-file').files[0];
+  const url = document.getElementById('site-editor-url').value.trim();
+  if (!editorSelection) { status.textContent = 'ჯერ აირჩიეთ ფოტო გადახედვაში.'; return; }
+  if (!file && !url) { status.textContent = 'აირჩიეთ ფაილი ან მიუთითეთ მედიის ბმული.'; return; }
+  status.textContent = 'ცვლილება ინახება…';
+  try {
+    const videoMatch = url.match(/\.(mp4|webm|ogg)(?:$|\?)/i);
+    const media = file ? await uploadEditorMedia(file) : { url, type: videoMatch ? `video/${videoMatch[1].toLowerCase()}` : 'image/*' };
+    await saveEditorPageImage(media);
+    status.textContent = 'მედია წარმატებით ჩანაცვლდა. გვერდი ახლდება…';
+    document.getElementById('site-editor-file').value = '';
+    document.getElementById('site-editor-url').value = '';
+    loadEditorPage(true);
+  } catch (error) { status.textContent = error.message || 'მედიის შენახვა ვერ მოხერხდა.'; }
+}
+
+async function deleteEditorImage() {
+  const status = document.getElementById('site-editor-status');
+  if (!editorSelection) { status.textContent = 'ჯერ აირჩიეთ ფოტო გადახედვაში.'; return; }
+  if (!window.confirm('წაიშალოს მონიშნული ფოტო საიტიდან?')) return;
+  status.textContent = 'ფოტო იშლება…';
+  try {
+    await saveEditorPageImage(null, true);
+    status.textContent = 'ფოტო წაიშალა. გვერდი ახლდება…';
+    loadEditorPage(true);
+  } catch (error) { status.textContent = error.message || 'ფოტოს წაშლა ვერ მოხერხდა.'; }
 }
 
 function initializeVoteStatsView() {

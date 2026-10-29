@@ -80,23 +80,34 @@
     card.className = "cms-product-card";
     card.href = new URL(`product-pages/${encodeURIComponent(productSlug(product))}.html`, baseUrl).href;
 
-    const image = document.createElement("img");
-    image.className = "cms-product-card__image";
     const imagePath = productImages(product)[0];
-    if (imagePath) {
-      image.src = safeImagePath(imagePath, 640);
+    const videoUrl = String(product.visualEditorVideoUrl || "").trim();
+    if (videoUrl && /\.(mp4|webm|ogg)(?:$|[?#])/i.test(videoUrl)) {
+      const video = document.createElement("video");
+      video.className = "cms-product-card__image";
+      video.src = videoUrl;
+      video.autoplay = true;
+      video.muted = true;
+      video.loop = true;
+      video.playsInline = true;
+      video.preload = "metadata";
+      video.setAttribute("aria-label", product.title || "PUPSY პროდუქტი");
+      card.append(video);
     } else {
-      image.hidden = true;
+      const image = document.createElement("img");
+      image.className = "cms-product-card__image";
+      if (imagePath) image.src = safeImagePath(imagePath, 640);
+      else image.hidden = true;
+      if (imagePath && /\/cdn\/shop\/files\/|cdn\.shopify\.com/i.test(imagePath)) {
+        image.srcset = [320, 480, 640, 800]
+          .map((width) => safeImagePath(imagePath, width) + " " + width + "w")
+          .join(", ");
+        image.sizes = "(max-width: 600px) 50vw, 25vw";
+      }
+      image.alt = product.title || "PUPSY პროდუქტი";
+      image.loading = "lazy";
+      card.append(image);
     }
-    if (imagePath && /\/cdn\/shop\/files\/|cdn\.shopify\.com/i.test(imagePath)) {
-      image.srcset = [320, 480, 640, 800]
-        .map((width) => safeImagePath(imagePath, width) + " " + width + "w")
-        .join(", ");
-      image.sizes = "(max-width: 600px) 50vw, 25vw";
-    }
-    image.alt = product.title || "PUPSY პროდუქტი";
-    image.loading = "lazy";
-    card.append(image);
 
     if (product.comingSoon === true) {
       const badge = document.createElement("span");
