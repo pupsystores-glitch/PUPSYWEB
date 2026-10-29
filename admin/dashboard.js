@@ -335,6 +335,7 @@ function clearEditorSelection() {
   preview?.classList.add('hidden');
   document.getElementById('site-editor-media-tools')?.classList.remove('hidden');
   document.getElementById('site-editor-text-tools')?.classList.add('hidden');
+  document.getElementById('site-editor-product-tools')?.classList.add('hidden');
   document.getElementById('site-editor-selection-hint').textContent = 'აირჩიეთ ფოტო, ტექსტი ან სექცია გადახედვის ფანჯარაში.';
   document.getElementById('site-editor-status').textContent = '';
 }
@@ -351,7 +352,8 @@ function bindEditorFrame() {
       document.getElementById('site-editor-status').textContent = '';
       const clicked = event.target.closest('img, video, h1, h2, h3, h4, h5, p, button, a, li, span, strong, label, summary, section, article, div');
       const anchor = event.target.closest('a[href]');
-      const card = anchor?.closest('.cms-product-card, [class*="product-card"], [class*="product-item"]');
+      const card = event.target.closest('.cms-product-card, [class*="product-card"], [class*="product-item"]')
+        || anchor?.closest('.cms-product-card, [class*="product-card"], [class*="product-item"]');
       const isProductLink = Boolean(anchor && (/product-pages\/|\/products?\//i.test(anchor.href) || card));
       if (isProductLink && !event.editorParentPick) {
         if (editorProductClick.href === anchor.href) editorProductClick.count += 1;
@@ -392,10 +394,14 @@ function bindEditorFrame() {
       element.style.outline = '3px solid #f59e0b';
       element.style.outlineOffset = '2px';
       const tagName = element.tagName.toLowerCase();
-      const sourceAttribute = ['src', 'data-src', 'data-original'].find(name => element.getAttribute(name));
-      const attributeValue = sourceAttribute ? element.getAttribute(sourceAttribute) : '';
+      const mediaElement = ['img', 'video'].includes(tagName) ? element : card?.querySelector('img, video');
+      const mediaTagName = mediaElement?.tagName.toLowerCase() || '';
+      const sourceAttribute = mediaElement && ['src', 'data-src', 'data-original'].find(name => mediaElement.getAttribute(name));
+      const attributeValue = sourceAttribute ? mediaElement.getAttribute(sourceAttribute) : '';
       const identityClass = [...element.classList].find(name => !name.startsWith('admin-editor-')) || '';
       const identityNodes = [...doc.querySelectorAll(tagName)].filter(item => element.id ? item.id === element.id : identityClass ? item.classList.contains(identityClass) : item.textContent.trim() === element.textContent.trim());
+      const productIdentityClass = card ? ([...card.classList].find(name => !['grid-item', 'is-visible'].includes(name)) || '') : '';
+      const productNodes = card ? [...doc.querySelectorAll(card.tagName.toLowerCase())].filter(item => card.id ? item.id === card.id : productIdentityClass ? item.classList.contains(productIdentityClass) : false) : [];
       const productAccordion = element.closest('.product-accordion');
       const accordionIndex = productAccordion ? [...doc.querySelectorAll('.product-accordion details')].indexOf(element.closest('details')) : -1;
       const productField = element.closest('.cms-product-card__title') ? 'title'
@@ -407,9 +413,13 @@ function bindEditorFrame() {
       const pageSlug = document.getElementById('site-editor-page').value.match(/product-pages\/([^/]+)\.html/i)?.[1]
         || card?.getAttribute('href')?.match(/product-pages\/([^/]+)\.html/i)?.[1] || '';
       const productTitle = card?.querySelector('.cms-product-card__title')?.textContent.trim()
+        || card?.querySelector('.product-item__title')?.textContent.trim()
         || doc.querySelector('.product__title')?.textContent.trim() || '';
       const loadedProduct = products.find(item => item.raw?.slug === pageSlug || productSlugFromTitle(item.title) === pageSlug || (productTitle && item.title === productTitle));
       const fieldValue = productField && loadedProduct ? loadedProduct.raw[productField] : undefined;
+      const productPriceText = card?.querySelector('.cms-product-card__price, .product-item__price')?.textContent.match(/[\d,]+(?:\.\d+)?/g)?.at(-1) || '';
+      const productColors = loadedProduct?.raw?.colors || [...(card?.querySelectorAll('tooltip-component[data-tooltip]') || [])].map(item => item.getAttribute('data-tooltip')).filter(Boolean);
+      const isProductCard = Boolean(card && (card.classList.contains('cms-product-card') || card.classList.contains('product-item') || card.className.toString().includes('product-item')));
       editorSelection = {
         page: document.getElementById('site-editor-page').value,
         tagName,
@@ -418,14 +428,22 @@ function bindEditorFrame() {
         identityClass,
         text: element.textContent.trim(),
         occurrence: Math.max(0, identityNodes.indexOf(element)),
-        mediaOccurrence: sourceAttribute ? [...doc.querySelectorAll(tagName)].filter(item => item.getAttribute(sourceAttribute) === attributeValue).indexOf(element) : 0,
+        mediaOccurrence: sourceAttribute ? [...(card || doc).querySelectorAll(mediaTagName)].filter(item => item.getAttribute(sourceAttribute) === attributeValue).indexOf(mediaElement) : 0,
         href: anchor?.getAttribute('href') || '',
-        productHref: card?.getAttribute('href') || '',
+        productHref: card?.getAttribute('href') || card?.querySelector('a[href]')?.getAttribute('href') || '',
         productTitle,
+        productId: card?.id || '',
+        productTagName: card?.tagName.toLowerCase() || '',
+        productIdentityClass,
+        productOccurrence: Math.max(0, productNodes.indexOf(card)),
+        isProductCard,
+        productPrice: loadedProduct?.raw?.price ?? productPriceText.replace(/,/g, ''),
+        productColors,
         productField,
         sourceAttribute,
+        mediaTagName,
         attributeValue,
-        resolvedSrc: element.currentSrc || element.src || '',
+        resolvedSrc: mediaElement?.currentSrc || mediaElement?.src || '',
         alt: element.alt || '',
         canEditText: (!element.children.length && !['img', 'video', 'input', 'br', 'hr'].includes(tagName)) || Boolean(productField),
         editTextValue: fieldValue !== undefined
@@ -433,13 +451,14 @@ function bindEditorFrame() {
           : element.textContent.trim(),
       };
       const preview = document.getElementById('site-editor-selected-image');
-      const isMedia = tagName === 'img' || tagName === 'video';
+      const isMedia = Boolean(mediaElement);
       document.getElementById('site-editor-media-tools').classList.toggle('hidden', !isMedia);
       document.getElementById('site-editor-text-tools').classList.toggle('hidden', isMedia);
-      if (tagName === 'video') preview.classList.add('hidden');
+      document.getElementById('site-editor-product-tools').classList.toggle('hidden', !isProductCard);
+      if (mediaTagName === 'video') preview.classList.add('hidden');
       else {
-        if (tagName === 'img') {
-          preview.src = element.currentSrc || element.src;
+        if (mediaTagName === 'img') {
+          preview.src = mediaElement.currentSrc || mediaElement.src;
           preview.classList.remove('hidden');
         } else preview.classList.add('hidden');
       }
@@ -448,6 +467,12 @@ function bindEditorFrame() {
       document.getElementById('site-editor-text-value').disabled = !editorSelection.canEditText;
       document.getElementById('site-editor-save-text').disabled = !editorSelection.canEditText;
       document.getElementById('site-editor-save-text').classList.toggle('opacity-40', !editorSelection.canEditText);
+      if (isProductCard) {
+        document.getElementById('site-editor-product-title').value = productTitle;
+        document.getElementById('site-editor-product-price').value = productPriceText.replace(/,/g, '') || loadedProduct?.raw?.price || '';
+        document.getElementById('site-editor-product-colors').value = productColors.join(', ');
+        renderEditorProductColors();
+      }
       document.querySelector('#site-editor-text-tools label').textContent = editorSelection.canEditText ? 'Edit text' : 'Section selected';
     }, true);
   } catch {
@@ -462,14 +487,29 @@ function escapeHtmlAttribute(value) {
 }
 
 function findEditorImageTag(html, selection) {
+  let source = html;
+  let offset = 0;
+  if (selection.productId) {
+    const cardRange = editorTagRange(html, {
+      tagName: selection.productTagName,
+      id: selection.productId,
+      identityClass: selection.productIdentityClass,
+      occurrence: selection.productOccurrence,
+    });
+    if (cardRange) {
+      source = html.slice(cardRange.start, cardRange.end);
+      offset = cardRange.start;
+    }
+  }
   const candidates = [];
-  const tagPattern = new RegExp(`<${selection.tagName || 'img'}\\b[^>]*>`, 'gi');
-  for (const match of html.matchAll(tagPattern)) {
+  const tagName = selection.mediaTagName || selection.tagName || 'img';
+  const tagPattern = new RegExp(`<${tagName}\\b[^>]*>`, 'gi');
+  for (const match of source.matchAll(tagPattern)) {
     const tag = match[0];
     const attribute = new RegExp(`\\b${selection.sourceAttribute}\\s*=\\s*(["'])(.*?)\\1`, 'i').exec(tag);
     if (attribute) {
       const decoded = attribute[2].replace(/&amp;/g, '&').replace(/&#39;/g, "'").replace(/&quot;/g, '"');
-      if (decoded === selection.attributeValue) candidates.push({ tag, index: match.index });
+      if (decoded === selection.attributeValue) candidates.push({ tag, index: offset + match.index });
     }
   }
   return candidates[selection.mediaOccurrence ?? selection.occurrence] || null;
@@ -533,6 +573,7 @@ function selectedProductSlug(selection) {
 async function findEditorProduct(selection) {
   const slug = selectedProductSlug(selection);
   if (!slug) {
+    if (selection.productId) return null;
     const loaded = products.find(item => item.title === selection.productTitle || item.title === selection.text || item.image === selection.resolvedSrc);
     const collection = collections.find(item => item.id === loaded?.collectionId);
     if (!loaded || !collection) return null;
@@ -550,6 +591,155 @@ async function findEditorProduct(selection) {
     if (index >= 0) return { path, file, raw: file.data.products[index], index, slug };
   }
   return null;
+}
+
+function productCardRange(html, selection) {
+  if (!selection.productTagName) return null;
+  return editorTagRange(html, {
+    tagName: selection.productTagName,
+    id: selection.productId,
+    identityClass: selection.productIdentityClass,
+    occurrence: selection.productOccurrence || 0,
+  });
+}
+
+function updateStaticProductTitle(cardHtml, title) {
+  const className = cardHtml.includes('cms-product-card__title') ? 'cms-product-card__title' : 'product-item__title';
+  const open = new RegExp(`<([a-z][\\w-]*)\\b[^>]*\\bclass\\s*=\\s*(["'])[^"']*\\b${className}\\b[^"']*\\2[^>]*>`, 'i').exec(cardHtml);
+  if (!open) return cardHtml;
+  const range = editorTagRange(cardHtml, { tagName: open[1], identityClass: className, occurrence: 0 });
+  if (!range) return cardHtml;
+  return cardHtml.slice(0, range.openEnd) + escapeEditorText(title) + cardHtml.slice(range.closeStart);
+}
+
+function updateStaticProductPrice(cardHtml, price) {
+  const range = editorTagRange(cardHtml, { tagName: 'div', identityClass: 'product-item__price', occurrence: 0 });
+  if (!range) return cardHtml;
+  const block = cardHtml.slice(range.start, range.end);
+  const updated = block.replace(/(<img\b[^>]*(?:lari-currency-logo|Lari_logo)[^>]*>)([\s\S]*?)(\d[\d,.]*)/i, `$1$2${price.toFixed(2)}`);
+  return cardHtml.slice(0, range.start) + updated + cardHtml.slice(range.end);
+}
+
+function editorColorHex(name) {
+  const value = name.toLowerCase();
+  const palette = [
+    [/black|შავ/, '#171717'], [/white|თეთრ/, '#f7f5f2'], [/blue|ლურჯ/, '#3284c7'],
+    [/green|მწვან/, '#3e8b58'], [/red|წითელ/, '#c74c4c'], [/pink|ვარდისფ/, '#df8fa7'],
+    [/beige|cream|კრემ|ბეჟ/, '#d9c3a3'], [/brown|ყავისფ/, '#80543e'],
+    [/gray|grey|ნაცრისფ/, '#8a8a8a'], [/yellow|ყვითელ/, '#e5bc42'],
+    [/purple|იისფ/, '#8b68ad'], [/terracotta|ტერაკოტ/, '#b96b4d'],
+  ];
+  return palette.find(([pattern]) => pattern.test(value))?.[1] || '#8a8a8a';
+}
+
+function renderEditorProductColors() {
+  const input = document.getElementById('site-editor-product-colors');
+  const preview = document.getElementById('site-editor-color-preview');
+  if (!input || !preview) return;
+  preview.replaceChildren();
+  input.value.split(/[,،]/).map(value => value.trim()).filter(Boolean).forEach(name => {
+    const chip = document.createElement('span');
+    chip.className = 'inline-flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-900 px-2 py-1 text-[10px] text-slate-200';
+    const swatch = document.createElement('span');
+    swatch.className = 'h-3 w-3 rounded-full border border-white/30';
+    swatch.style.backgroundColor = editorColorHex(name);
+    chip.append(swatch, document.createTextNode(name));
+    preview.append(chip);
+  });
+}
+
+function updateStaticProductColors(cardHtml, colors) {
+  const siblings = editorTagRange(cardHtml, { tagName: 'product-siblings', identityClass: 'product-item__siblings', occurrence: 0 });
+  if (!siblings) return cardHtml;
+  let block = cardHtml.slice(siblings.start, siblings.end);
+  const existingCount = [...block.matchAll(/<tooltip-component\b[^>]*\bdata-tooltip=/gi)].length;
+  for (let index = existingCount - 1; index >= 0; index -= 1) {
+    const range = editorTagRange(block, { tagName: 'tooltip-component', identityClass: 'swatches', occurrence: index });
+    if (!range) continue;
+    if (index >= colors.length) {
+      block = block.slice(0, range.start) + block.slice(range.end);
+      continue;
+    }
+    const name = colors[index];
+    let openTag = block.slice(range.start, range.openEnd);
+    openTag = openTag.replace(/\bdata-tooltip\s*=\s*(["']).*?\1/i, `data-tooltip="${escapeHtmlAttribute(name)}"`);
+    const slug = productSlugFromTitle(name) || `color-${index + 1}`;
+    if (/\bclass\s*=\s*(["']).*?\1/i.test(openTag)) {
+      openTag = openTag.replace(/\bclass\s*=\s*(["'])(.*?)\1/i, (_all, quote, value) => `class=${quote}${value.replace(/\bswatch-[a-z0-9-]+\b/gi, '').trim()} swatch-${slug}${quote}`);
+    }
+    const hex = editorColorHex(name);
+    if (/\bstyle\s*=\s*(["']).*?\1/i.test(openTag)) {
+      openTag = openTag.replace(/\bstyle\s*=\s*(["'])([\s\S]*?)\1/i, (_all, quote, value) => `style=${quote}${value.replace(/--swatch\s*:\s*[^;]+;?/i, `--swatch: ${hex};`)}${quote}`);
+    } else openTag = openTag.replace(/>$/, ` style="--swatch: ${hex};">`);
+    block = block.slice(0, range.start) + openTag + block.slice(range.openEnd);
+  }
+  for (let index = existingCount; index < colors.length; index += 1) {
+    const name = colors[index];
+    const slug = productSlugFromTitle(name) || `color-${index + 1}`;
+    block = block.replace(/<\/native-scrollbar>/i, `<tooltip-component class="swatches swatch__button swatch__button--circle swatch-${slug}" style="--swatch: ${editorColorHex(name)};" data-tooltip="${escapeHtmlAttribute(name)}" tabindex="0"><div class="sibling__link"></div></tooltip-component></native-scrollbar>`);
+  }
+  return cardHtml.slice(0, siblings.start) + block + cardHtml.slice(siblings.end);
+}
+
+async function saveSelectedProduct() {
+  const status = document.getElementById('site-editor-status');
+  if (!editorSelection?.isProductCard) { status.textContent = 'მონიშნეთ პროდუქტი მის რედაქტირებამდე.'; return; }
+  const title = document.getElementById('site-editor-product-title').value.trim();
+  const price = Number(document.getElementById('site-editor-product-price').value);
+  const colors = document.getElementById('site-editor-product-colors').value.split(/[,،]/).map(value => value.trim()).filter(Boolean);
+  if (!title || !Number.isFinite(price) || price < 0) { status.textContent = 'შეამოწმეთ პროდუქტის სახელი და ფასი.'; return; }
+  status.textContent = 'პროდუქტის ცვლილებები ინახება…';
+  try {
+    const product = await findEditorProduct(editorSelection);
+    if (product) {
+      product.raw.title = title;
+      product.raw.price = price;
+      product.raw.colors = colors;
+      await commitJson(product.path, product.file.data);
+      const cached = products.find(item => item.raw?.slug === product.slug || (item.title === editorSelection.productTitle && item.collectionId === collections.find(entry => entry.file === product.path.split('/').pop())?.id));
+      if (cached) {
+        cached.title = title;
+        cached.price = price;
+        cached.colors = colors;
+        cached.raw = product.raw;
+      }
+    } else {
+      const page = await editorHtmlFile(editorSelection.page);
+      const range = productCardRange(page.content, editorSelection);
+      if (!range) throw new Error('არჩეული პროდუქტი HTML-ში ვერ მოიძებნა.');
+      let cardHtml = page.content.slice(range.start, range.end);
+      cardHtml = updateStaticProductTitle(cardHtml, title);
+      cardHtml = updateStaticProductPrice(cardHtml, price);
+      cardHtml = updateStaticProductColors(cardHtml, colors);
+      const updated = page.content.slice(0, range.start) + cardHtml + page.content.slice(range.end);
+      await commitEditorHtml(editorSelection.page, page.sha, updated, `Edit product on ${editorSelection.page}`);
+    }
+    status.textContent = 'პროდუქტი განახლდა. გვერდი ახლდება…';
+    loadEditorPage(true);
+  } catch (error) { status.textContent = error.message || 'პროდუქტის შენახვა ვერ მოხერხდა.'; }
+}
+
+async function deleteSelectedProduct() {
+  if (!editorSelection?.isProductCard) return;
+  if (!window.confirm('პროდუქტი და მისი ფერის ვარიანტები წაიშალოს?')) return;
+  const status = document.getElementById('site-editor-status');
+  status.textContent = 'პროდუქტი იშლება…';
+  try {
+    const product = await findEditorProduct(editorSelection);
+    if (product) {
+      product.file.data.products.splice(product.index, 1);
+      await commitJson(product.path, product.file.data);
+      await deleteProductRoute(product.slug);
+    } else {
+      const page = await editorHtmlFile(editorSelection.page);
+      const range = productCardRange(page.content, editorSelection);
+      if (!range) throw new Error('არჩეული პროდუქტი HTML-ში ვერ მოიძებნა.');
+      const updated = page.content.slice(0, range.start) + page.content.slice(range.end);
+      await commitEditorHtml(editorSelection.page, page.sha, updated, `Delete product on ${editorSelection.page}`);
+    }
+    status.textContent = 'პროდუქტი წაიშალა. გვერდი ახლდება…';
+    loadEditorPage(true);
+  } catch (error) { status.textContent = error.message || 'პროდუქტის წაშლა ვერ მოხერხდა.'; }
 }
 
 async function saveEditorText() {
@@ -663,12 +853,13 @@ async function saveEditorPageImage(replacement, remove = false) {
     if (match) {
       const { tag, index: imageIndex } = match;
       let targetMarkup = tag;
+      const mediaTagName = editorSelection.mediaTagName || editorSelection.tagName;
       const pictureStart = html.lastIndexOf('<picture', imageIndex);
       const pictureEnd = html.indexOf('</picture>', imageIndex);
       const inPicture = pictureStart >= 0 && pictureEnd >= imageIndex;
       const targetStart = inPicture ? pictureStart : imageIndex;
       if (inPicture) targetMarkup = html.slice(pictureStart, pictureEnd + '</picture>'.length);
-      else if (editorSelection.tagName === 'video') {
+      else if (mediaTagName === 'video') {
         const closing = html.indexOf('</video>', imageIndex);
         if (closing >= imageIndex) targetMarkup = html.slice(imageIndex, closing + '</video>'.length);
       }
@@ -684,7 +875,7 @@ async function saveEditorPageImage(replacement, remove = false) {
         }).join('');
         const video = `<video src="${src}" class="${escapeHtmlAttribute(className)}" style="${escapeHtmlAttribute(style)}"${dimensions} controls playsinline muted loop></video>`;
         updated = html.slice(0, targetStart) + video + html.slice(targetStart + targetMarkup.length);
-      } else if (editorSelection.tagName === 'video') {
+      } else if (mediaTagName === 'video') {
         const attrs = ['class', 'style', 'width', 'height', 'alt'].map(name => {
           const match = new RegExp(`\\b${name}\\s*=\\s*(["'])(.*?)\\1`, 'i').exec(tag);
           return match ? ` ${name}="${escapeHtmlAttribute(match[2])}"` : '';
@@ -713,7 +904,7 @@ async function saveEditorPageImage(replacement, remove = false) {
     const product = file.data.products?.find(item => selectedProductPhoto(item, editorSelection));
     if (!product) continue;
     const isVideo = !remove && /^video\//i.test(replacement.type || '');
-    if (editorSelection.tagName === 'video') {
+    if ((editorSelection.mediaTagName || editorSelection.tagName) === 'video') {
       updateProductPhotoReferences(product, editorSelection, null);
       if (!remove && isVideo) {
         product.visualEditorVideoUrl = replacement.url;
