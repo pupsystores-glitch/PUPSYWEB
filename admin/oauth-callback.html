@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ka">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PUPSY CMS ავტორიზაცია</title>
+</head>
+<body>
+  <p id="message">ავტორიზაცია სრულდება…</p>
+  <script>
+    (() => {
+      const params = new URLSearchParams(location.hash.slice(1));
+      const token = params.get('oauth_token');
+      const adminUrl = new URL('./', location.href);
+      if (!token) {
+        location.replace(adminUrl.href);
+        return;
+      }
+      try {
+        sessionStorage.setItem('pupsy_github_token', token);
+        history.replaceState(null, '', location.pathname + location.search);
+        location.replace(adminUrl.href);
+      } catch {
+        document.getElementById('message').textContent = 'ავტორიზაციის შენახვა ვერ მოხერხდა. სცადეთ თავიდან.';
+      }
+    })();
+  </script>
+</body>
+</html>

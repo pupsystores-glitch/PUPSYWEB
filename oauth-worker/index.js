@@ -1,4 +1,5 @@
 const STATE_COOKIE = "pupsy_oauth_state";
+const ADMIN_URL = "https://pupsystores-glitch.github.io/PUPSYWEB/admin/oauth-callback.html";
 
 export default {
   async fetch(request, env) {
@@ -188,6 +189,7 @@ async function finishOAuth(request, url, env) {
 function callbackSuccess(token) {
   const authMessage = `authorization:github:success:${JSON.stringify({ provider: "github", token })}`;
   const safeMessage = JSON.stringify(authMessage).replaceAll("<", "\\u003c");
+  const safeToken = JSON.stringify(token).replaceAll("<", "\\u003c");
   const html = `<!doctype html>
 <html lang="ka"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PUPSY CMS ავტორიზაცია</title></head>
 <body><p>ავტორიზაცია დასრულდა. ეს ფანჯარა დაიხურება…</p>
@@ -195,6 +197,7 @@ function callbackSuccess(token) {
 (() => {
   const authMessage = ${safeMessage};
   if (!window.opener) {
+    window.location.replace(${JSON.stringify(ADMIN_URL)} + "#oauth_token=" + encodeURIComponent(${safeToken}));
     document.body.textContent = "CMS-ის ფანჯარა ვერ მოიძებნა. დახურე ეს ფანჯარა და თავიდან სცადე.";
     return;
   }

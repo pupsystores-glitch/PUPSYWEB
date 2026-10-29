@@ -118,6 +118,8 @@ function loginWithGithub() {
   button.textContent = 'GitHub იხსნება…';
   authPopup = window.open(`${OAUTH_BASE}/auth?provider=github&scope=repo,user`, 'PUPSY_GitHub_Auth', 'width=960,height=700');
   if (!authPopup) {
+    window.location.assign(`${OAUTH_BASE}/auth?provider=github&scope=repo,user&mode=redirect`);
+    return;
     button.disabled = false;
     button.textContent = 'GitHub-ით შესვლა';
     setAuthMessage('ავტორიზაციის ფანჯარა დაიბლოკა. დაუშვი popup-ები და თავიდან სცადე.');
