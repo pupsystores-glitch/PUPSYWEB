@@ -339,10 +339,20 @@ async function loadVoteStats() {
     leadsNode.replaceChildren();
     (data.products || []).forEach(item => {
       const row = document.createElement('div');
-      row.className = 'flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-3 text-xs';
-      const title = document.createElement('span'); title.className = 'font-semibold text-slate-100'; title.textContent = item.title;
+      row.className = 'flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-3 text-xs';
+      const product = products.find(candidate =>
+        candidate.raw?.slug === item.productId || productSlugFromTitle(candidate.title) === item.productId
+      ) || products.find(candidate => candidate.title === item.title);
+      const image = document.createElement('img');
+      image.className = 'h-12 w-12 shrink-0 rounded-lg border border-slate-700 object-cover bg-slate-900';
+      image.alt = product ? `${product.title} — ფოტო` : item.title;
+      image.src = product?.image
+        ? new URL(product.image, new URL('../', window.location.href)).href
+        : 'https://placehold.co/96x96/1e293b/94a3b8?text=IMG';
+      image.onerror = () => { image.src = 'https://placehold.co/96x96/1e293b/94a3b8?text=IMG'; };
+      const title = document.createElement('span'); title.className = 'min-w-0 flex-1 font-semibold text-slate-100'; title.textContent = item.title;
       const count = document.createElement('span'); count.className = 'shrink-0 text-indigo-300'; count.textContent = `${item.votes} ხმა · ${item.contacts} კონტაქტი`;
-      row.append(title, count); productsNode.append(row);
+      row.append(image, title, count); productsNode.append(row);
     });
     (data.leads || []).forEach(item => {
       const row = document.createElement('div');
