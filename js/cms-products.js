@@ -101,7 +101,10 @@
     if (product.comingSoon === true) {
       const badge = document.createElement("span");
       badge.className = "cms-product-card__badge";
-      badge.textContent = "მალე დაგვემატება";
+      const badgeText = document.createElement("span");
+      badgeText.className = "cms-product-card__badge-text";
+      badgeText.textContent = "მალე დაგვემატება";
+      badge.append(badgeText);
       badge.setAttribute("role", "status");
       card.append(badge);
     }
@@ -114,7 +117,7 @@
     const price = document.createElement("span");
     price.className = "cms-product-card__price";
     const currency = document.createElement("img");
-    currency.className = "lari-currency-logo";
+    currency.className = "lari-currency-logo cms-product-card__currency";
     currency.src = new URL("images/Lari_logo.png", baseUrl).href;
     currency.alt = "";
     currency.setAttribute("aria-hidden", "true");
