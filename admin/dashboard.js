@@ -344,11 +344,24 @@ async function loadVoteStats() {
     });
     (data.leads || []).forEach(item => {
       const row = document.createElement('div');
-      row.className = 'rounded-xl border border-slate-800 bg-slate-950/70 p-3 text-xs';
+      row.className = 'flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-3 text-xs';
+      const product = products.find(candidate =>
+        candidate.raw?.slug === item.productId || productSlugFromTitle(candidate.title) === item.productId
+      ) || products.find(candidate => candidate.title === item.title);
+      const image = document.createElement('img');
+      image.className = 'h-16 w-16 shrink-0 rounded-xl border border-slate-700 object-cover bg-slate-900';
+      image.alt = product ? `${product.title} — მთავარი ფოტო` : item.title;
+      image.src = product?.image
+        ? new URL(product.image, new URL('../', window.location.href)).href
+        : 'https://placehold.co/128x128/1e293b/94a3b8?text=IMG';
+      image.onerror = () => { image.src = 'https://placehold.co/128x128/1e293b/94a3b8?text=IMG'; };
+      const details = document.createElement('div');
+      details.className = 'min-w-0 flex-1';
       const title = document.createElement('p'); title.className = 'font-semibold text-slate-100'; title.textContent = item.title;
       const contact = document.createElement('p'); contact.className = 'mt-1 text-slate-300'; contact.textContent = item.contact;
       const date = document.createElement('p'); date.className = 'mt-1 text-[10px] text-slate-500'; date.textContent = item.createdAt;
-      row.append(title, contact, date); leadsNode.append(row);
+      details.append(title, contact, date);
+      row.append(details, image); leadsNode.append(row);
     });
     if (!(data.products || []).length) {
       const empty = document.createElement('p'); empty.className = 'text-xs text-slate-500'; empty.textContent = 'ხმები ჯერ არ არის.'; productsNode.append(empty);
