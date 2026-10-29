@@ -10,6 +10,16 @@
     { path: "products/categories/toys.json", category: "სათამაშოები" },
   ];
   const baseUrl = new URL(".", document.baseURI);
+  function loadVoteModule() {
+    if (window.PupsyComingSoonVotes) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = new URL("js/coming-soon-votes.js?v=1", baseUrl).href;
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.append(script);
+    });
+  }
   const georgianToLatin = {
     ა: "a", ბ: "b", გ: "g", დ: "d", ე: "e", ვ: "v", ზ: "z", თ: "t",
     ი: "i", კ: "k", ლ: "l", მ: "m", ნ: "n", ო: "o", პ: "p", ჟ: "zh",
@@ -106,6 +116,9 @@
     price.textContent = formatPrice(product.price);
     details.append(title, price);
     card.append(details);
+    if (product.comingSoon === true) {
+      window.PupsyComingSoonVotes?.mount(productSlug(product), product.title || "პროდუქტი", card, { inline: true });
+    }
     return card;
   }
 
@@ -114,6 +127,7 @@
     if (!targets.length) return;
 
     try {
+      await loadVoteModule();
       const catalogs = await Promise.all(catalogFiles.map(async (catalog) => {
         const response = await fetch(new URL(catalog.path, baseUrl));
         if (!response.ok) throw new Error("კატალოგის ჩატვირთვა ვერ მოხერხდა: " + catalog.category);

@@ -183,6 +183,7 @@ async function initializeDashboard() {
   selectCollection(activeCollectionId);
   renderMediaGallery();
   renderPageVideos();
+  initializeVoteStatsView();
   document.getElementById('auth-screen').classList.add('hidden');
   lucide.createIcons();
 }
@@ -296,10 +297,69 @@ async function loadMediaFiles() {
 function switchMainTab(tab) {
   const selected = 'flex-1 min-w-0 justify-center px-2.5 py-2 rounded-xl text-[11px] sm:text-xs font-semibold flex items-center gap-1.5 transition-all bg-indigo-600 text-white active-tab-glow';
   const idle = 'flex-1 min-w-0 justify-center px-2.5 py-2 rounded-xl text-[11px] sm:text-xs font-semibold flex items-center gap-1.5 text-slate-400 hover:text-white transition-all';
-  ['contents', 'media', 'videos'].forEach(view => {
+  ['contents', 'media', 'videos', 'stats'].forEach(view => {
     document.getElementById(`${view}-view`).classList.toggle('hidden', view !== tab);
     document.getElementById(`tab-${view}-btn`).className = view === tab ? selected : idle;
   });
+  if (tab === 'stats') loadVoteStats();
+}
+
+function initializeVoteStatsView() {
+  const nav = document.getElementById('tab-videos-btn')?.parentElement;
+  const main = document.querySelector('main');
+  if (!nav || !main || document.getElementById('stats-view')) return;
+  const button = document.createElement('button');
+  button.id = 'tab-stats-btn';
+  button.className = 'flex-1 min-w-0 justify-center px-2 py-2 rounded-xl text-[11px] sm:text-xs font-semibold flex items-center gap-1.5 text-slate-400 hover:text-white transition-all';
+  button.innerHTML = '<i data-lucide="chart-no-axes-column-increasing" class="w-3.5 h-3.5"></i><span>სტატისტიკა</span>';
+  button.onclick = () => switchMainTab('stats');
+  nav.append(button);
+  const view = document.createElement('div');
+  view.id = 'stats-view';
+  view.className = 'hidden space-y-5';
+  view.innerHTML = '<section class="glass-card rounded-2xl border border-slate-800 p-5 space-y-4"><div class="flex items-start justify-between gap-3"><div><h2 class="text-base font-bold text-white">მალე დაგვემატება — ხმები</h2><p class="mt-1 text-xs text-slate-400">ხმები და მომხმარებლების საკონტაქტო ინფორმაცია.</p></div><button id="vote-stats-refresh" class="shrink-0 rounded-xl border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-800">განახლება</button></div><p id="vote-stats-status" class="text-xs text-slate-400">აირჩიეთ „განახლება“ მონაცემების ჩასატვირთად.</p><div id="vote-stats-products" class="space-y-2"></div><h3 class="pt-3 border-t border-slate-800 text-xs font-bold uppercase tracking-wider text-slate-300">შეტყობინების მოთხოვნები</h3><div id="vote-stats-leads" class="space-y-2"></div></section>';
+  main.append(view);
+  document.getElementById('vote-stats-refresh').addEventListener('click', loadVoteStats);
+  if (window.lucide) lucide.createIcons();
+}
+
+async function loadVoteStats() {
+  const status = document.getElementById('vote-stats-status');
+  const productsNode = document.getElementById('vote-stats-products');
+  const leadsNode = document.getElementById('vote-stats-leads');
+  if (!status || !productsNode || !leadsNode) return;
+  status.textContent = 'მონაცემები იტვირთება…';
+  try {
+    const response = await fetch(`${OAUTH_BASE}/api/stats`, { headers: { Authorization: `Bearer ${accessToken}` } });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'სტატისტიკის ჩატვირთვა ვერ მოხერხდა.');
+    productsNode.replaceChildren();
+    leadsNode.replaceChildren();
+    (data.products || []).forEach(item => {
+      const row = document.createElement('div');
+      row.className = 'flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-3 text-xs';
+      const title = document.createElement('span'); title.className = 'font-semibold text-slate-100'; title.textContent = item.title;
+      const count = document.createElement('span'); count.className = 'shrink-0 text-indigo-300'; count.textContent = `${item.votes} ხმა · ${item.contacts} კონტაქტი`;
+      row.append(title, count); productsNode.append(row);
+    });
+    (data.leads || []).forEach(item => {
+      const row = document.createElement('div');
+      row.className = 'rounded-xl border border-slate-800 bg-slate-950/70 p-3 text-xs';
+      const title = document.createElement('p'); title.className = 'font-semibold text-slate-100'; title.textContent = item.title;
+      const contact = document.createElement('p'); contact.className = 'mt-1 text-slate-300'; contact.textContent = item.contact;
+      const date = document.createElement('p'); date.className = 'mt-1 text-[10px] text-slate-500'; date.textContent = item.createdAt;
+      row.append(title, contact, date); leadsNode.append(row);
+    });
+    if (!(data.products || []).length) {
+      const empty = document.createElement('p'); empty.className = 'text-xs text-slate-500'; empty.textContent = 'ხმები ჯერ არ არის.'; productsNode.append(empty);
+    }
+    if (!(data.leads || []).length) {
+      const empty = document.createElement('p'); empty.className = 'text-xs text-slate-500'; empty.textContent = 'საკონტაქტო მოთხოვნები ჯერ არ არის.'; leadsNode.append(empty);
+    }
+    status.textContent = `პროდუქტები: ${(data.products || []).length} · ჯამური ხმები: ${(data.products || []).reduce((sum, item) => sum + Number(item.votes || 0), 0)}`;
+  } catch (error) {
+    status.textContent = error.message || 'სტატისტიკის ჩატვირთვა ვერ მოხერხდა.';
+  }
 }
 
 function currentVideoPage() {

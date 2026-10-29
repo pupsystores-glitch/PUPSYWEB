@@ -4,6 +4,16 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
+    if (url.pathname.startsWith("/api/")) {
+      if (request.method === "OPTIONS") return apiResponse(null, 204, request);
+      if (!env.VOTES_DB) return apiResponse({ error: "Vote storage is not configured." }, 503, request);
+      if (url.pathname === "/api/votes" && request.method === "POST") return castVote(request, env);
+      if (url.pathname === "/api/votes" && request.method === "GET") return getVoteCount(url, request, env);
+      if (url.pathname === "/api/contacts" && request.method === "POST") return saveContact(request, env);
+      if (url.pathname === "/api/stats" && request.method === "GET") return getVoteStats(request, env);
+      return apiResponse({ error: "Not found" }, 404, request);
+    }
+
     if (request.method !== "GET") {
       return new Response("Method not allowed", { status: 405, headers: { Allow: "GET" } });
     }
@@ -21,6 +31,86 @@ export default {
     });
   },
 };
+
+const STORE_ORIGIN = "https://pupsystores-glitch.github.io";
+const REPO = "pupsystores-glitch/PUPSYWEB";
+
+function corsHeaders(request) {
+  const origin = request.headers.get("Origin") || "";
+  const allowed = origin === STORE_ORIGIN || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+  return {
+    "Access-Control-Allow-Origin": allowed ? origin : STORE_ORIGIN,
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Max-Age": "86400",
+    "Vary": "Origin",
+  };
+}
+
+function apiResponse(body, status, request) {
+  return new Response(body == null ? null : JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders(request), "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" },
+  });
+}
+
+async function readJson(request) {
+  try { return await request.json(); } catch { return null; }
+}
+
+async function castVote(request, env) {
+  const body = await readJson(request);
+  const productId = typeof body?.productId === "string" ? body.productId.trim().slice(0, 160) : "";
+  const title = typeof body?.title === "string" ? body.title.trim().slice(0, 200) : "";
+  const voterId = typeof body?.voterId === "string" && /^[a-f0-9-]{32,64}$/i.test(body.voterId) ? body.voterId : "";
+  if (!productId || !title || !voterId) return apiResponse({ error: "Invalid vote data." }, 400, request);
+  const id = crypto.randomUUID();
+  await env.VOTES_DB.prepare("INSERT OR IGNORE INTO votes (id, product_id, product_title, voter_id, created_at) VALUES (?, ?, ?, ?, datetime('now'))")
+    .bind(id, productId, title, voterId).run();
+  const vote = await env.VOTES_DB.prepare("SELECT id FROM votes WHERE product_id = ? AND voter_id = ?").bind(productId, voterId).first();
+  const row = await env.VOTES_DB.prepare("SELECT COUNT(*) AS count FROM votes WHERE product_id = ?").bind(productId).first();
+  return apiResponse({ voteId: vote.id, count: row.count, duplicate: vote.id !== id }, 200, request);
+}
+
+async function getVoteCount(url, request, env) {
+  const productId = (url.searchParams.get("productId") || "").trim().slice(0, 160);
+  if (!productId) return apiResponse({ error: "Product ID required." }, 400, request);
+  const row = await env.VOTES_DB.prepare("SELECT COUNT(*) AS count FROM votes WHERE product_id = ?").bind(productId).first();
+  return apiResponse({ count: row.count }, 200, request);
+}
+
+async function saveContact(request, env) {
+  const body = await readJson(request);
+  const voteId = typeof body?.voteId === "string" ? body.voteId : "";
+  const contact = typeof body?.contact === "string" ? body.contact.trim().slice(0, 200) : "";
+  if (!/^[0-9a-f-]{36}$/i.test(voteId) || contact.length < 5 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact) && !/^[+\d][\d\s().-]{5,24}$/.test(contact)) {
+    return apiResponse({ error: "Enter a valid email address or phone number." }, 400, request);
+  }
+  const vote = await env.VOTES_DB.prepare("SELECT id FROM votes WHERE id = ?").bind(voteId).first();
+  if (!vote) return apiResponse({ error: "Vote not found." }, 404, request);
+  await env.VOTES_DB.prepare("INSERT INTO vote_contacts (vote_id, contact, created_at) VALUES (?, ?, datetime('now')) ON CONFLICT(vote_id) DO UPDATE SET contact = excluded.contact, created_at = excluded.created_at")
+    .bind(voteId, contact).run();
+  return apiResponse({ saved: true }, 200, request);
+}
+
+async function getVoteStats(request, env) {
+  const token = (request.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
+  if (!token) return apiResponse({ error: "Admin authorization required." }, 401, request);
+  const repoResponse = await fetch(`https://api.github.com/repos/${REPO}`, {
+    headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "PUPSY-votes" },
+  });
+  if (!repoResponse.ok) return apiResponse({ error: "GitHub admin authorization failed." }, 403, request);
+  const repo = await repoResponse.json();
+  if (!repo.permissions?.push && !repo.permissions?.admin) return apiResponse({ error: "Repository write access required." }, 403, request);
+  const { results } = await env.VOTES_DB.prepare(`SELECT v.product_id AS productId, v.product_title AS title,
+      COUNT(*) AS votes, COUNT(c.vote_id) AS contacts
+    FROM votes v LEFT JOIN vote_contacts c ON c.vote_id = v.id
+    GROUP BY v.product_id ORDER BY votes DESC, title`).all();
+  const leads = await env.VOTES_DB.prepare(`SELECT v.product_id AS productId, v.product_title AS title,
+      c.contact AS contact, c.created_at AS createdAt
+    FROM vote_contacts c JOIN votes v ON v.id = c.vote_id ORDER BY c.created_at DESC`).all();
+  return apiResponse({ products: results || [], leads: leads.results || [] }, 200, request);
+}
 
 function startOAuth(url, env) {
   if (!env.GITHUB_CLIENT_ID) {

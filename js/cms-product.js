@@ -477,6 +477,7 @@
       badge.setAttribute("role", "status");
       badge.style.cssText = "display:inline-flex;align-items:center;width:max-content;margin:8px 0 12px;padding:8px 14px;border-radius:999px;background:#8a4d2e;color:#fff;font-size:13px;font-weight:700;line-height:1.2;";
       titleWrapper.append(badge);
+      window.PupsyComingSoonVotes?.mount(productSlug(product), product.title || "პროდუქტი", titleWrapper);
     }
 
     const price = document.querySelector("[data-product-price]");
@@ -553,6 +554,15 @@
 
   async function init() {
     try {
+      if (!window.PupsyComingSoonVotes) {
+        await new Promise((resolve, reject) => {
+          const script = document.createElement("script");
+          script.src = new URL("js/coming-soon-votes.js?v=1", baseUrl).href;
+          script.onload = resolve;
+          script.onerror = reject;
+          document.head.append(script);
+        });
+      }
       const catalogs = await Promise.all(catalogFiles.map(async (catalog) => {
         const response = await fetch(new URL(catalog.path, baseUrl));
         if (!response.ok) throw new Error("პროდუქტების სია ვერ ჩაიტვირთა: " + catalog.category);

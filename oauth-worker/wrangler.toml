@@ -1,6 +1,21 @@
 name = "pupsy-decap-oauth"
 main = "index.js"
 compatibility_date = "2026-10-16"
+preview_urls = true
+
+[vars]
+GITHUB_CLIENT_ID = "Ov23liEoP6Xm8ETqLycR"
+
+[observability]
+enabled = true
+
+[observability.logs]
+enabled = true
+
+[[d1_databases]]
+binding = "VOTES_DB"
+database_name = "pupsy-product-votes"
+database_id = "2c28938a-1075-4746-9724-b555bcb6ce98"
 
 # After deployment, set these as Worker secrets in Cloudflare:
 # GITHUB_CLIENT_ID
