@@ -315,6 +315,53 @@ let editorSelection = null;
 let editorLoadedPage = '';
 let editorSelectedNode = null;
 const boundEditorDocuments = new WeakSet();
+const pendingEditorHtml = new Map();
+const pendingEditorJson = new Map();
+const pendingProductRoutes = new Set();
+
+function updateEditorSaveButton() {
+  const button = document.getElementById('site-editor-save-changes');
+  if (!button) return;
+  button.classList.toggle('hidden', !pendingEditorHtml.size && !pendingEditorJson.size && !pendingProductRoutes.size);
+}
+
+function stageEditorHtml(path, sha, content, message) {
+  const existing = pendingEditorHtml.get(path);
+  pendingEditorHtml.set(path, { sha: existing?.sha || sha, content, message });
+  updateEditorSaveButton();
+}
+
+function stageEditorJson(path, data) {
+  pendingEditorJson.set(path, data);
+  updateEditorSaveButton();
+}
+
+async function saveEditorChanges() {
+  const status = document.getElementById('site-editor-status');
+  if (!pendingEditorHtml.size && !pendingEditorJson.size && !pendingProductRoutes.size) return;
+  status.textContent = 'ცვლილებები ინახება…';
+  try {
+    for (const [path, draft] of pendingEditorHtml) {
+      await commitEditorHtml(path, draft.sha, draft.content, draft.message);
+      pendingEditorHtml.delete(path);
+      updateEditorSaveButton();
+    }
+    for (const [path, data] of pendingEditorJson) {
+      await commitJson(path, data);
+      pendingEditorJson.delete(path);
+      updateEditorSaveButton();
+    }
+    for (const slug of pendingProductRoutes) {
+      await deleteProductRoute(slug);
+      pendingProductRoutes.delete(slug);
+      updateEditorSaveButton();
+    }
+    status.textContent = 'ცვლილებები შენახულია. გვერდი განახლდება…';
+    loadEditorPage(true);
+  } catch (error) {
+    status.textContent = error.message || 'ცვლილებების შენახვა ვერ მოხერხდა.';
+  }
+}
 
 function loadEditorPage(force = false) {
   const page = document.getElementById('site-editor-page')?.value;
@@ -520,7 +567,14 @@ function editorTagRange(html, selection) {
       else if (!token[0].endsWith('/>')) depth += 1;
       if (depth === 0) { closeStart = token.index; end = tokens.lastIndex; break; }
     }
-    if (end >= 0) candidates.push({ start: match.index, openEnd, closeStart, end });
+    if (end >= 0) {
+      if (!selection.id && !selection.identityClass && selection.text) {
+        const textTemplate = document.createElement('template');
+        textTemplate.innerHTML = html.slice(openEnd, closeStart);
+        if (textTemplate.content.textContent.trim() !== selection.text) continue;
+      }
+      candidates.push({ start: match.index, openEnd, closeStart, end });
+    }
   }
   return candidates[selection.occurrence] || null;
 }
@@ -651,18 +705,27 @@ async function deleteSelectedProduct() {
   try {
     const product = await findEditorProduct(editorSelection);
     if (product) {
-      product.file.data.products.splice(product.index, 1);
-      await commitJson(product.path, product.file.data);
-      await deleteProductRoute(product.slug);
+      const data = pendingEditorJson.get(product.path) || product.file.data;
+      const index = data.products.findIndex(item => item.slug === product.slug || productSlugFromTitle(item.title || '') === product.slug);
+      if (index < 0) throw new Error('Product no longer exists.');
+      data.products.splice(index, 1);
+      stageEditorJson(product.path, data);
+      pendingProductRoutes.add(product.slug);
+      updateEditorSaveButton();
+      (editorSelectedNode?.closest('.cms-product-card, .product-item, [class*="product-card"], [class*="product-item"]') || editorSelectedNode)?.remove();
     } else {
-      const page = await editorHtmlFile(editorSelection.page);
+      const pending = pendingEditorHtml.get(editorSelection.page);
+      const page = pending || await editorHtmlFile(editorSelection.page);
       const range = productCardRange(page.content, editorSelection);
       if (!range) throw new Error('არჩეული პროდუქტი HTML-ში ვერ მოიძებნა.');
       const updated = page.content.slice(0, range.start) + page.content.slice(range.end);
-      await commitEditorHtml(editorSelection.page, page.sha, updated, `Delete product on ${editorSelection.page}`);
+      stageEditorHtml(editorSelection.page, page.sha, updated, `Delete product on ${editorSelection.page}`);
+      (editorSelectedNode?.closest('.cms-product-card, .product-item, [class*="product-card"], [class*="product-item"]') || editorSelectedNode)?.remove();
     }
-    status.textContent = 'პროდუქტი წაიშალა. გვერდი ახლდება…';
-    loadEditorPage(true);
+    editorSelection = null;
+    editorSelectedNode = null;
+    document.getElementById('site-editor-product-tools').classList.add('hidden');
+    status.textContent = 'Product removed from preview. Click Save changes below to publish.';
   } catch (error) { status.textContent = error.message || 'პროდუქტის წაშლა ვერ მოხერხდა.'; }
 }
 
@@ -709,18 +772,28 @@ async function deleteEditorSelection() {
   try {
     const product = await findEditorProduct(editorSelection);
     if (product && (editorSelection.tagName === 'a' || editorSelection.tagName === 'article' || editorSelection.className.includes('product-card'))) {
-      product.file.data.products.splice(product.index, 1);
-      await commitJson(product.path, product.file.data);
-      await deleteProductRoute(product.slug);
+      const data = pendingEditorJson.get(product.path) || product.file.data;
+      const index = data.products.findIndex(item => item.slug === product.slug || productSlugFromTitle(item.title || '') === product.slug);
+      if (index < 0) throw new Error('Product no longer exists.');
+      data.products.splice(index, 1);
+      stageEditorJson(product.path, data);
+      pendingProductRoutes.add(product.slug);
+      updateEditorSaveButton();
+      (editorSelectedNode?.closest('.cms-product-card, .product-item, [class*="product-card"], [class*="product-item"]') || editorSelectedNode)?.remove();
     } else {
-      const page = await editorHtmlFile(editorSelection.page);
+      const pending = pendingEditorHtml.get(editorSelection.page);
+      const page = pending || await editorHtmlFile(editorSelection.page);
       const range = editorTagRange(page.content, editorSelection);
       if (!range) throw new Error('მონიშნული სექცია გვერდის HTML-ში ვერ მოიძებნა.');
       const updated = page.content.slice(0, range.start) + page.content.slice(range.end);
-      await commitEditorHtml(editorSelection.page, page.sha, updated, `Delete section on ${editorSelection.page}`);
+      stageEditorHtml(editorSelection.page, page.sha, updated, `Delete section on ${editorSelection.page}`);
+      editorSelectedNode?.remove();
     }
-    status.textContent = 'მონიშნული ელემენტი წაიშალა. გვერდი ახლდება…';
-    loadEditorPage(true);
+    editorSelection = null;
+    editorSelectedNode = null;
+    document.getElementById('site-editor-text-tools').classList.add('hidden');
+    document.getElementById('site-editor-product-tools').classList.add('hidden');
+    status.textContent = 'Deleted in preview. Click Save changes below to publish.';
   } catch (error) { status.textContent = error.message || 'ელემენტის წაშლა ვერ მოხერხდა.'; }
 }
 
@@ -765,9 +838,11 @@ function updateProductPhotoReferences(raw, selection, replacement) {
 async function saveEditorPageImage(replacement, remove = false) {
   if (!editorSelection) throw new Error('ჯერ აირჩიეთ ფოტო საიტის გადახედვაში.');
   const path = editorSelection.page;
-  const result = await githubRequest(`/repos/${GITHUB_REPO}/contents/${encodeURIComponent(path).replace(/%2F/g, '/')}?ref=${GITHUB_BRANCH}`);
+  const pending = pendingEditorHtml.get(path);
+  const result = pending ? { sha: pending.sha } : await githubRequest(`/repos/${GITHUB_REPO}/contents/${encodeURIComponent(path).replace(/%2F/g, '/')}?ref=${GITHUB_BRANCH}`);
   let html;
-  if (typeof result.content === 'string') html = decodeBase64Utf8(result.content);
+  if (pending) html = pending.content;
+  else if (typeof result.content === 'string') html = decodeBase64Utf8(result.content);
   else if (result.download_url) html = await fetch(result.download_url).then(response => {
       if (!response.ok) throw new Error('გვერდის წყაროს წაკითხვა ვერ მოხერხდა.');
       return response.text();
@@ -814,9 +889,10 @@ async function saveEditorPageImage(replacement, remove = false) {
         if (inPicture) updatedMarkup = updatedMarkup.replace(/<source\b[^>]*>/gi, '');
         updated = html.slice(0, targetStart) + updatedMarkup + html.slice(targetStart + targetMarkup.length);
       }
-      await githubRequest(`/repos/${GITHUB_REPO}/contents/${encodeURIComponent(path).replace(/%2F/g, '/')}?ref=${GITHUB_BRANCH}`, {
+      if (remove) stageEditorHtml(path, result.sha, updated, `Remove image on ${path}`);
+      else await githubRequest(`/repos/${GITHUB_REPO}/contents/${encodeURIComponent(path).replace(/%2F/g, '/')}?ref=${GITHUB_BRANCH}`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: `${remove ? 'Remove' : 'Replace'} image on ${path}`, content: encodeBase64Utf8(updated), sha: result.sha, branch: GITHUB_BRANCH }),
+        body: JSON.stringify({ message: `Replace image on ${path}`, content: encodeBase64Utf8(updated), sha: result.sha, branch: GITHUB_BRANCH }),
       });
       return;
     }
@@ -824,7 +900,8 @@ async function saveEditorPageImage(replacement, remove = false) {
 
   for (const collection of collections) {
     const filePath = `products/categories/${collection.file}`;
-    const file = await githubFile(filePath);
+    const pendingData = pendingEditorJson.get(filePath);
+    const file = pendingData ? { data: pendingData } : await githubFile(filePath);
     const product = file.data.products?.find(item => selectedProductPhoto(item, editorSelection));
     if (!product) continue;
     const isVideo = !remove && /^video\//i.test(replacement.type || '');
@@ -847,7 +924,8 @@ async function saveEditorPageImage(replacement, remove = false) {
         delete product.visualEditorVideoUrl;
       }
     }
-    await commitJson(filePath, file.data);
+    if (remove) stageEditorJson(filePath, file.data);
+    else await commitJson(filePath, file.data);
     return;
   }
   throw new Error('არჩეული ფოტო გვერდის HTML-ში ან პროდუქტის მონაცემებში ვერ მოიძებნა. შესაძლოა ის CSS ფონის სურათი იყოს.');
@@ -889,8 +967,11 @@ async function deleteEditorImage() {
   status.textContent = 'ფოტო იშლება…';
   try {
     await saveEditorPageImage(null, true);
-    status.textContent = 'ფოტო წაიშალა. გვერდი ახლდება…';
-    loadEditorPage(true);
+    (editorSelectedNode?.closest('picture') || editorSelectedNode)?.remove();
+    editorSelection = null;
+    editorSelectedNode = null;
+    status.textContent = 'Image removed from preview. Click Save changes below to publish.';
+
   } catch (error) { status.textContent = error.message || 'ფოტოს წაშლა ვერ მოხერხდა.'; }
 }
 
