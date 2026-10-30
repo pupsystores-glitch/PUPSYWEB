@@ -1171,12 +1171,61 @@ function updateProductPhotoReferences(raw, selection, replacement) {
   visit(raw, null, null);
 }
 
+function replaceEditorProductPhotos(raw, url) {
+  raw.photos = [{ source: 'gallery', images: [url] }];
+  raw.image = url;
+  raw.images = [url];
+  delete raw.imageUrl;
+  delete raw.photo;
+}
+
+function collapseEditorProductGalleryPreview(preferredSlide = null) {
+  const gallery = preferredSlide?.closest('.product__slides[data-product-media-list]')
+    || editorSelectedNode?.closest('.product__slides[data-product-media-list]')
+    || editorSelectedNode?.ownerDocument.querySelector('.product__slides[data-product-media-list]');
+  const selectedSlide = preferredSlide || editorSelectedNode?.closest('.product__slide') || gallery?.querySelector('.product__slide');
+  if (!gallery || !selectedSlide) return;
+  gallery.querySelectorAll('.product__slide').forEach(slide => {
+    if (slide === selectedSlide) {
+      slide.hidden = false;
+      slide.classList.add('media--active');
+      slide.classList.remove('media--hidden');
+      slide.dataset.imageId = 'cms-0';
+      slide.dataset.mediaId = 'cms-0';
+    } else slide.hidden = true;
+  });
+  gallery.setAttribute('data-active-media', 'cms-0');
+}
+
+function updateEditorProductGalleryPreview(url) {
+  const doc = editorSelectedNode?.ownerDocument;
+  const gallery = doc?.querySelector('.product__slides[data-product-media-list]');
+  const slide = editorSelectedNode?.closest('.product__slide') || gallery?.querySelector('.product__slide');
+  const image = slide?.querySelector('.product__photo img, img');
+  if (image && image !== editorSelectedNode) {
+    image.removeAttribute('srcset');
+    image.removeAttribute('data-src');
+    image.src = url;
+  }
+  collapseEditorProductGalleryPreview(slide);
+}
+
 async function saveEditorPageImage(replacement, remove = false) {
   if (!editorSelection) throw new Error('ჯერ აირჩიეთ ფოტო საიტის გადახედვაში.');
   const path = editorSelection.page;
+  const storedUrl = replacement ? replacement.stagedUrl || replacement.url : '';
+  if (!remove && !/^video\//i.test(replacement.type || '')) {
+    const product = await findEditorProduct(editorSelection);
+    if (product) {
+      replaceEditorProductPhotos(product.raw, storedUrl);
+      stageEditorJson(product.path, product.file.data);
+      updateEditorMediaPreview(replacement);
+      updateEditorProductGalleryPreview(replacement.url);
+      return;
+    }
+  }
   const pending = pendingEditorHtml.get(path);
   const result = pending ? { sha: pending.sha } : await githubRequest(`/repos/${GITHUB_REPO}/contents/${encodeURIComponent(path).replace(/%2F/g, '/')}?ref=${GITHUB_BRANCH}`);
-  const storedUrl = replacement ? replacement.stagedUrl || replacement.url : '';
   let html;
   if (pending) html = pending.content;
   else if (typeof result.content === 'string') html = decodeBase64Utf8(result.content);
