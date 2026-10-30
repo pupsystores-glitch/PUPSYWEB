@@ -332,6 +332,7 @@ async function loadPageVideosView() {
 
 let editorSelection = null;
 let editorLoadedPage = '';
+let editorLoadedUrl = '';
 let editorFrameBindGeneration = 0;
 let editorSelectedNode = null;
 const boundEditorDocuments = new WeakSet();
@@ -436,14 +437,14 @@ function loadEditorPage(force = false) {
   if (!page || !frame || (!force && editorLoadedPage === page)) return;
   editorLoadedPage = page;
   clearEditorSelection();
-  frame.src = `https://pupsystores-glitch.github.io/PUPSYWEB/${page}`;
+  editorLoadedUrl = `https://pupsystores-glitch.github.io/PUPSYWEB/${page}?admin-preview=${Date.now()}`;
+  frame.src = editorLoadedUrl;
   editorFrameBindGeneration += 1;
-  bindEditorFrameWhenReady(page, editorFrameBindGeneration);
+  bindEditorFrameWhenReady(page, editorFrameBindGeneration, editorLoadedUrl);
 }
 
-function bindEditorFrameWhenReady(page, generation) {
+function bindEditorFrameWhenReady(page, generation, expectedUrl = editorLoadedUrl) {
   const frame = document.getElementById('site-editor-frame');
-  const expectedUrl = `https://pupsystores-glitch.github.io/PUPSYWEB/${page}`;
   let attempts = 0;
   const attemptBind = () => {
     if (generation !== editorFrameBindGeneration || editorLoadedPage !== page || attempts++ >= 750) return;
@@ -703,8 +704,20 @@ function editorLiveSelector(element) {
       parts.unshift(`#${CSS.escape(current.id)}`);
       break;
     }
+    let uniqueDataSelector = '';
+    for (const attribute of ['data-section-id', 'data-product-id', 'data-block-id', 'data-product-handle']) {
+      const value = current.getAttribute(attribute);
+      if (!value) continue;
+      const escapedValue = value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+      const candidate = `[${attribute}="${escapedValue}"]`;
+      if (current.ownerDocument.querySelectorAll(candidate).length === 1) { uniqueDataSelector = candidate; break; }
+    }
+    if (uniqueDataSelector) {
+      parts.unshift(uniqueDataSelector);
+      break;
+    }
     const tag = current.tagName.toLowerCase();
-    const classes = [...current.classList].filter(name => !name.startsWith('admin-editor-'));
+    const classes = [...current.classList].filter(name => !/^(?:admin-editor-|aos-animate$|is-visible$|is-hidden$|is-active$|is-selected$|active$|loaded$|is-loaded$|is-initialized$|animated$)/i.test(name));
     let part = tag + classes.map(name => `.${CSS.escape(name)}`).join('');
     const siblings = [...(current.parentElement?.children || [])].filter(item => item.tagName === current.tagName);
     if (siblings.length > 1) part += `:nth-of-type(${siblings.indexOf(current) + 1})`;
@@ -724,6 +737,20 @@ function stageEditorLiveElementDeletion(page, element) {
     ? page.content.replace(existing[0], existing[0].replace('</style>', `${css}</style>`))
     : page.content.includes('</body>') ? page.content.replace('</body>', `${style}</body>`) : `${page.content}${style}`;
   stageEditorHtml(editorSelection.page, page.sha, updated, `Delete rendered section on ${editorSelection.page}`);
+  return true;
+}
+
+function stageEditorHiddenProduct(page, slug) {
+  const value = String(slug || '').trim();
+  if (!value) return false;
+  const hidden = [...page.content.matchAll(/<meta\b[^>]*\bdata-admin-hidden-product\s*=\s*(["'])(.*?)\1[^>]*>/gi)]
+    .map(match => match[2].replace(/&amp;/g, '&').replace(/&quot;/g, '"'));
+  if (hidden.includes(value)) return true;
+  const meta = `<meta data-admin-hidden-product="${escapeHtmlAttribute(value)}">`;
+  const updated = /<\/head>/i.test(page.content)
+    ? page.content.replace(/<\/head>/i, `${meta}</head>`)
+    : `${meta}${page.content}`;
+  stageEditorHtml(editorSelection.page, page.sha, updated, `Hide product card on ${editorSelection.page}`);
   return true;
 }
 
@@ -1164,16 +1191,16 @@ async function deleteEditorSelection() {
   const status = document.getElementById('site-editor-status');
   status.textContent = 'ელემენტი იშლება…';
   try {
-    const product = await findEditorProduct(editorSelection);
-    if (product && (editorSelection.tagName === 'a' || editorSelection.tagName === 'article' || editorSelection.className.includes('product-card'))) {
-      const data = pendingEditorJson.get(product.path) || product.file.data;
-      const index = data.products.findIndex(item => item.slug === product.slug || productSlugFromTitle(item.title || '') === product.slug);
-      if (index < 0) throw new Error('Product no longer exists.');
-      data.products.splice(index, 1);
-      stageEditorJson(product.path, data);
-      pendingProductRoutes.add(product.slug);
-      updateEditorSaveButton();
-      (editorSelectedNode?.closest('.cms-product-card, .product-item, [class*="product-card"], [class*="product-item"]') || editorSelectedNode)?.remove();
+    const productHref = editorSelection.productHref || editorSelection.href || '';
+    const productRoute = /(?:^|\/)product-pages\/([^/?#]+)\.html|(?:^|\/)products\/([^/?#]+)/i.exec(productHref);
+    const hiddenProductSlug = decodeURIComponent(productRoute?.[1] || productRoute?.[2] || '');
+    if (editorSelection.isProductCard && editorSelection.productTagName === 'a' && editorSelection.productIdentityClass === 'cms-product-card') {
+      const pending = pendingEditorHtml.get(editorSelection.page);
+      const page = pending || await editorHtmlFile(editorSelection.page);
+      const slugMatch = (editorSelection.productHref || editorSelection.href || '').match(/product-pages\/([^/?#]+)\.html/i);
+      const slug = decodeURIComponent(slugMatch?.[1] || '');
+      if (!stageEditorHiddenProduct(page, slug)) throw new Error('Selected product could not be identified for deletion.');
+      (editorSelectedNode?.closest('.cms-product-card') || editorSelectedNode)?.remove();
     } else {
       const pending = pendingEditorHtml.get(editorSelection.page);
       const page = pending || await editorHtmlFile(editorSelection.page);
@@ -1183,6 +1210,10 @@ async function deleteEditorSelection() {
         stageEditorHtml(editorSelection.page, page.sha, updated, `Delete section on ${editorSelection.page}`);
       } else if (!stageEditorLiveElementDeletion(page, editorSelectedNode)) {
         throw new Error('Selected element could not be deleted.');
+      }
+      if (editorSelection.isProductCard && hiddenProductSlug) {
+        const staged = pendingEditorHtml.get(editorSelection.page);
+        stageEditorHiddenProduct(staged ? { sha: staged.sha, content: staged.content } : page, hiddenProductSlug);
       }
       editorSelectedNode?.remove();
     }

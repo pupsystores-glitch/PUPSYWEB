@@ -156,7 +156,9 @@
     try {
       await loadVoteModule();
       const catalogs = await Promise.all(catalogFiles.map(async (catalog) => {
-        const response = await fetch(new URL(catalog.path, baseUrl));
+        const catalogUrl = new URL(catalog.path, baseUrl);
+        catalogUrl.searchParams.set("_", String(Date.now()));
+        const response = await fetch(catalogUrl, { cache: "no-store" });
         if (!response.ok) throw new Error("კატალოგის ჩატვირთვა ვერ მოხერხდა: " + catalog.category);
         const data = await response.json();
         return (Array.isArray(data.products) ? data.products : []).map((product) => ({
@@ -164,8 +166,11 @@
           category: catalog.category,
         }));
       }));
+      const hiddenProducts = new Set([...document.querySelectorAll("meta[data-admin-hidden-product]")]
+        .map((meta) => meta.getAttribute("data-admin-hidden-product"))
+        .filter(Boolean));
       const products = catalogs.flat().filter(
-        (product) => product.published !== false && product.title
+        (product) => product.published !== false && product.title && !hiddenProducts.has(productSlug(product))
       );
 
       targets.forEach((target) => {
