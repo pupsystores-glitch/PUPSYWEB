@@ -62,13 +62,32 @@
     const gallery = document.querySelector('.ambassador-video-section__grid');
     if (!gallery || !items.length) return;
     gallery.replaceChildren();
+    const posters = [
+      'https://images.unsplash.com/photo-1765278134601-3f2dc85d1edf?auto=format&fit=crop&w=480&q=40',
+      'https://images.unsplash.com/photo-1767101608062-4eadebf5a889?auto=format&fit=crop&w=480&q=40',
+      'https://images.unsplash.com/photo-1600804340584-c7db2eacf0bf?auto=format&fit=crop&w=480&q=40',
+      'https://images.unsplash.com/photo-1686908904084-34e0c26b5f71?auto=format&fit=crop&w=480&q=40',
+      'https://images.unsplash.com/photo-1737482810276-80dfd5948034?auto=format&fit=crop&w=480&q=40',
+      'https://images.unsplash.com/photo-1751315722210-3eb0c4a028c0?auto=format&fit=crop&w=480&q=40'
+    ];
     items.forEach(item => {
       const card = document.createElement('button');
       card.type = 'button';
       card.className = 'ambassador-video-slot ambassador-managed-video';
       card.dataset.videoUrl = item.url;
       card.setAttribute('aria-label', `ვიდეოს ნახვა: ${item.caption}`);
-      card.append(createVideo(item, true));
+      const poster = document.createElement('img');
+      poster.className = 'ambassador-managed-video__poster';
+      poster.src = posters[items.indexOf(item) % posters.length];
+      poster.alt = item.caption;
+      poster.loading = 'lazy';
+      poster.decoding = 'async';
+      card.append(poster);
+      const playIcon = document.createElement('span');
+      playIcon.className = 'ambassador-managed-video__play';
+      playIcon.setAttribute('aria-hidden', 'true');
+      playIcon.textContent = '▶';
+      card.append(playIcon);
       const caption = document.createElement('span');
       caption.className = 'ambassador-video-slot__label';
       caption.textContent = item.caption;

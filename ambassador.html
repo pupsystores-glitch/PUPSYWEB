@@ -15259,8 +15259,10 @@ A true staple...">
     }
     .ambassador-video-slot:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(50, 35, 30, .16); }
     .ambassador-video-slot:focus-visible { outline: 3px solid #292321; outline-offset: 4px; }
-    .ambassador-managed-video { min-height: 0; padding: 12px; }
-    .ambassador-managed-video video { width: 100%; aspect-ratio: 4 / 5; max-height: 380px; object-fit: cover; pointer-events: none; }
+    .ambassador-managed-video { position: relative; display: block; min-height: 0; padding: 0; overflow: hidden; }
+    .ambassador-managed-video__poster { display: block; width: 100%; aspect-ratio: 4 / 5; max-height: 380px; object-fit: cover; }
+    .ambassador-managed-video__play { position: absolute; inset: 0; display: grid; place-items: center; color: #fff; font: 700 48px/1 Arial, sans-serif; text-shadow: 0 2px 10px rgba(0,0,0,.65); pointer-events: none; }
+    .ambassador-managed-video .ambassador-video-slot__label { position: absolute; right: 12px; bottom: 0; left: 12px; padding: 30px 8px 14px; background: linear-gradient(transparent, rgba(0,0,0,.62)); color: #fff; text-align: center; }
     .ambassador-video-slot:nth-child(2) { background: #8d7167; }
     .ambassador-video-slot:nth-child(3) { background: #6e827d; }
     .ambassador-video-slot:nth-child(4) { background: #887b9e; }
@@ -24517,6 +24519,6 @@ This shoot with @pollycreativestudios was such a fun one, and we have so much mo
 })();
 </script>
 
-<script defer src="js/page-videos.js?v=3"></script>
-<script defer src="js/remove-header-icons.js?v=1"></script><script defer src="js/ambassador-videos.js?v=3"></script>
+<script defer src="js/page-videos.js?v=4"></script>
+<script defer src="js/remove-header-icons.js?v=1"></script><script defer src="js/ambassador-videos.js?v=4"></script>
 </body></html>
