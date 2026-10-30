@@ -791,12 +791,13 @@ function stageEditorLiveImageEdit(page, element, url) {
 async function editorHtmlFile(path) {
   const file = await githubRequest(`/repos/${GITHUB_REPO}/contents/${encodeURIComponent(path).replace(/%2F/g, '/')}?ref=${GITHUB_BRANCH}`);
   let content;
-  if (typeof file.content === 'string') content = decodeBase64Utf8(file.content);
+  if (typeof file.content === 'string' && file.content.trim()) content = decodeBase64Utf8(file.content);
   else if (file.download_url) {
     const response = await fetch(file.download_url);
     if (!response.ok) throw new Error('გვერდის წყაროს წაკითხვა ვერ მოხერხდა.');
     content = await response.text();
   } else throw new Error('გვერდийн HTML ფაიлыг რედაქტირება შეუძლებელია.');
+  if (!content?.trim()) throw new Error('Page HTML is empty; changes were not saved to protect the site.');
   return { sha: file.sha, content };
 }
 
@@ -816,29 +817,24 @@ function selectedProductSlug(selection) {
 
 async function findEditorProduct(selection) {
   const slug = selectedProductSlug(selection);
+  const normalizeSlug = value => String(value || '').trim().replace(/\\/g, '/').split('/').pop().replace(/\.html$/i, '').toLocaleLowerCase();
   const normalizedTitle = value => String(value || '').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
   const loaded = products.find(item =>
     (selection.productTitle && normalizedTitle(item.title) === normalizedTitle(selection.productTitle))
     || (selection.text && normalizedTitle(item.title) === normalizedTitle(selection.text))
     || (selection.resolvedSrc && item.image === selection.resolvedSrc)
   );
-  if (!slug) {
-    const collection = collections.find(item => item.id === loaded?.collectionId);
-    if (!loaded || !collection) return null;
-    const path = `products/categories/${collection.file}`;
-    const pendingData = pendingEditorJson.get(path);
-    const file = pendingData ? { data: pendingData } : collectionFiles[collection.id] || await githubFile(path);
-    const index = loaded.raw?.slug
-      ? (file.data.products || []).findIndex(raw => raw.slug === loaded.raw.slug)
-      : loaded.index;
-    return index >= 0 ? { path, file, raw: file.data.products[index], index, slug: loaded.raw?.slug || productSlugFromTitle(loaded.title) } : null;
-  }
+  const wantedSlug = normalizeSlug(slug);
   for (const collection of collections) {
     const path = `products/categories/${collection.file}`;
     const pendingData = pendingEditorJson.get(path);
     const file = pendingData ? { data: pendingData } : collectionFiles[collection.id] || await githubFile(path);
-    const index = (file.data.products || []).findIndex(raw => raw.slug === slug || productSlugFromTitle(raw.title || '') === slug);
-    if (index >= 0) return { path, file, raw: file.data.products[index], index, slug };
+    const index = (file.data.products || []).findIndex(raw =>
+      (wantedSlug && normalizeSlug(raw.slug) === wantedSlug)
+      || (wantedSlug && normalizeSlug(productSlugFromTitle(raw.title || '')) === wantedSlug)
+      || (loaded && normalizedTitle(raw.title) === normalizedTitle(loaded.title))
+    );
+    if (index >= 0) return { path, file, raw: file.data.products[index], index, slug: file.data.products[index].slug || slug };
   }
   return null;
 }
@@ -1324,11 +1320,12 @@ async function saveEditorPageImage(replacement, remove = false) {
   const result = pending ? { sha: pending.sha } : await githubRequest(`/repos/${GITHUB_REPO}/contents/${encodeURIComponent(path).replace(/%2F/g, '/')}?ref=${GITHUB_BRANCH}`);
   let html;
   if (pending) html = pending.content;
-  else if (typeof result.content === 'string') html = decodeBase64Utf8(result.content);
+  else if (typeof result.content === 'string' && result.content.trim()) html = decodeBase64Utf8(result.content);
   else if (result.download_url) html = await fetch(result.download_url).then(response => {
       if (!response.ok) throw new Error('გვერდის წყაროს წაკითხვა ვერ მოხერხდა.');
       return response.text();
     });
+  if (!html?.trim()) throw new Error('Page HTML could not be loaded; changes were not saved to protect the site.');
   if (html) {
     const match = findEditorImageTag(html, editorSelection);
     if (match) {

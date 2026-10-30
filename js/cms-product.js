@@ -576,7 +576,9 @@
         });
       }
       const catalogs = await Promise.all(catalogFiles.map(async (catalog) => {
-        const response = await fetch(new URL(catalog.path, baseUrl));
+        const catalogUrl = new URL(catalog.path, baseUrl);
+        catalogUrl.searchParams.set("_", String(Date.now()));
+        const response = await fetch(catalogUrl, { cache: "no-store" });
         if (!response.ok) throw new Error("პროდუქტების სია ვერ ჩაიტვირთა: " + catalog.category);
         const data = await response.json();
         return (Array.isArray(data.products) ? data.products : []).map((product) => ({
