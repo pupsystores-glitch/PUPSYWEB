@@ -450,6 +450,7 @@ function bindEditorFrame() {
       const loadedProduct = products.find(item => item.raw?.slug === pageSlug || productSlugFromTitle(item.title) === pageSlug || (productTitle && item.title === productTitle));
       const fieldValue = productField && loadedProduct ? loadedProduct.raw[productField] : undefined;
       const productPriceText = card?.querySelector('.cms-product-card__price, .product-item__price')?.textContent.match(/[\d,]+(?:\.\d+)?/g)?.at(-1) || '';
+      const productColors = loadedProduct?.raw?.colors || [...(card?.querySelectorAll('tooltip-component[data-tooltip]') || [])].map(item => item.getAttribute('data-tooltip')).filter(Boolean);
       const isProductCard = Boolean(card && (card.classList.contains('cms-product-card') || card.classList.contains('product-item') || card.className.toString().includes('product-item')));
       editorSelection = {
         page: document.getElementById('site-editor-page').value,
@@ -469,6 +470,7 @@ function bindEditorFrame() {
         productOccurrence: Math.max(0, productNodes.indexOf(card)),
         isProductCard,
         productPrice: loadedProduct?.raw?.price ?? productPriceText.replace(/,/g, ''),
+        productColors,
         productField,
         sourceAttribute,
         mediaTagName,
@@ -500,6 +502,7 @@ function bindEditorFrame() {
       if (isProductCard) {
         document.getElementById('site-editor-product-title').value = productTitle;
         document.getElementById('site-editor-product-price').value = productPriceText.replace(/,/g, '') || loadedProduct?.raw?.price || '';
+        renderEditorProductColors(productColors);
       }
       document.querySelector('#site-editor-text-tools label').textContent = editorSelection.canEditText ? 'Edit text' : 'Section selected';
     }, true);
@@ -554,7 +557,6 @@ function editorTagRange(html, selection) {
     const tag = match[0];
     const id = /\bid\s*=\s*(["'])(.*?)\1/i.exec(tag)?.[2] || '';
     const classes = /\bclass\s*=\s*(["'])(.*?)\1/i.exec(tag)?.[2]?.split(/\s+/) || [];
-    if (selection.id ? id !== selection.id : selection.identityClass ? !classes.includes(selection.identityClass) : false) continue;
     const openEnd = match.index + tag.length;
     const tokens = new RegExp(`<\\/?${selection.tagName}\\b[^>]*>`, 'gi');
     tokens.lastIndex = openEnd;
@@ -567,16 +569,55 @@ function editorTagRange(html, selection) {
       else if (!token[0].endsWith('/>')) depth += 1;
       if (depth === 0) { closeStart = token.index; end = tokens.lastIndex; break; }
     }
-    if (end >= 0) {
-      if (!selection.id && !selection.identityClass && selection.text) {
-        const textTemplate = document.createElement('template');
-        textTemplate.innerHTML = html.slice(openEnd, closeStart);
-        if (textTemplate.content.textContent.trim() !== selection.text) continue;
-      }
-      candidates.push({ start: match.index, openEnd, closeStart, end });
-    }
+    if (end < 0) continue;
+    candidates.push({ start: match.index, openEnd, closeStart, end, id, classes });
   }
-  return candidates[selection.occurrence] || null;
+  if (!candidates.length) return null;
+  let matching = selection.id ? candidates.filter(candidate => candidate.id === selection.id) : [];
+  if (!matching.length && selection.identityClass) matching = candidates.filter(candidate => candidate.classes.includes(selection.identityClass));
+  if (!matching.length && selection.text) {
+    matching = candidates.filter(candidate => {
+      const textTemplate = document.createElement('template');
+      textTemplate.innerHTML = html.slice(candidate.openEnd, candidate.closeStart);
+      return textTemplate.content.textContent.trim() === selection.text;
+    });
+  }
+  if (!matching.length) matching = candidates;
+  const index = Math.min(Math.max(Number(selection.occurrence) || 0, 0), matching.length - 1);
+  return matching[index] || null;
+}
+
+function editorLiveSelector(element) {
+  if (!element || element.nodeType !== 1) return '';
+  const parts = [];
+  let current = element;
+  while (current && current.tagName !== 'HTML') {
+    if (current.id) {
+      parts.unshift(`#${CSS.escape(current.id)}`);
+      break;
+    }
+    const tag = current.tagName.toLowerCase();
+    const classes = [...current.classList].filter(name => !name.startsWith('admin-editor-'));
+    let part = tag + classes.map(name => `.${CSS.escape(name)}`).join('');
+    const siblings = [...(current.parentElement?.children || [])].filter(item => item.tagName === current.tagName);
+    if (siblings.length > 1) part += `:nth-of-type(${siblings.indexOf(current) + 1})`;
+    parts.unshift(part);
+    current = current.parentElement;
+  }
+  return parts.join(' > ');
+}
+
+function stageEditorLiveElementDeletion(page, element) {
+  const selector = editorLiveSelector(element);
+  if (!selector) return false;
+  const css = `${selector.replace(/</g, '\\3c ')}{display:none!important}`;
+  const style = `<style data-admin-editor-deletions>${css}</style>`;
+  const existing = page.content.match(/<style\b[^>]*data-admin-editor-deletions[^>]*>[\s\S]*?<\/style>/i);
+  const updated = existing
+    ? page.content.replace(existing[0], existing[0].replace('</style>', `${css}</style>`))
+    : page.content.includes('</body>') ? page.content.replace('</body>', `${style}</body>`) : `${page.content}${style}`;
+  stageEditorHtml(editorSelection.page, page.sha, updated, `Delete rendered section on ${editorSelection.page}`);
+  return true;
 }
 
 async function editorHtmlFile(path) {
@@ -655,9 +696,82 @@ function updateStaticProductPrice(cardHtml, price) {
   return cardHtml.slice(0, range.start) + updated + cardHtml.slice(range.end);
 }
 
-function removeStaticProductColors(cardHtml) {
+function editorColorHex(name) {
+  const value = name.toLowerCase();
+  const palette = [
+    [/black|შავ/, '#171717'], [/white|თეთრ/, '#f7f5f2'], [/blue|ლურჯ/, '#3284c7'],
+    [/green|მწვან/, '#3e8b58'], [/red|წითელ/, '#c74c4c'], [/pink|ვარდისფ/, '#df8fa7'],
+    [/beige|cream|კრემ|ბეჟ/, '#d9c3a3'], [/brown|ყავისფ/, '#80543e'],
+    [/gray|grey|ნაცრისფ/, '#8a8a8a'], [/yellow|ყვითელ/, '#e5bc42'],
+    [/purple|იისფ/, '#8b68ad'], [/terracotta|ტერაკოტ/, '#b96b4d'],
+  ];
+  return palette.find(([pattern]) => pattern.test(value))?.[1] || '#8a8a8a';
+}
+
+function renderEditorProductColors(selectedColors = editorSelection?.productColors || []) {
+  const container = document.getElementById('site-editor-product-colors');
+  if (!container) return;
+  const availableColors = [...document.querySelectorAll('#form-product-colors input[type="checkbox"]')].map(input => input.value);
+  const colors = [...new Set([...availableColors, ...selectedColors])];
+  const selected = new Set(selectedColors);
+  container.replaceChildren();
+  colors.forEach(name => {
+    const label = document.createElement('label');
+    label.className = 'flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-300 cursor-pointer hover:border-indigo-500/60 transition-all';
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.value = name;
+    checkbox.checked = selected.has(name);
+    checkbox.className = 'accent-indigo-500';
+    const swatch = document.createElement('span');
+    swatch.className = 'h-3 w-3 shrink-0 rounded-full border border-white/30';
+    swatch.style.backgroundColor = editorColorHex(name);
+    label.append(checkbox, swatch, document.createTextNode(` ${name}`));
+    container.append(label);
+  });
+}
+
+function addEditorProductColor() {
+  const input = document.getElementById('site-editor-new-color');
+  const name = input?.value.trim();
+  if (!name) return;
+  const current = [...document.querySelectorAll('#site-editor-product-colors input:checked')].map(checkbox => checkbox.value);
+  if (!current.includes(name)) current.push(name);
+  renderEditorProductColors(current);
+  input.value = '';
+}
+function updateStaticProductColors(cardHtml, colors) {
   const siblings = editorTagRange(cardHtml, { tagName: 'product-siblings', identityClass: 'product-item__siblings', occurrence: 0 });
-  return siblings ? cardHtml.slice(0, siblings.start) + cardHtml.slice(siblings.end) : cardHtml;
+  if (!siblings) return cardHtml;
+  if (!colors.length) return cardHtml.slice(0, siblings.start) + cardHtml.slice(siblings.end);
+  let block = cardHtml.slice(siblings.start, siblings.end);
+  const existingCount = [...block.matchAll(/<tooltip-component\b[^>]*\bdata-tooltip=/gi)].length;
+  for (let index = existingCount - 1; index >= 0; index -= 1) {
+    const range = editorTagRange(block, { tagName: 'tooltip-component', identityClass: 'swatches', occurrence: index });
+    if (!range) continue;
+    if (index >= colors.length) {
+      block = block.slice(0, range.start) + block.slice(range.end);
+      continue;
+    }
+    const name = colors[index];
+    let openTag = block.slice(range.start, range.openEnd);
+    openTag = openTag.replace(/\bdata-tooltip\s*=\s*(["']).*?\1/i, `data-tooltip="${escapeHtmlAttribute(name)}"`);
+    const slug = productSlugFromTitle(name) || `color-${index + 1}`;
+    if (/\bclass\s*=\s*(["']).*?\1/i.test(openTag)) {
+      openTag = openTag.replace(/\bclass\s*=\s*(["'])(.*?)\1/i, (_all, quote, value) => `class=${quote}${value.replace(/\bswatch-[a-z0-9-]+\b/gi, '').trim()} swatch-${slug}${quote}`);
+    }
+    const hex = editorColorHex(name);
+    if (/\bstyle\s*=\s*(["']).*?\1/i.test(openTag)) {
+      openTag = openTag.replace(/\bstyle\s*=\s*(["'])([\s\S]*?)\1/i, (_all, quote, value) => `style=${quote}${value.replace(/--swatch\s*:\s*[^;]+;?/i, `--swatch: ${hex};`)}${quote}`);
+    } else openTag = openTag.replace(/>$/, ` style="--swatch: ${hex};">`);
+    block = block.slice(0, range.start) + openTag + block.slice(range.openEnd);
+  }
+  for (let index = existingCount; index < colors.length; index += 1) {
+    const name = colors[index];
+    const slug = productSlugFromTitle(name) || `color-${index + 1}`;
+    block = block.replace(/<\/native-scrollbar>/i, `<tooltip-component class="swatches swatch__button swatch__button--circle swatch-${slug}" style="--swatch: ${editorColorHex(name)};" data-tooltip="${escapeHtmlAttribute(name)}" tabindex="0"><div class="sibling__link"></div></tooltip-component></native-scrollbar>`);
+  }
+  return cardHtml.slice(0, siblings.start) + block + cardHtml.slice(siblings.end);
 }
 
 async function saveSelectedProduct() {
@@ -665,6 +779,7 @@ async function saveSelectedProduct() {
   if (!editorSelection?.isProductCard) { status.textContent = 'მონიშნეთ პროდუქტი მის რედაქტირებამდე.'; return; }
   const title = document.getElementById('site-editor-product-title').value.trim();
   const price = Number(document.getElementById('site-editor-product-price').value);
+  const colors = [...document.querySelectorAll('#site-editor-product-colors input[type="checkbox"]:checked')].map(input => input.value);
   if (!title || !Number.isFinite(price) || price < 0) { status.textContent = 'შეამოწმეთ პროდუქტის სახელი და ფასი.'; return; }
   status.textContent = 'პროდუქტის ცვლილებები ინახება…';
   try {
@@ -672,13 +787,13 @@ async function saveSelectedProduct() {
     if (product) {
       product.raw.title = title;
       product.raw.price = price;
-      product.raw.colors = [];
+      product.raw.colors = colors;
       await commitJson(product.path, product.file.data);
       const cached = products.find(item => item.raw?.slug === product.slug || (item.title === editorSelection.productTitle && item.collectionId === collections.find(entry => entry.file === product.path.split('/').pop())?.id));
       if (cached) {
         cached.title = title;
         cached.price = price;
-        cached.colors = [];
+        cached.colors = colors;
         cached.raw = product.raw;
       }
     } else {
@@ -688,7 +803,7 @@ async function saveSelectedProduct() {
       let cardHtml = page.content.slice(range.start, range.end);
       cardHtml = updateStaticProductTitle(cardHtml, title);
       cardHtml = updateStaticProductPrice(cardHtml, price);
-      cardHtml = removeStaticProductColors(cardHtml);
+      cardHtml = updateStaticProductColors(cardHtml, colors);
       const updated = page.content.slice(0, range.start) + cardHtml + page.content.slice(range.end);
       await commitEditorHtml(editorSelection.page, page.sha, updated, `Edit product on ${editorSelection.page}`);
     }
@@ -784,9 +899,12 @@ async function deleteEditorSelection() {
       const pending = pendingEditorHtml.get(editorSelection.page);
       const page = pending || await editorHtmlFile(editorSelection.page);
       const range = editorTagRange(page.content, editorSelection);
-      if (!range) throw new Error('მონიშნული სექცია გვერდის HTML-ში ვერ მოიძებნა.');
-      const updated = page.content.slice(0, range.start) + page.content.slice(range.end);
-      stageEditorHtml(editorSelection.page, page.sha, updated, `Delete section on ${editorSelection.page}`);
+      if (range) {
+        const updated = page.content.slice(0, range.start) + page.content.slice(range.end);
+        stageEditorHtml(editorSelection.page, page.sha, updated, `Delete section on ${editorSelection.page}`);
+      } else if (!stageEditorLiveElementDeletion(page, editorSelectedNode)) {
+        throw new Error('Selected element could not be deleted.');
+      }
       editorSelectedNode?.remove();
     }
     editorSelection = null;
