@@ -1414,7 +1414,31 @@ async function saveEditorPageImage(replacement, remove = false) {
   throw new Error('არჩეული ფოტო გვერდის HTML-ში ან პროდუქტის მონაცემებში ვერ მოიძებნა. შესაძლოა ის CSS ფონის სურათი იყოს.');
 }
 
+async function optimizeUploadImage(file) {
+  if (!['image/jpeg', 'image/png'].includes(file.type) || file.size < 180 * 1024) return file;
+  let bitmap;
+  try {
+    bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, 1920 / Math.max(bitmap.width, bitmap.height));
+    const width = Math.max(1, Math.round(bitmap.width * scale));
+    const height = Math.max(1, Math.round(bitmap.height * scale));
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    canvas.getContext('2d').drawImage(bitmap, 0, 0, width, height);
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/webp', 0.82));
+    if (!blob || blob.size >= file.size) return file;
+    const baseName = file.name.replace(/\.[^.]+$/, '') || 'photo';
+    return new File([blob], `${baseName}.webp`, { type: 'image/webp', lastModified: Date.now() });
+  } catch {
+    return file;
+  } finally {
+    bitmap?.close();
+  }
+}
+
 async function uploadEditorMedia(file) {
+  file = await optimizeUploadImage(file);
   const safeName = file.name.normalize('NFKD').replace(/[^a-zA-Z0-9._-]+/g, '-');
   const assetId = crypto.randomUUID();
   const filename = `${Date.now()}-${assetId}-${safeName}`;
@@ -1949,6 +1973,7 @@ function productToRaw(product, collection, values, isNew) {
 }
 
 async function uploadProductImage(file) {
+  file = await optimizeUploadImage(file);
   if (!file.type.startsWith('image/')) throw new Error('აირჩიე მხოლოდ ფოტოსურათის ფაილები.');
   const safeName = file.name.normalize('NFKD').replace(/[^a-zA-Z0-9._-]+/g, '-') || 'photo';
   const filename = `${Date.now()}-${crypto.randomUUID()}-${safeName}`;
@@ -2075,9 +2100,10 @@ async function handleMediaUpload(event) {
   if (!files.length) return;
   try {
     for (const file of files) {
-      const safeName = file.name.normalize('NFKD').replace(/[^a-zA-Z0-9._-]+/g, '-');
+      const optimizedFile = await optimizeUploadImage(file);
+      const safeName = optimizedFile.name.normalize('NFKD').replace(/[^a-zA-Z0-9._-]+/g, '-');
       const filename = `${Date.now()}-${safeName}`;
-      const content = encodeBase64Utf8FromBytes(await file.arrayBuffer());
+      const content = encodeBase64Utf8FromBytes(await optimizedFile.arrayBuffer());
       await githubRequest(`/repos/${GITHUB_REPO}/contents/images/uploads/${encodeURIComponent(filename)}`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: `Upload ${filename} from PUPSY CMS`, content, branch: GITHUB_BRANCH }),
