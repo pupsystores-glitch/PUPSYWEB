@@ -1,9 +1,6 @@
 (() => {
-  const gallery = document.querySelector('.ambassador-community-gallery__grid');
-  if (!gallery) return;
-
-  const tiles = [...gallery.querySelectorAll('[data-ambassador-image-url], [data-ambassador-video-url]')];
-  if (!tiles.length) return;
+  const galleries = [...document.querySelectorAll('.ambassador-community-gallery__grid')];
+  if (!galleries.length) return;
 
   const viewer = document.createElement('div');
   viewer.className = 'ambassador-feed-viewer';
@@ -12,6 +9,7 @@
   document.body.append(viewer);
 
   const content = viewer.querySelector('.ambassador-feed-viewer__content');
+  let activeTiles = [];
   let activeIndex = 0;
   let lastFocused = null;
   let closeTimer = 0;
@@ -39,8 +37,9 @@
 
   const render = () => {
     stopCurrentMedia();
-    const tile = tiles[activeIndex];
-    const videoUrl = tile.dataset.ambassadorVideoUrl;
+    const tile = activeTiles[activeIndex];
+    if (!tile) return;
+    const videoUrl = tile.dataset.ambassadorVideoUrl || tile.dataset.videoUrl;
     content.replaceChildren();
 
     if (videoUrl) {
@@ -59,7 +58,7 @@
     }
 
     const image = document.createElement('img');
-    image.src = tile.dataset.ambassadorImageUrl;
+    image.src = tile.dataset.ambassadorImageUrl || tile.querySelector('img')?.src || '';
     image.alt = tile.querySelector('img')?.alt || '';
     content.append(image);
   };
@@ -86,18 +85,22 @@
   const step = direction => {
     content.classList.add('is-switching');
     window.setTimeout(() => {
-      activeIndex = (activeIndex + direction + tiles.length) % tiles.length;
+      activeIndex = (activeIndex + direction + activeTiles.length) % activeTiles.length;
       render();
       window.requestAnimationFrame(() => content.classList.remove('is-switching'));
     }, 130);
   };
 
-  gallery.addEventListener('click', event => {
-    const tile = event.target.closest('[data-ambassador-image-url], [data-ambassador-video-url]');
-    if (!tile) return;
-    activeIndex = tiles.indexOf(tile);
-    lastFocused = tile;
-    openViewer();
+  galleries.forEach(gallery => {
+    const tiles = [...gallery.querySelectorAll('[data-ambassador-image-url], [data-ambassador-video-url], [data-video-url]')];
+    gallery.addEventListener('click', event => {
+      const tile = event.target.closest('[data-ambassador-image-url], [data-ambassador-video-url], [data-video-url]');
+      if (!tile || !tiles.includes(tile)) return;
+      activeTiles = tiles;
+      activeIndex = tiles.indexOf(tile);
+      lastFocused = tile;
+      openViewer();
+    });
   });
 
   viewer.querySelector('.ambassador-feed-viewer__close').addEventListener('click', closeViewer);

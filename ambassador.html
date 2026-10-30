@@ -15252,249 +15252,47 @@ A true staple...">
   </div>
   <!-- END sections: group-pre-footer -->
 
-  <!-- Temporary ambassador video section. Add video URLs to the data-video-url attributes when ready. -->
   <style>
-    .ambassador-video-section {
-      padding: 56px 24px;
-      background: #f7f2ee;
-      text-align: center;
-    }
-    .ambassador-video-section__inner { max-width: 1100px; margin: 0 auto; }
-    .ambassador-video-section__title { margin: 0 0 28px; color: #292321; }
-    .ambassador-video-section__grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 20px;
-    }
-    .ambassador-video-slot {
-      min-height: 220px;
-      display: grid;
-      align-content: center;
-      justify-items: center;
-      gap: 12px;
-      padding: 24px;
-      border-radius: 14px;
-      background: #a86f61;
-      color: #fff;
-      cursor: pointer;
-      border: 0;
-      font: inherit;
-      transition: transform .2s ease, box-shadow .2s ease;
-    }
-    .ambassador-video-slot:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(50, 35, 30, .16); }
-    .ambassador-video-slot:focus-visible { outline: 3px solid #292321; outline-offset: 4px; }
-    .ambassador-managed-video { position: relative; display: block; min-height: 0; padding: 0; overflow: hidden; }
-    .ambassador-managed-video__poster { display: block; width: 100%; aspect-ratio: 4 / 5; max-height: 380px; object-fit: cover; }
-    .ambassador-managed-video__play { position: absolute; inset: 0; display: grid; place-items: center; color: #fff; font: 700 48px/1 Arial, sans-serif; text-shadow: 0 2px 10px rgba(0,0,0,.65); pointer-events: none; }
-    .ambassador-managed-video .ambassador-video-slot__label { position: absolute; right: 12px; bottom: 0; left: 12px; padding: 30px 8px 14px; background: linear-gradient(transparent, rgba(0,0,0,.62)); color: #fff; text-align: center; }
-    .ambassador-video-slot:nth-child(2) { background: #8d7167; }
-    .ambassador-video-slot:nth-child(3) { background: #6e827d; }
-    .ambassador-video-slot:nth-child(4) { background: #887b9e; }
-    .ambassador-video-slot:nth-child(5) { background: #b47f65; }
-    .ambassador-video-slot:nth-child(6) { background: #657a97; }
-    .ambassador-video-slot__icon { font-size: 34px; line-height: 1; }
-    .ambassador-video-slot__label { font-size: 18px; font-weight: 600; }
-    @media (max-width: 640px) {
-      .ambassador-video-section { padding: 36px 0; }
-      .ambassador-video-section__title { padding: 0 18px; }
-      .ambassador-video-section__grid {
-        display: flex;
-        gap: 0;
-        overflow-x: auto;
-        overscroll-behavior-x: contain;
-        scroll-snap-type: x mandatory;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
-        padding: 2px 0 12px;
-        touch-action: pan-x pan-y;
-      }
-      .ambassador-video-section__grid::-webkit-scrollbar { display: none; }
-      .ambassador-video-slot { flex: 0 0 100%; width: 100%; min-height: 240px; border-radius: 0; scroll-snap-align: start; }
-    }
-    .ambassador-media-viewer[hidden] { display: none; }
-    .ambassador-media-viewer {
-      position: fixed;
-      inset: 0;
-      z-index: 99999;
-      display: grid;
-      grid-template-columns: 56px minmax(0, 1fr) 56px;
-      align-items: center;
-      justify-items: center;
-      gap: 18px;
-      padding: 24px;
-      background: rgba(8, 10, 18, .94);
-    }
-    .ambassador-media-viewer__content {
-      grid-column: 2;
-      grid-row: 1;
-      justify-self: stretch;
-      position: relative;
-      display: grid;
-      place-items: center;
-      width: 100%;
-      min-width: 0;
-      height: min(78vh, 720px);
-      overflow: hidden;
-      border-radius: 12px;
-      background: #a86f61;
-      color: #fff;
-    }
-    .ambassador-media-viewer__content video,
-    .ambassador-media-viewer__content img { width: 100%; height: 100%; object-fit: contain; }
-    .ambassador-media-viewer__placeholder { font-size: clamp(22px, 4vw, 34px); font-weight: 600; text-align: center; }
-    .ambassador-media-viewer__close,
-    .ambassador-media-viewer__nav {
-      display: grid;
-      place-items: center;
-      width: 48px;
-      height: 48px;
-      border: 1px solid rgba(255,255,255,.35);
-      border-radius: 50%;
-      background: rgba(255,255,255,.95);
-      color: #222;
-      font: 32px/1 Arial, sans-serif;
-      cursor: pointer;
-    }
-    .ambassador-media-viewer__close { position: absolute; top: 18px; right: 18px; z-index: 1; }
+    .ambassador-video-section { padding: 40px 18px; background: #f7f3f0; }
+    .ambassador-video-section__inner { max-width: 825px; margin: 0 auto; }
+    .ambassador-video-section__title { display: block; margin: 0 0 10px; color: #292321; text-align: center; font-size: 18px; font-weight: 400; }
+    .ambassador-video-section__grid { height: auto; }
     @media (max-width: 600px) {
-      .ambassador-media-viewer { grid-template-columns: 42px minmax(0, 1fr) 42px; gap: 8px; padding: 12px; }
-      .ambassador-media-viewer__content { position: fixed; inset: 0; z-index: 1; width: 100vw; height: 100vh; height: 100dvh; border-radius: 0; }
-      .ambassador-media-viewer__content video,
-      .ambassador-media-viewer__content img { width: 100vw; height: 100vh; height: 100dvh; object-fit: cover; }
-      .ambassador-media-viewer__nav { position: absolute; z-index: 2; top: 50%; width: 42px; height: 42px; transform: translateY(-50%); }
-      .ambassador-media-viewer__nav[data-viewer-step="-1"] { left: 10px; }
-      .ambassador-media-viewer__nav[data-viewer-step="1"] { right: 10px; }
-      .ambassador-media-viewer__close { top: 10px; right: 10px; z-index: 3; }
+      .ambassador-video-section { padding: 32px 0; }
+      .ambassador-video-section__inner { max-width: none; }
     }
   </style>
   <section class="ambassador-video-section" aria-labelledby="ambassador-video-title">
     <div class="ambassador-video-section__inner">
       <h2 class="ambassador-video-section__title" id="ambassador-video-title">ამბასადორების ვიდეოები</h2>
-      <div class="ambassador-video-section__grid">
-        <button type="button" class="ambassador-video-slot" data-video-slot="1" data-video-url="https://videos.pexels.com/video-files/5534310/5534310-hd_1080_1920_30fps.mp4" aria-label="ვიდეოს გადიდება">
-          <span class="ambassador-video-slot__icon" aria-hidden="true">▶</span>
-          <span class="ambassador-video-slot__label">მოკლე ვიდეო</span>
+      <div class="ambassador-community-gallery__grid ambassador-video-section__grid">
+        <button type="button" class="ambassador-community-gallery__tile ambassador-video-slot" data-video-slot="1" data-video-url="https://videos.pexels.com/video-files/5534310/5534310-hd_1080_1920_30fps.mp4" aria-label="ვიდეოს ნახვა">
+          <img src="https://images.unsplash.com/photo-1765278134601-3f2dc85d1edf?auto=format&amp;fit=crop&amp;w=480&amp;q=40" alt="ვიდეოს ყდა" loading="lazy" decoding="async">
+          <span class="ambassador-community-gallery__play" aria-hidden="true">▶</span>
         </button>
-        <button type="button" class="ambassador-video-slot" data-video-slot="2" data-video-url="https://videos.pexels.com/video-files/17662319/17662319-uhd_2160_3840_25fps.mp4" aria-label="ვიდეოს გადიდება">
-          <span class="ambassador-video-slot__icon" aria-hidden="true">▶</span>
-          <span class="ambassador-video-slot__label">მოკლე ვიდეო</span>
+        <button type="button" class="ambassador-community-gallery__tile ambassador-video-slot" data-video-slot="2" data-video-url="https://videos.pexels.com/video-files/17662319/17662319-uhd_2160_3840_25fps.mp4" aria-label="ვიდეოს ნახვა">
+          <img src="https://images.unsplash.com/photo-1600804340584-c7db2eacf0bf?auto=format&amp;fit=crop&amp;w=480&amp;q=40" alt="ვიდეოს ყდა" loading="lazy" decoding="async">
+          <span class="ambassador-community-gallery__play" aria-hidden="true">▶</span>
         </button>
-        <button type="button" class="ambassador-video-slot" data-video-slot="3" data-video-url="https://videos.pexels.com/video-files/35069969/14855765_3262_2160_30fps.mp4" aria-label="ვიდეოს გადიდება">
-          <span class="ambassador-video-slot__icon" aria-hidden="true">▶</span>
-          <span class="ambassador-video-slot__label">მოკლე ვიდეო</span>
+        <button type="button" class="ambassador-community-gallery__tile ambassador-video-slot" data-video-slot="3" data-video-url="https://videos.pexels.com/video-files/35069969/14855765_3262_2160_30fps.mp4" aria-label="ვიდეოს ნახვა">
+          <img src="https://images.unsplash.com/photo-1737482810276-80dfd5948034?auto=format&amp;fit=crop&amp;w=480&amp;q=40" alt="ვიდეოს ყდა" loading="lazy" decoding="async">
+          <span class="ambassador-community-gallery__play" aria-hidden="true">▶</span>
         </button>
-        <button type="button" class="ambassador-video-slot" data-video-slot="4" data-video-url="https://videos.pexels.com/video-files/16787340/16787340-hd_1080_1920_15fps.mp4" aria-label="ვიდეოს გადიდება">
-          <span class="ambassador-video-slot__icon" aria-hidden="true">▶</span>
-          <span class="ambassador-video-slot__label">მოკლე ვიდეო</span>
+        <button type="button" class="ambassador-community-gallery__tile ambassador-video-slot" data-video-slot="4" data-video-url="https://videos.pexels.com/video-files/16787340/16787340-hd_1080_1920_15fps.mp4" aria-label="ვიდეოს ნახვა">
+          <img src="https://images.unsplash.com/photo-1656529569201-2cdbe5f509cd?auto=format&amp;fit=crop&amp;w=480&amp;q=40" alt="ვიდეოს ყდა" loading="lazy" decoding="async">
+          <span class="ambassador-community-gallery__play" aria-hidden="true">▶</span>
         </button>
-        <button type="button" class="ambassador-video-slot" data-video-slot="5" data-video-url="https://videos.pexels.com/video-files/36040931/15284688_1440_2332_30fps.mp4" aria-label="ვიდეოს გადიდება">
-          <span class="ambassador-video-slot__icon" aria-hidden="true">▶</span>
-          <span class="ambassador-video-slot__label">მოკლე ვიდეო</span>
+        <button type="button" class="ambassador-community-gallery__tile ambassador-video-slot" data-video-slot="5" data-video-url="https://videos.pexels.com/video-files/36040931/15284688_1440_2332_30fps.mp4" aria-label="ვიდეოს ნახვა">
+          <img src="https://images.unsplash.com/photo-1765278134477-bbdf6599a1e8?auto=format&amp;fit=crop&amp;w=480&amp;q=40" alt="ვიდეოს ყდა" loading="lazy" decoding="async">
+          <span class="ambassador-community-gallery__play" aria-hidden="true">▶</span>
         </button>
-        <button type="button" class="ambassador-video-slot" data-video-slot="6" data-video-url="https://videos.pexels.com/video-files/26864498/12023875_2160_3840_25fps.mp4" aria-label="ვიდეოს გადიდება">
-          <span class="ambassador-video-slot__icon" aria-hidden="true">▶</span>
-          <span class="ambassador-video-slot__label">მოკლე ვიდეო</span>
+        <button type="button" class="ambassador-community-gallery__tile ambassador-video-slot" data-video-slot="6" data-video-url="https://videos.pexels.com/video-files/26864498/12023875_2160_3840_25fps.mp4" aria-label="ვიდეოს ნახვა">
+          <img src="https://images.unsplash.com/photo-1722553777944-99f73ce48fc8?auto=format&amp;fit=crop&amp;w=480&amp;q=40" alt="ვიდეოს ყდა" loading="lazy" decoding="async">
+          <span class="ambassador-community-gallery__play" aria-hidden="true">▶</span>
         </button>
       </div>
     </div>
   </section>
-  <div class="ambassador-media-viewer" id="ambassador-media-viewer" role="dialog" aria-modal="true" aria-label="ამბასადორების მედია" hidden>
-    <button class="ambassador-media-viewer__close" type="button" aria-label="დახურვა">×</button>
-    <button class="ambassador-media-viewer__nav" type="button" data-viewer-step="-1" aria-label="წინა">‹</button>
-    <div class="ambassador-media-viewer__content" aria-live="polite"></div>
-    <button class="ambassador-media-viewer__nav" type="button" data-viewer-step="1" aria-label="შემდეგი">›</button>
-  </div>
-  <script>
-    (() => {
-      const getSlots = () => [...document.querySelectorAll('.ambassador-video-slot')];
-      const viewer = document.getElementById('ambassador-media-viewer');
-      const content = viewer?.querySelector('.ambassador-media-viewer__content');
-      if (!viewer || !content) return;
-      let activeIndex = 0;
-      let lastFocused = null;
-
-      const limitToShortClip = video => {
-        let stoppedAtClipEnd = false;
-        video.addEventListener('play', () => { stoppedAtClipEnd = false; });
-        video.addEventListener('timeupdate', () => {
-          if (!stoppedAtClipEnd && video.currentTime >= 3.5) {
-            stoppedAtClipEnd = true;
-            video.pause();
-            video.currentTime = 0;
-          }
-        });
-      };
-
-      const render = () => {
-        const slots = getSlots();
-        const slot = slots[activeIndex];
-        if (!slot) return;
-        const videoUrl = slot.dataset.videoUrl;
-        const imageUrl = slot.dataset.imageUrl;
-        content.replaceChildren();
-        if (videoUrl) {
-          const video = document.createElement('video');
-          limitToShortClip(video);
-          video.src = videoUrl;
-          video.controls = true;
-          video.autoplay = true;
-          video.muted = true;
-          video.playsInline = true;
-          content.append(video);
-          video.play().catch(() => {});
-        } else if (imageUrl) {
-          const image = document.createElement('img');
-          image.src = imageUrl;
-          image.alt = slot.querySelector('.ambassador-video-slot__label')?.textContent || '';
-          content.append(image);
-        } else {
-          content.style.backgroundColor = getComputedStyle(slot).backgroundColor;
-          const placeholder = document.createElement('span');
-          placeholder.className = 'ambassador-media-viewer__placeholder';
-          placeholder.textContent = slot.querySelector('.ambassador-video-slot__label')?.textContent || 'ვიდეო მიუწვდომელია';
-          content.append(placeholder);
-        }
-      };
-      const open = (index) => {
-        const slots = getSlots();
-        if (!slots.length) return;
-        activeIndex = index;
-        lastFocused = document.activeElement;
-        render();
-        viewer.hidden = false;
-        document.body.style.overflow = 'hidden';
-        viewer.querySelector('.ambassador-media-viewer__close').focus();
-      };
-      const close = () => {
-        viewer.hidden = true;
-        content.querySelector('video')?.pause();
-        document.body.style.overflow = '';
-        lastFocused?.focus();
-      };
-      document.querySelector('.ambassador-video-section__grid')?.addEventListener('click', (event) => {
-        const slot = event.target.closest('.ambassador-video-slot');
-        if (slot) open(getSlots().indexOf(slot));
-      });
-      viewer.querySelector('.ambassador-media-viewer__close').addEventListener('click', close);
-      viewer.querySelectorAll('[data-viewer-step]').forEach((button) => button.addEventListener('click', () => {
-        const slots = getSlots();
-        if (!slots.length) return;
-        activeIndex = (activeIndex + Number(button.dataset.viewerStep) + slots.length) % slots.length;
-        render();
-      }));
-      viewer.addEventListener('click', (event) => { if (event.target === viewer) close(); });
-      document.addEventListener('keydown', (event) => {
-        if (viewer.hidden) return;
-        if (event.key === 'Escape') close();
-        if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
-          const slots = getSlots();
-          if (!slots.length) return;
-          activeIndex = (activeIndex + (event.key === 'ArrowRight' ? 1 : -1) + slots.length) % slots.length;
-          render();
-        }
-      });
-    })();
-  </script>
 
   <footer class="footer-sections">
     <!-- BEGIN sections: group-footer -->
@@ -24568,5 +24366,5 @@ This shoot with @pollycreativestudios was such a fun one, and we have so much mo
 </script>
 
 <script defer src="js/page-videos.js?v=4"></script>
-<script defer src="js/remove-header-icons.js?v=1"></script><script defer src="js/ambassador-videos.js?v=9"></script>
+<script defer src="js/remove-header-icons.js?v=1"></script><script defer src="js/ambassador-videos.js?v=10"></script>
 </body></html>
