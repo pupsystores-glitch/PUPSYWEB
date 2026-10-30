@@ -492,8 +492,23 @@ function bindEditorFrame() {
       const anchor = target.closest('a[data-admin-original-href], a[data-admin-original-product-link], a[data-product-link], a[href]');
       const card = target.closest('.cms-product-card, [class*="product-card"], [class*="product-item"]')
         || anchor?.closest('.cms-product-card, [class*="product-card"], [class*="product-item"]');
-      const element = clicked || event.target;
+      let element = clicked || target;
       if (!(element instanceof doc.defaultView.HTMLElement)) return;
+      let backgroundElement = null;
+      let backgroundUrl = '';
+      for (let candidate = element; candidate && candidate.tagName !== 'HTML'; candidate = candidate.parentElement) {
+        const backgroundImage = doc.defaultView.getComputedStyle(candidate).backgroundImage;
+        const match = /url\((?:"|')?(.*?)(?:"|')?\)/i.exec(backgroundImage);
+        if (match?.[1]) {
+          backgroundElement = candidate;
+          backgroundUrl = match[1];
+          break;
+        }
+      }
+      let mediaElement = ['img', 'video'].includes(element.tagName.toLowerCase())
+        ? element
+        : backgroundElement ? null : card?.querySelector('img, video');
+      if (backgroundElement && !mediaElement) element = backgroundElement;
       if (editorSelectedNode?.ownerDocument === doc) {
         editorSelectedNode.removeAttribute('data-admin-editor-selected');
         editorSelectedNode.style.outline = '';
@@ -504,10 +519,11 @@ function bindEditorFrame() {
       element.style.outline = '3px solid #f59e0b';
       element.style.outlineOffset = '2px';
       const tagName = element.tagName.toLowerCase();
-      const mediaElement = ['img', 'video'].includes(tagName) ? element : card?.querySelector('img, video');
-      const mediaTagName = mediaElement?.tagName.toLowerCase() || '';
-      const sourceAttribute = mediaElement && ['src', 'data-src', 'data-original'].find(name => mediaElement.getAttribute(name));
-      const attributeValue = sourceAttribute ? mediaElement.getAttribute(sourceAttribute) : '';
+      const mediaTagName = mediaElement?.tagName.toLowerCase() || (backgroundElement ? 'background' : '');
+      const sourceAttribute = mediaElement
+        ? ['src', 'data-src', 'data-original'].find(name => mediaElement.getAttribute(name))
+        : backgroundElement ? 'background-image' : '';
+      const attributeValue = mediaElement ? mediaElement.getAttribute(sourceAttribute) : backgroundUrl;
       const identityClass = [...element.classList].find(name => !name.startsWith('admin-editor-')) || '';
       const identityNodes = element.id
         ? [element]
@@ -545,9 +561,10 @@ function bindEditorFrame() {
         identityClass,
         text: element.textContent.trim(),
         occurrence: Math.max(0, Array.prototype.indexOf.call(identityNodes, element)),
-        mediaOccurrence: sourceAttribute ? [...(card || doc).querySelectorAll(mediaTagName)].filter(item => item.getAttribute(sourceAttribute) === attributeValue).indexOf(mediaElement) : 0,
+        mediaOccurrence: mediaElement && sourceAttribute ? [...(card || doc).querySelectorAll(mediaTagName)].filter(item => item.getAttribute(sourceAttribute) === attributeValue).indexOf(mediaElement) : 0,
         href: anchor?.dataset.adminOriginalHref || anchor?.dataset.adminOriginalProductLink || anchor?.getAttribute('href') || anchor?.getAttribute('data-product-link') || '',
         productHref: card?.dataset.adminOriginalHref || card?.dataset.adminOriginalProductLink || card?.getAttribute('href') || card?.getAttribute('data-product-link') || card?.querySelector('a[data-admin-original-href], a[data-admin-original-product-link], a[data-product-link], a[href]')?.dataset.adminOriginalHref || card?.querySelector('a[data-admin-original-product-link]')?.dataset.adminOriginalProductLink || card?.querySelector('a[href]')?.getAttribute('href') || card?.querySelector('a[data-product-link]')?.getAttribute('data-product-link') || '',
+        productSlug: pageSlug,
         productTitle,
         productId: card?.id || '',
         productTagName: card?.tagName.toLowerCase() || '',
@@ -559,8 +576,9 @@ function bindEditorFrame() {
         productField,
         sourceAttribute,
         mediaTagName,
+        backgroundUrl,
         attributeValue,
-        resolvedSrc: mediaElement?.currentSrc || mediaElement?.src || '',
+        resolvedSrc: backgroundUrl || mediaElement?.currentSrc || mediaElement?.src || '',
         alt: element.alt || '',
         canEditText: (!element.children.length && !['img', 'video', 'input', 'br', 'hr'].includes(tagName)) || Boolean(productField),
         editTextValue: fieldValue !== undefined
@@ -568,11 +586,15 @@ function bindEditorFrame() {
           : element.textContent.trim(),
       };
       const preview = document.getElementById('site-editor-selected-image');
-      const isMedia = Boolean(mediaElement);
+      const isMedia = Boolean(mediaElement || backgroundElement);
       document.getElementById('site-editor-media-tools').classList.toggle('hidden', !isMedia);
       document.getElementById('site-editor-text-tools').classList.toggle('hidden', isMedia);
       document.getElementById('site-editor-product-tools').classList.toggle('hidden', !isProductCard);
       if (mediaTagName === 'video') preview.classList.add('hidden');
+      else if (backgroundElement) {
+        preview.src = backgroundUrl;
+        preview.classList.remove('hidden');
+      }
       else {
         if (mediaTagName === 'img') {
           preview.src = mediaElement.currentSrc || mediaElement.src;
@@ -725,6 +747,47 @@ function stageEditorLiveTextEdit(page, element, value) {
   return true;
 }
 
+function stageEditorLiveBackgroundEdit(page, element, url) {
+  const selector = editorLiveSelector(element);
+  if (!selector) return false;
+  const existing = page.content.match(/<script\b([^>]*data-admin-editor-background-edits="([^"]*)"[^>]*)>[\s\S]*?<\/script>/i);
+  let edits = [];
+  if (existing) {
+    try { edits = JSON.parse(existing[2].replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&lt;/g, '<')); } catch { edits = []; }
+  }
+  const cssValue = url ? `url(${JSON.stringify(url)})` : 'none';
+  const previous = edits.find(edit => edit.selector === selector);
+  if (previous) previous.value = cssValue;
+  else edits.push({ selector, value: cssValue });
+  const encoded = escapeHtmlAttribute(JSON.stringify(edits));
+  const script = `<script data-admin-editor-background-edits="${encoded}">(function(){const edits=JSON.parse(document.currentScript.dataset.adminEditorBackgroundEdits);let observer;const apply=()=>{let complete=true;for(const edit of edits){const target=document.querySelector(edit.selector);if(target)target.style.setProperty('background-image',edit.value,'important');else complete=false}if(complete)observer.disconnect()};observer=new MutationObserver(apply);observer.observe(document.documentElement,{childList:true,subtree:true});apply();setTimeout(()=>observer.disconnect(),30000)})();</script>`;
+  const updated = existing
+    ? page.content.replace(existing[0], script)
+    : page.content.includes('</body>') ? page.content.replace('</body>', `${script}</body>`) : `${page.content}${script}`;
+  stageEditorHtml(editorSelection.page, page.sha, updated, `Edit background image on ${editorSelection.page}`);
+  return true;
+}
+
+function stageEditorLiveImageEdit(page, element, url) {
+  const selector = editorLiveSelector(element);
+  if (!selector) return false;
+  const existing = page.content.match(/<script\b([^>]*data-admin-editor-image-edits="([^"]*)"[^>]*)>[\s\S]*?<\/script>/i);
+  let edits = [];
+  if (existing) {
+    try { edits = JSON.parse(existing[2].replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&lt;/g, '<')); } catch { edits = []; }
+  }
+  const previous = edits.find(edit => edit.selector === selector);
+  if (previous) previous.url = url;
+  else edits.push({ selector, url });
+  const encoded = escapeHtmlAttribute(JSON.stringify(edits));
+  const script = `<script data-admin-editor-image-edits="${encoded}">(function(){const edits=JSON.parse(document.currentScript.dataset.adminEditorImageEdits);let observer;const apply=()=>{let complete=true;for(const edit of edits){const target=document.querySelector(edit.selector);if(target){target.removeAttribute('srcset');target.removeAttribute('data-src');target.removeAttribute('data-original');target.setAttribute('src',edit.url);target.loading='eager'}else complete=false}if(complete)observer.disconnect()};observer=new MutationObserver(apply);observer.observe(document.documentElement,{childList:true,subtree:true});apply();setTimeout(()=>observer.disconnect(),30000)})();</script>`;
+  const updated = existing
+    ? page.content.replace(existing[0], script)
+    : page.content.includes('</body>') ? page.content.replace('</body>', `${script}</body>`) : `${page.content}${script}`;
+  stageEditorHtml(editorSelection.page, page.sha, updated, `Replace rendered image on ${editorSelection.page}`);
+  return true;
+}
+
 async function editorHtmlFile(path) {
   const file = await githubRequest(`/repos/${GITHUB_REPO}/contents/${encodeURIComponent(path).replace(/%2F/g, '/')}?ref=${GITHUB_BRANCH}`);
   let content;
@@ -748,14 +811,18 @@ function selectedProductSlug(selection) {
   const href = selection.productHref || selection.href || '';
   const match = href.match(/product-pages\/([^/?#]+)\.html/i);
   const pageMatch = selection.page?.match(/product-pages\/([^/?#]+)\.html/i);
-  return match ? decodeURIComponent(match[1]) : pageMatch ? decodeURIComponent(pageMatch[1]) : '';
+  return match ? decodeURIComponent(match[1]) : pageMatch ? decodeURIComponent(pageMatch[1]) : selection.productSlug || '';
 }
 
 async function findEditorProduct(selection) {
   const slug = selectedProductSlug(selection);
+  const normalizedTitle = value => String(value || '').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+  const loaded = products.find(item =>
+    (selection.productTitle && normalizedTitle(item.title) === normalizedTitle(selection.productTitle))
+    || (selection.text && normalizedTitle(item.title) === normalizedTitle(selection.text))
+    || (selection.resolvedSrc && item.image === selection.resolvedSrc)
+  );
   if (!slug) {
-    if (selection.productId) return null;
-    const loaded = products.find(item => item.title === selection.productTitle || item.title === selection.text || item.image === selection.resolvedSrc);
     const collection = collections.find(item => item.id === loaded?.collectionId);
     if (!loaded || !collection) return null;
     const path = `products/categories/${collection.file}`;
@@ -1043,7 +1110,7 @@ function selectEditorParent() {
 
 async function deleteEditorSelection() {
   if (!editorSelection) return;
-  if (['img', 'video'].includes(editorSelection.tagName)) return deleteEditorImage();
+  if (['img', 'video'].includes(editorSelection.tagName) || editorSelection.mediaTagName === 'background') return deleteEditorImage();
   if (!window.confirm('მონიშნული ელემენტი ან სექცია მთლიანად წაიშალოს?')) return;
   const status = document.getElementById('site-editor-status');
   status.textContent = 'ელემენტი იშლება…';
@@ -1081,6 +1148,19 @@ async function deleteEditorSelection() {
 function updateEditorMediaPreview(replacement, remove = false) {
   const selected = editorSelectedNode;
   if (!selected) return;
+  if (editorSelection?.mediaTagName === 'background') {
+    selected.style.setProperty('background-image', remove ? 'none' : `url(${JSON.stringify(replacement.url)})`, 'important');
+    const preview = document.getElementById('site-editor-selected-image');
+    if (remove) preview?.classList.add('hidden');
+    else if (preview) {
+      preview.src = replacement.url;
+      preview.classList.remove('hidden');
+      editorSelection.attributeValue = replacement.stagedUrl || replacement.url;
+      editorSelection.resolvedSrc = replacement.url;
+      editorSelection.backgroundUrl = replacement.stagedUrl || replacement.url;
+    }
+    return;
+  }
   if (remove) {
     (selected.closest('picture') || selected)?.remove();
     document.getElementById('site-editor-selected-image')?.classList.add('hidden');
@@ -1214,6 +1294,22 @@ async function saveEditorPageImage(replacement, remove = false) {
   if (!editorSelection) throw new Error('ჯერ აირჩიეთ ფოტო საიტის გადახედვაში.');
   const path = editorSelection.page;
   const storedUrl = replacement ? replacement.stagedUrl || replacement.url : '';
+  if (editorSelection.mediaTagName === 'background') {
+    if (!remove) {
+      const product = await findEditorProduct(editorSelection);
+      if (product) {
+        replaceEditorProductPhotos(product.raw, storedUrl);
+        stageEditorJson(product.path, product.file.data);
+      }
+    }
+    const pending = pendingEditorHtml.get(path);
+    const page = pending || await editorHtmlFile(path);
+    if (!stageEditorLiveBackgroundEdit(page, editorSelectedNode, remove ? '' : storedUrl)) {
+      throw new Error('Background image could not be located in the selected section.');
+    }
+    updateEditorMediaPreview(replacement, remove);
+    return;
+  }
   if (!remove && !/^video\//i.test(replacement.type || '')) {
     const product = await findEditorProduct(editorSelection);
     if (product) {
@@ -1311,6 +1407,13 @@ async function saveEditorPageImage(replacement, remove = false) {
     updateEditorMediaPreview(replacement, remove);
     return;
   }
+  if (!remove && !/^video\//i.test(replacement.type || '') && editorSelection.mediaTagName === 'img') {
+    const page = pending || { sha: result.sha, content: html || '' };
+    if (stageEditorLiveImageEdit(page, editorSelectedNode, storedUrl)) {
+      updateEditorMediaPreview(replacement);
+      return;
+    }
+  }
   throw new Error('არჩეული ფოტო გვერდის HTML-ში ან პროდუქტის მონაცემებში ვერ მოიძებნა. შესაძლოა ის CSS ფონის სურათი იყოს.');
 }
 
@@ -1356,7 +1459,7 @@ async function deleteEditorImage() {
   status.textContent = 'ფოტო იშლება…';
   try {
     await saveEditorPageImage(null, true);
-    (editorSelectedNode?.closest('picture') || editorSelectedNode)?.remove();
+    if (editorSelection.mediaTagName !== 'background') (editorSelectedNode?.closest('picture') || editorSelectedNode)?.remove();
     editorSelection = null;
     editorSelectedNode = null;
     status.textContent = 'Image removed from preview. Click Save changes below to publish.';
