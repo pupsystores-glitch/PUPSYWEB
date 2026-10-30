@@ -348,18 +348,27 @@ function bindEditorFrame() {
     if (boundEditorDocuments.has(doc)) return;
     boundEditorDocuments.add(doc);
     doc.querySelectorAll('body *').forEach(element => { element.style.cursor = 'crosshair'; });
-    doc.addEventListener('click', event => {
+    const disableNativeLinks = () => doc.querySelectorAll('a[href]').forEach(link => {
+      if (!link.dataset.adminOriginalHref) link.dataset.adminOriginalHref = link.getAttribute('href');
+      link.removeAttribute('href');
+    });
+    disableNativeLinks();
+    new doc.defaultView.MutationObserver(disableNativeLinks).observe(doc.documentElement, {
+      childList: true, subtree: true, attributes: true, attributeFilter: ['href'],
+    });
+    doc.defaultView.addEventListener('click', event => {
       document.getElementById('site-editor-status').textContent = '';
       const clicked = event.target.closest('img, video, h1, h2, h3, h4, h5, p, button, a, li, span, strong, label, summary, section, article, div');
-      const anchor = event.target.closest('a[href]');
+      const anchor = event.target.closest('a[data-admin-original-href], a[href]');
       const card = event.target.closest('.cms-product-card, [class*="product-card"], [class*="product-item"]')
         || anchor?.closest('.cms-product-card, [class*="product-card"], [class*="product-item"]');
       const isLink = Boolean(anchor);
       if (isLink && !event.editorParentPick) {
-        if (editorProductClick.href === anchor.href) editorProductClick.count += 1;
+        const linkHref = anchor.dataset.adminOriginalHref || anchor.getAttribute('href');
+        if (editorProductClick.href === linkHref) editorProductClick.count += 1;
         else {
           clearTimeout(editorProductClick.timer);
-          editorProductClick = { href: anchor.href, count: 1, timer: 0 };
+          editorProductClick = { href: linkHref, count: 1, timer: 0 };
         }
         clearTimeout(editorProductClick.timer);
         if (editorProductClick.count < 5) {
@@ -374,6 +383,10 @@ function bindEditorFrame() {
         } else {
           clearTimeout(editorProductClick.timer);
           editorProductClick = { href: '', count: 0, timer: 0 };
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          const targetUrl = new URL(linkHref, doc.baseURI);
+          if (targetUrl.protocol === 'http:' || targetUrl.protocol === 'https:') doc.defaultView.location.assign(targetUrl.href);
           return;
         }
       } else {
@@ -429,8 +442,8 @@ function bindEditorFrame() {
         text: element.textContent.trim(),
         occurrence: Math.max(0, identityNodes.indexOf(element)),
         mediaOccurrence: sourceAttribute ? [...(card || doc).querySelectorAll(mediaTagName)].filter(item => item.getAttribute(sourceAttribute) === attributeValue).indexOf(mediaElement) : 0,
-        href: anchor?.getAttribute('href') || '',
-        productHref: card?.getAttribute('href') || card?.querySelector('a[href]')?.getAttribute('href') || '',
+        href: anchor?.dataset.adminOriginalHref || anchor?.getAttribute('href') || '',
+        productHref: card?.dataset.adminOriginalHref || card?.getAttribute('href') || card?.querySelector('a[data-admin-original-href], a[href]')?.dataset.adminOriginalHref || card?.querySelector('a[href]')?.getAttribute('href') || '',
         productTitle,
         productId: card?.id || '',
         productTagName: card?.tagName.toLowerCase() || '',
