@@ -332,6 +332,7 @@ async function loadPageVideosView() {
 
 let editorSelection = null;
 let editorLoadedPage = '';
+let editorFrameBindGeneration = 0;
 let editorSelectedNode = null;
 const boundEditorDocuments = new WeakSet();
 const pendingEditorHtml = new Map();
@@ -436,6 +437,26 @@ function loadEditorPage(force = false) {
   editorLoadedPage = page;
   clearEditorSelection();
   frame.src = `https://pupsystores-glitch.github.io/PUPSYWEB/${page}`;
+  editorFrameBindGeneration += 1;
+  bindEditorFrameWhenReady(page, editorFrameBindGeneration);
+}
+
+function bindEditorFrameWhenReady(page, generation) {
+  const frame = document.getElementById('site-editor-frame');
+  const expectedUrl = `https://pupsystores-glitch.github.io/PUPSYWEB/${page}`;
+  let attempts = 0;
+  const attemptBind = () => {
+    if (generation !== editorFrameBindGeneration || editorLoadedPage !== page || attempts++ >= 750) return;
+    try {
+      const doc = frame?.contentDocument;
+      if (doc?.location.href === expectedUrl && doc.readyState !== 'loading') {
+        bindEditorFrame();
+        if (boundEditorDocuments.has(doc)) return;
+      }
+    } catch { /* wait until the same-origin preview document is available */ }
+    window.setTimeout(attemptBind, 40);
+  };
+  attemptBind();
 }
 
 function clearEditorSelection() {
@@ -463,12 +484,14 @@ function bindEditorFrame() {
     (doc.head || doc.documentElement).append(editorStyle);
     doc.defaultView.addEventListener('click', event => {
       document.getElementById('site-editor-status').textContent = '';
-      const clicked = event.target.closest('img, video, h1, h2, h3, h4, h5, p, button, a, li, span, strong, label, summary, section, article, div');
-      const anchor = event.target.closest('a[data-admin-original-href], a[data-admin-original-product-link], a[data-product-link], a[href]');
-      const card = event.target.closest('.cms-product-card, [class*="product-card"], [class*="product-item"]')
-        || anchor?.closest('.cms-product-card, [class*="product-card"], [class*="product-item"]');
       event.preventDefault();
       event.stopImmediatePropagation();
+      const target = event.target instanceof doc.defaultView.Element ? event.target : event.target?.parentElement;
+      if (!target) return;
+      const clicked = target.closest('img, video, h1, h2, h3, h4, h5, p, button, a, li, span, strong, label, summary, section, article, div');
+      const anchor = target.closest('a[data-admin-original-href], a[data-admin-original-product-link], a[data-product-link], a[href]');
+      const card = target.closest('.cms-product-card, [class*="product-card"], [class*="product-item"]')
+        || anchor?.closest('.cms-product-card, [class*="product-card"], [class*="product-item"]');
       const element = clicked || event.target;
       if (!(element instanceof doc.defaultView.HTMLElement)) return;
       if (editorSelectedNode?.ownerDocument === doc) {
@@ -679,6 +702,26 @@ function stageEditorLiveElementDeletion(page, element) {
     ? page.content.replace(existing[0], existing[0].replace('</style>', `${css}</style>`))
     : page.content.includes('</body>') ? page.content.replace('</body>', `${style}</body>`) : `${page.content}${style}`;
   stageEditorHtml(editorSelection.page, page.sha, updated, `Delete rendered section on ${editorSelection.page}`);
+  return true;
+}
+
+function stageEditorLiveTextEdit(page, element, value) {
+  const selector = editorLiveSelector(element);
+  if (!selector) return false;
+  const existing = page.content.match(/<script\b([^>]*data-admin-editor-text-edits="([^"]*)"[^>]*)>[\s\S]*?<\/script>/i);
+  let edits = [];
+  if (existing) {
+    try { edits = JSON.parse(decodeURIComponent(existing[2])); } catch { edits = []; }
+  }
+  const previous = edits.find(edit => edit.selector === selector);
+  if (previous) previous.value = value;
+  else edits.push({ selector, value });
+  const encoded = encodeURIComponent(JSON.stringify(edits));
+  const script = `<script data-admin-editor-text-edits="${encoded}">(function(){const current=document.currentScript;const edits=JSON.parse(decodeURIComponent(current.dataset.adminEditorTextEdits));let observer;const apply=()=>{let complete=true;for(const edit of edits){const target=document.querySelector(edit.selector);if(target)target.textContent=edit.value;else complete=false}if(complete)observer.disconnect()};observer=new MutationObserver(apply);observer.observe(document.documentElement,{childList:true,subtree:true});apply();setTimeout(()=>observer.disconnect(),30000)})();</script>`;
+  const updated = existing
+    ? page.content.replace(existing[0], script)
+    : page.content.includes('</body>') ? page.content.replace('</body>', `${script}</body>`) : `${page.content}${script}`;
+  stageEditorHtml(editorSelection.page, page.sha, updated, `Edit rendered text on ${editorSelection.page}`);
   return true;
 }
 
@@ -978,9 +1021,12 @@ async function saveEditorText() {
       const pending = pendingEditorHtml.get(path);
       const page = pending || await editorHtmlFile(path);
       const range = editorTagRange(page.content, editorSelection);
-      if (!range) throw new Error('მონიშნული ტექსტი გვერდის HTML-ში ვერ მოიძებნა.');
-      const updated = page.content.slice(0, range.openEnd) + escapeEditorText(value) + page.content.slice(range.closeStart);
-      stageEditorHtml(path, page.sha, updated, `Edit text on ${path}`);
+      if (range) {
+        const updated = page.content.slice(0, range.openEnd) + escapeEditorText(value) + page.content.slice(range.closeStart);
+        stageEditorHtml(path, page.sha, updated, `Edit text on ${path}`);
+      } else if (!stageEditorLiveTextEdit(page, editorSelectedNode, value)) {
+        throw new Error('Selected text could not be changed.');
+      }
     }
     if (editorSelectedNode?.isConnected) editorSelectedNode.textContent = value;
     status.textContent = 'ტექსტი შეიცვალა წინასწარ ხედში. საიტზე ასატვირთად დააჭირეთ ქვემოთ „ცვლილებების შენახვა“ ღილაკს.';
