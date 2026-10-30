@@ -25,6 +25,18 @@
     media.load();
   };
 
+  const limitToShortClip = video => {
+    let stoppedAtClipEnd = false;
+    video.addEventListener('play', () => { stoppedAtClipEnd = false; });
+    video.addEventListener('timeupdate', () => {
+      if (!stoppedAtClipEnd && video.currentTime >= 3.5) {
+        stoppedAtClipEnd = true;
+        video.pause();
+        video.currentTime = 0;
+      }
+    });
+  };
+
   const render = () => {
     stopCurrentMedia();
     const tile = tiles[activeIndex];
@@ -33,6 +45,7 @@
 
     if (videoUrl) {
       const video = document.createElement('video');
+      limitToShortClip(video);
       video.src = videoUrl;
       video.poster = tile.querySelector('img')?.src || '';
       video.controls = true;
