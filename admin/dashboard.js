@@ -910,8 +910,29 @@ function addEditorProductColor() {
   renderEditorProductColors(current);
   input.value = '';
 }
-function updateStaticProductColors(cardHtml, colors) {
-  const siblings = editorTagRange(cardHtml, { tagName: 'product-siblings', identityClass: 'product-item__siblings', occurrence: 0 });
+function editorProductSwatchMarkup(name, index) {
+  const slug = productSlugFromTitle(name) || `color-${index + 1}`;
+  return `<tooltip-component class="swatches swatch__button swatch__button--circle swatch-${slug}" style="--animation-delay: ${index * 50}ms; --swatch: ${editorColorHex(name)};" data-tooltip="${escapeHtmlAttribute(name)}" tabindex="0"><div class="sibling__link"></div></tooltip-component>`;
+}
+
+function buildEditorProductSiblingsMarkup(colors) {
+  const swatches = colors.map(editorProductSwatchMarkup).join('');
+  return `<product-siblings class="product-item__siblings product-item__swatches__holder product-item__swatches__holder--circle product-item__swatches__holder--slider"><native-scrollbar class="radio__fieldset radio__fieldset--swatches radio__fieldset--pgi is-visible" data-sibling-fieldset=""><div class="selector-wrapper__scrollbar" data-scrollbar="">${swatches}</div></native-scrollbar></product-siblings>`;
+}
+
+function updateStaticProductColors(cardHtml, colors, pageHtml = '') {
+  let siblings = editorTagRange(cardHtml, { tagName: 'product-siblings', identityClass: 'product-item__siblings', occurrence: 0 });
+  let createdSection = false;
+  if (!siblings && colors.length) {
+    createdSection = true;
+    const templateRange = editorTagRange(pageHtml, { tagName: 'product-siblings', identityClass: 'product-item__siblings', occurrence: 0 });
+    let markup = templateRange ? pageHtml.slice(templateRange.start, templateRange.end) : buildEditorProductSiblingsMarkup([]);
+    const titleTag = /<[^>]*\bclass\s*=\s*(["'])[^"']*\bproduct-item__title\b[^"']*\1[^>]*>/i.exec(cardHtml);
+    const insertionPoint = titleTag ? cardHtml.indexOf('</a>', titleTag.index) : -1;
+    if (insertionPoint < 0) return cardHtml;
+    cardHtml = cardHtml.slice(0, insertionPoint + 4) + markup + cardHtml.slice(insertionPoint + 4);
+    siblings = editorTagRange(cardHtml, { tagName: 'product-siblings', identityClass: 'product-item__siblings', occurrence: 0 });
+  }
   if (!siblings) return cardHtml;
   if (!colors.length) return cardHtml.slice(0, siblings.start) + cardHtml.slice(siblings.end);
   let block = cardHtml.slice(siblings.start, siblings.end);
@@ -926,6 +947,7 @@ function updateStaticProductColors(cardHtml, colors) {
     const name = colors[index];
     let openTag = block.slice(range.start, range.openEnd);
     openTag = openTag.replace(/\bdata-tooltip\s*=\s*(["']).*?\1/i, `data-tooltip="${escapeHtmlAttribute(name)}"`);
+    if (createdSection) openTag = openTag.replace(/\sdata-sibling-[\w-]+\s*=\s*(["']).*?\1/gi, '');
     const slug = productSlugFromTitle(name) || `color-${index + 1}`;
     if (/\bclass\s*=\s*(["']).*?\1/i.test(openTag)) {
       openTag = openTag.replace(/\bclass\s*=\s*(["'])(.*?)\1/i, (_all, quote, value) => `class=${quote}${value.replace(/\bswatch-[a-z0-9-]+\b/gi, '').trim()} swatch-${slug}${quote}`);
@@ -938,8 +960,10 @@ function updateStaticProductColors(cardHtml, colors) {
   }
   for (let index = existingCount; index < colors.length; index += 1) {
     const name = colors[index];
-    const slug = productSlugFromTitle(name) || `color-${index + 1}`;
-    block = block.replace(/<\/native-scrollbar>/i, `<tooltip-component class="swatches swatch__button swatch__button--circle swatch-${slug}" style="--swatch: ${editorColorHex(name)};" data-tooltip="${escapeHtmlAttribute(name)}" tabindex="0"><div class="sibling__link"></div></tooltip-component></native-scrollbar>`);
+    const markup = editorProductSwatchMarkup(name, index);
+    const scrollRange = editorTagRange(block, { tagName: 'div', identityClass: 'selector-wrapper__scrollbar', occurrence: 0 });
+    if (scrollRange) block = block.slice(0, scrollRange.closeStart) + markup + block.slice(scrollRange.closeStart);
+    else block = block.replace(/<\/native-scrollbar>/i, `${markup}</native-scrollbar>`);
   }
   return cardHtml.slice(0, siblings.start) + block + cardHtml.slice(siblings.end);
 }
@@ -962,11 +986,23 @@ function updateEditorProductPreview(title, price, colors) {
   let siblings = card.querySelector('product-siblings, .product__siblings, .product-item__siblings');
   if (!colors.length) { siblings?.remove(); return; }
   if (!siblings) {
-    siblings = card.ownerDocument.createElement('product-siblings');
-    siblings.className = 'product-item__siblings';
-    const scrollbar = card.ownerDocument.createElement('native-scrollbar');
-    siblings.append(scrollbar);
-    (priceNode || titleNode || card).after(siblings);
+    const template = card.ownerDocument.querySelector('product-siblings.product-item__siblings, product-siblings.product__siblings');
+    if (template) siblings = template.cloneNode(true);
+    else {
+      siblings = card.ownerDocument.createElement('product-siblings');
+      siblings.className = 'product-item__siblings product-item__swatches__holder product-item__swatches__holder--circle product-item__swatches__holder--slider';
+      const scrollbar = card.ownerDocument.createElement('native-scrollbar');
+      scrollbar.className = 'radio__fieldset radio__fieldset--swatches radio__fieldset--pgi is-visible';
+      scrollbar.dataset.siblingFieldset = '';
+      const scrollContent = card.ownerDocument.createElement('div');
+      scrollContent.className = 'selector-wrapper__scrollbar';
+      scrollContent.dataset.scrollbar = '';
+      scrollbar.append(scrollContent);
+      siblings.append(scrollbar);
+    }
+    siblings.querySelectorAll('tooltip-component[data-tooltip]').forEach(swatch => swatch.remove());
+    const productLink = titleNode?.closest('a[href]');
+    (productLink || priceNode || titleNode || card).after(siblings);
   }
   const scrollbar = siblings.querySelector('native-scrollbar') || siblings;
   const swatches = [...scrollbar.querySelectorAll('tooltip-component[data-tooltip]')];
@@ -976,7 +1012,10 @@ function updateEditorProductPreview(title, price, colors) {
     swatch.setAttribute('data-tooltip', name);
     swatch.className = `swatches swatch__button swatch__button--circle swatch-${productSlugFromTitle(name) || `color-${index + 1}`}`;
     swatch.style.setProperty('--swatch', editorColorHex(name));
+    swatch.style.setProperty('--animation-delay', `${index * 50}ms`);
+    ['data-sibling-link', 'data-sibling-price', 'data-sibling-compare-at-price', 'data-sibling-cutline', 'data-sibling-image'].forEach(attribute => swatch.removeAttribute(attribute));
   });
+  const swatchContainer = scrollbar.querySelector('.selector-wrapper__scrollbar') || scrollbar;
   for (let index = swatches.length; index < colors.length; index += 1) {
     const name = colors[index];
     const swatch = card.ownerDocument.createElement('tooltip-component');
@@ -987,7 +1026,8 @@ function updateEditorProductPreview(title, price, colors) {
     const link = card.ownerDocument.createElement('div');
     link.className = 'sibling__link';
     swatch.append(link);
-    scrollbar.append(swatch);
+    swatch.style.setProperty('--animation-delay', `${index * 50}ms`);
+    swatchContainer.append(swatch);
   }
 }
 
@@ -1020,9 +1060,22 @@ async function saveSelectedProduct() {
       let cardHtml = page.content.slice(range.start, range.end);
       cardHtml = updateStaticProductTitle(cardHtml, title);
       cardHtml = updateStaticProductPrice(cardHtml, price);
-      cardHtml = updateStaticProductColors(cardHtml, colors);
+      cardHtml = updateStaticProductColors(cardHtml, colors, page.content);
       const updated = page.content.slice(0, range.start) + cardHtml + page.content.slice(range.end);
       stageEditorHtml(editorSelection.page, page.sha, updated, `Edit product on ${editorSelection.page}`);
+    }
+    if (product) {
+      const pending = pendingEditorHtml.get(editorSelection.page);
+      const page = pending || await editorHtmlFile(editorSelection.page);
+      const range = productCardRange(page.content, editorSelection);
+      if (range) {
+        let cardHtml = page.content.slice(range.start, range.end);
+        cardHtml = updateStaticProductTitle(cardHtml, title);
+        cardHtml = updateStaticProductPrice(cardHtml, price);
+        cardHtml = updateStaticProductColors(cardHtml, colors, page.content);
+        const updated = page.content.slice(0, range.start) + cardHtml + page.content.slice(range.end);
+        stageEditorHtml(editorSelection.page, page.sha, updated, `Edit product on ${editorSelection.page}`);
+      }
     }
     updateEditorProductPreview(title, price, colors);
     editorSelection.productTitle = title;
