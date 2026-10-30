@@ -403,7 +403,6 @@ function bindEditorFrame() {
       const loadedProduct = products.find(item => item.raw?.slug === pageSlug || productSlugFromTitle(item.title) === pageSlug || (productTitle && item.title === productTitle));
       const fieldValue = productField && loadedProduct ? loadedProduct.raw[productField] : undefined;
       const productPriceText = card?.querySelector('.cms-product-card__price, .product-item__price')?.textContent.match(/[\d,]+(?:\.\d+)?/g)?.at(-1) || '';
-      const productColors = loadedProduct?.raw?.colors || [...(card?.querySelectorAll('tooltip-component[data-tooltip]') || [])].map(item => item.getAttribute('data-tooltip')).filter(Boolean);
       const isProductCard = Boolean(card && (card.classList.contains('cms-product-card') || card.classList.contains('product-item') || card.className.toString().includes('product-item')));
       editorSelection = {
         page: document.getElementById('site-editor-page').value,
@@ -423,7 +422,6 @@ function bindEditorFrame() {
         productOccurrence: Math.max(0, productNodes.indexOf(card)),
         isProductCard,
         productPrice: loadedProduct?.raw?.price ?? productPriceText.replace(/,/g, ''),
-        productColors,
         productField,
         sourceAttribute,
         mediaTagName,
@@ -455,8 +453,6 @@ function bindEditorFrame() {
       if (isProductCard) {
         document.getElementById('site-editor-product-title').value = productTitle;
         document.getElementById('site-editor-product-price').value = productPriceText.replace(/,/g, '') || loadedProduct?.raw?.price || '';
-        document.getElementById('site-editor-product-colors').value = productColors.join(', ');
-        renderEditorProductColors();
       }
       document.querySelector('#site-editor-text-tools label').textContent = editorSelection.canEditText ? 'Edit text' : 'Section selected';
     }, true);
@@ -605,65 +601,9 @@ function updateStaticProductPrice(cardHtml, price) {
   return cardHtml.slice(0, range.start) + updated + cardHtml.slice(range.end);
 }
 
-function editorColorHex(name) {
-  const value = name.toLowerCase();
-  const palette = [
-    [/black|შავ/, '#171717'], [/white|თეთრ/, '#f7f5f2'], [/blue|ლურჯ/, '#3284c7'],
-    [/green|მწვან/, '#3e8b58'], [/red|წითელ/, '#c74c4c'], [/pink|ვარდისფ/, '#df8fa7'],
-    [/beige|cream|კრემ|ბეჟ/, '#d9c3a3'], [/brown|ყავისფ/, '#80543e'],
-    [/gray|grey|ნაცრისფ/, '#8a8a8a'], [/yellow|ყვითელ/, '#e5bc42'],
-    [/purple|იისფ/, '#8b68ad'], [/terracotta|ტერაკოტ/, '#b96b4d'],
-  ];
-  return palette.find(([pattern]) => pattern.test(value))?.[1] || '#8a8a8a';
-}
-
-function renderEditorProductColors() {
-  const input = document.getElementById('site-editor-product-colors');
-  const preview = document.getElementById('site-editor-color-preview');
-  if (!input || !preview) return;
-  preview.replaceChildren();
-  input.value.split(/[,،]/).map(value => value.trim()).filter(Boolean).forEach(name => {
-    const chip = document.createElement('span');
-    chip.className = 'inline-flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-900 px-2 py-1 text-[10px] text-slate-200';
-    const swatch = document.createElement('span');
-    swatch.className = 'h-3 w-3 rounded-full border border-white/30';
-    swatch.style.backgroundColor = editorColorHex(name);
-    chip.append(swatch, document.createTextNode(name));
-    preview.append(chip);
-  });
-}
-
-function updateStaticProductColors(cardHtml, colors) {
+function removeStaticProductColors(cardHtml) {
   const siblings = editorTagRange(cardHtml, { tagName: 'product-siblings', identityClass: 'product-item__siblings', occurrence: 0 });
-  if (!siblings) return cardHtml;
-  let block = cardHtml.slice(siblings.start, siblings.end);
-  const existingCount = [...block.matchAll(/<tooltip-component\b[^>]*\bdata-tooltip=/gi)].length;
-  for (let index = existingCount - 1; index >= 0; index -= 1) {
-    const range = editorTagRange(block, { tagName: 'tooltip-component', identityClass: 'swatches', occurrence: index });
-    if (!range) continue;
-    if (index >= colors.length) {
-      block = block.slice(0, range.start) + block.slice(range.end);
-      continue;
-    }
-    const name = colors[index];
-    let openTag = block.slice(range.start, range.openEnd);
-    openTag = openTag.replace(/\bdata-tooltip\s*=\s*(["']).*?\1/i, `data-tooltip="${escapeHtmlAttribute(name)}"`);
-    const slug = productSlugFromTitle(name) || `color-${index + 1}`;
-    if (/\bclass\s*=\s*(["']).*?\1/i.test(openTag)) {
-      openTag = openTag.replace(/\bclass\s*=\s*(["'])(.*?)\1/i, (_all, quote, value) => `class=${quote}${value.replace(/\bswatch-[a-z0-9-]+\b/gi, '').trim()} swatch-${slug}${quote}`);
-    }
-    const hex = editorColorHex(name);
-    if (/\bstyle\s*=\s*(["']).*?\1/i.test(openTag)) {
-      openTag = openTag.replace(/\bstyle\s*=\s*(["'])([\s\S]*?)\1/i, (_all, quote, value) => `style=${quote}${value.replace(/--swatch\s*:\s*[^;]+;?/i, `--swatch: ${hex};`)}${quote}`);
-    } else openTag = openTag.replace(/>$/, ` style="--swatch: ${hex};">`);
-    block = block.slice(0, range.start) + openTag + block.slice(range.openEnd);
-  }
-  for (let index = existingCount; index < colors.length; index += 1) {
-    const name = colors[index];
-    const slug = productSlugFromTitle(name) || `color-${index + 1}`;
-    block = block.replace(/<\/native-scrollbar>/i, `<tooltip-component class="swatches swatch__button swatch__button--circle swatch-${slug}" style="--swatch: ${editorColorHex(name)};" data-tooltip="${escapeHtmlAttribute(name)}" tabindex="0"><div class="sibling__link"></div></tooltip-component></native-scrollbar>`);
-  }
-  return cardHtml.slice(0, siblings.start) + block + cardHtml.slice(siblings.end);
+  return siblings ? cardHtml.slice(0, siblings.start) + cardHtml.slice(siblings.end) : cardHtml;
 }
 
 async function saveSelectedProduct() {
@@ -671,7 +611,6 @@ async function saveSelectedProduct() {
   if (!editorSelection?.isProductCard) { status.textContent = 'მონიშნეთ პროდუქტი მის რედაქტირებამდე.'; return; }
   const title = document.getElementById('site-editor-product-title').value.trim();
   const price = Number(document.getElementById('site-editor-product-price').value);
-  const colors = document.getElementById('site-editor-product-colors').value.split(/[,،]/).map(value => value.trim()).filter(Boolean);
   if (!title || !Number.isFinite(price) || price < 0) { status.textContent = 'შეამოწმეთ პროდუქტის სახელი და ფასი.'; return; }
   status.textContent = 'პროდუქტის ცვლილებები ინახება…';
   try {
@@ -679,13 +618,13 @@ async function saveSelectedProduct() {
     if (product) {
       product.raw.title = title;
       product.raw.price = price;
-      product.raw.colors = colors;
+      product.raw.colors = [];
       await commitJson(product.path, product.file.data);
       const cached = products.find(item => item.raw?.slug === product.slug || (item.title === editorSelection.productTitle && item.collectionId === collections.find(entry => entry.file === product.path.split('/').pop())?.id));
       if (cached) {
         cached.title = title;
         cached.price = price;
-        cached.colors = colors;
+        cached.colors = [];
         cached.raw = product.raw;
       }
     } else {
@@ -695,7 +634,7 @@ async function saveSelectedProduct() {
       let cardHtml = page.content.slice(range.start, range.end);
       cardHtml = updateStaticProductTitle(cardHtml, title);
       cardHtml = updateStaticProductPrice(cardHtml, price);
-      cardHtml = updateStaticProductColors(cardHtml, colors);
+      cardHtml = removeStaticProductColors(cardHtml);
       const updated = page.content.slice(0, range.start) + cardHtml + page.content.slice(range.end);
       await commitEditorHtml(editorSelection.page, page.sha, updated, `Edit product on ${editorSelection.page}`);
     }

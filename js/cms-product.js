@@ -81,7 +81,10 @@
     if (!colorsBlock) return;
 
     const selectedColors = new Set(productColors(product));
-    if (!selectedColors.size) return;
+    if (!selectedColors.size) {
+      document.querySelectorAll(".product__siblings").forEach((block) => block.remove());
+      return;
+    }
     const swatches = [...colorsBlock.querySelectorAll(".swatches")];
     swatches.forEach((swatch) => {
       const link = swatch.querySelector(".sibling__link");
