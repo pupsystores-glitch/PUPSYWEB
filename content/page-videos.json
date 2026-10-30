@@ -2,6 +2,37 @@
   "pages": {
     "index.html": [],
     "about.html": [],
-    "ambassador.html": []
+    "ambassador.html": [
+      {
+        "id": "ambassador-small-video-1",
+        "caption": "მოკლე ვიდეო 1",
+        "url": "https://convertico.com/samples/download.php?file=sample-mp4-360p-h264-10s.mp4&format=mp4"
+      },
+      {
+        "id": "ambassador-small-video-2",
+        "caption": "მოკლე ვიდეო 2",
+        "url": "https://convertico.com/samples/download.php?file=sample-mp4-720p-h264-10s.mp4&format=mp4"
+      },
+      {
+        "id": "ambassador-small-video-3",
+        "caption": "მოკლე ვიდეო 3",
+        "url": "https://convertico.com/samples/download.php?file=sample-mp4-720p-no-audio.mp4&format=mp4"
+      },
+      {
+        "id": "ambassador-small-video-4",
+        "caption": "მოკლე ვიდეო 4",
+        "url": "https://convertico.com/samples/download.php?file=sample-mp4-vertical-1080x1920-9x16.mp4&format=mp4"
+      },
+      {
+        "id": "ambassador-small-video-5",
+        "caption": "მოკლე ვიდეო 5",
+        "url": "https://convertico.com/samples/download.php?file=sample-mp4-1080p-h264-10s.mp4&format=mp4"
+      },
+      {
+        "id": "ambassador-small-video-6",
+        "caption": "მოკლე ვიდეო 6",
+        "url": "https://convertico.com/samples/download.php?file=sample-mp4-480p-30s.mp4&format=mp4"
+      }
+    ]
   }
 }

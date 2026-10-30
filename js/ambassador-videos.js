@@ -1,31 +1,31 @@
 (() => {
-  const videoUrls = [
-    'https://media.w3.org/wai/perspective-videos/clear-layout-design.mp4',
-    'https://media.w3.org/wai/perspective-videos/clear-layout-design-ad.mp4',
-    'https://media.w3.org/wai/perspective-videos/colors-with-good-contrast.mp4',
-    'https://media.w3.org/wai/perspective-videos/colors-with-good-contrast-ad.mp4',
-    'https://media.w3.org/wai/perspective-videos/customizable-text.mp4',
-    'https://media.w3.org/wai/perspective-videos/customizable-text-ad.mp4',
-    'https://media.w3.org/wai/perspective-videos/keyboard-compatibility.mp4',
-    'https://media.w3.org/wai/perspective-videos/keyboard-compatibility-ad.mp4',
-    'https://media.w3.org/wai/perspective-videos/large-links-buttons-controls.mp4',
-    'https://media.w3.org/wai/perspective-videos/large-links-buttons-controls-ad.mp4',
-    'https://media.w3.org/wai/perspective-videos/notifications-feedback.mp4',
-    'https://media.w3.org/wai/perspective-videos/notifications-feedback-ad.mp4',
-    'https://media.w3.org/wai/perspective-videos/text-to-speech.mp4',
-    'https://media.w3.org/wai/perspective-videos/text-to-speech-ad.mp4',
-    'https://media.w3.org/wai/perspective-videos/understandable-content.mp4',
-    'https://media.w3.org/wai/perspective-videos/understandable-content-ad.mp4',
-    'https://media.w3.org/wai/perspective-videos/video-captions.mp4',
-    'https://media.w3.org/wai/perspective-videos/video-captions-ad.mp4',
-    'https://media.w3.org/wai/perspective-videos/voice-recognition.mp4',
-    'https://media.w3.org/wai/perspective-videos/voice-recognition-ad.mp4',
-    'https://media.w3.org/wai/evaluation-intros/conformance-evaluation.mp4',
-    'https://media.w3.org/wai/evaluation-intros/easy-checks-accessibility.mp4',
-    'https://media.w3.org/wai/evaluation-intros/evaluating-resources-overview.mp4',
-    'https://media.w3.org/wai/evaluation-intros/involving-users.mp4',
-    'https://media.w3.org/wai/evaluation-intros/tools-for-evaluating.mp4',
-    'https://media.w3.org/wai/accessibility-intro/intro.mp4'
+  const mediaItems = [
+    { type: 'image', url: 'https://images.unsplash.com/photo-1765278134601-3f2dc85d1edf?auto=format&fit=crop&w=480&q=40' },
+    { type: 'image', url: 'https://images.unsplash.com/photo-1767101608062-4eadebf5a889?auto=format&fit=crop&w=480&q=40' },
+    { type: 'video', url: 'https://convertico.com/samples/download.php?file=sample-mp4-360p-h264-10s.mp4&format=mp4' },
+    { type: 'image', url: 'https://images.unsplash.com/photo-1600804340584-c7db2eacf0bf?auto=format&fit=crop&w=480&q=40' },
+    { type: 'image', url: 'https://images.unsplash.com/photo-1686908904084-34e0c26b5f71?auto=format&fit=crop&w=480&q=40' },
+    { type: 'video', url: 'https://convertico.com/samples/download.php?file=sample-mp4-480p-30s.mp4&format=mp4' },
+    { type: 'image', url: 'https://images.unsplash.com/photo-1737482810276-80dfd5948034?auto=format&fit=crop&w=480&q=40' },
+    { type: 'image', url: 'https://images.unsplash.com/photo-1751315722210-3eb0c4a028c0?auto=format&fit=crop&w=480&q=40' },
+    { type: 'video', url: 'https://convertico.com/samples/download.php?file=sample-mp4-720p-60fps.mp4&format=mp4' },
+    { type: 'image', url: 'https://images.unsplash.com/photo-1656529569201-2cdbe5f509cd?auto=format&fit=crop&w=480&q=40' },
+    { type: 'image', url: 'https://images.unsplash.com/photo-1769117317230-aa2ae87de191?auto=format&fit=crop&w=480&q=40' },
+    { type: 'video', url: 'https://convertico.com/samples/download.php?file=sample-mp4-720p-h264-10s.mp4&format=mp4' },
+    { type: 'image', url: 'https://images.unsplash.com/photo-1765278134477-bbdf6599a1e8?auto=format&fit=crop&w=480&q=40' },
+    { type: 'image', url: 'https://images.unsplash.com/photo-1644308168029-0da21dfba47f?auto=format&fit=crop&w=480&q=40' },
+    { type: 'video', url: 'https://convertico.com/samples/download.php?file=sample-mp4-720p-no-audio.mp4&format=mp4' },
+    { type: 'image', url: 'https://images.unsplash.com/photo-1722553777944-99f73ce48fc8?auto=format&fit=crop&w=480&q=40' },
+    { type: 'image', url: 'https://images.unsplash.com/photo-1667152927602-208d4245fc90?auto=format&fit=crop&w=480&q=40' },
+    { type: 'video', url: 'https://convertico.com/samples/download.php?file=sample-mp4-vertical-1080x1920-9x16.mp4&format=mp4' },
+    { type: 'image', url: 'https://images.unsplash.com/photo-1599061171921-61b5cd73410b?auto=format&fit=crop&w=480&q=40' },
+    { type: 'image', url: 'https://images.unsplash.com/photo-1500862341394-4477ad3e8af2?auto=format&fit=crop&w=480&q=40' },
+    { type: 'video', url: 'https://convertico.com/samples/download.php?file=sample-mp4-1080p-h264-10s.mp4&format=mp4' },
+    { type: 'image', url: 'https://images.unsplash.com/photo-1746561801596-b00c9cd2c981?auto=format&fit=crop&w=480&q=40' },
+    { type: 'image', url: 'https://images.unsplash.com/photo-1720749407529-d812eb277413?auto=format&fit=crop&w=480&q=40' },
+    { type: 'video', url: 'https://convertico.com/samples/download.php?file=sample-mp4-360p-h264-10s.mp4&format=mp4' },
+    { type: 'image', url: 'https://images.unsplash.com/photo-1759353180340-2a171f0e3e2d?auto=format&fit=crop&w=480&q=40' },
+    { type: 'image', url: 'https://images.unsplash.com/photo-1703733570809-9a9765f3da73?auto=format&fit=crop&w=480&q=40' }
   ];
 
   const feed = document.querySelector('#insta-feed');
@@ -55,7 +55,8 @@
       overflow: hidden;
       background: #171513;
     }
-    #insta-feed .ambassador-video-tile video {
+    #insta-feed .ambassador-video-tile video,
+    #insta-feed .ambassador-video-tile img {
       display: block;
       width: 100%;
       height: 100%;
@@ -73,8 +74,12 @@
   const observer = new IntersectionObserver(entries => {
     entries.forEach(({ target, isIntersecting }) => {
       if (isIntersecting) {
-        target.preload = 'metadata';
-        target.load();
+        if (!target.dataset.loaded) {
+          target.dataset.loaded = 'true';
+          target.src = target.dataset.src;
+          target.preload = 'metadata';
+          target.load();
+        }
         target.play().catch(() => {});
       } else {
         target.pause();
@@ -82,20 +87,30 @@
     });
   }, { threshold: 0.15 });
 
-  videoUrls.forEach((url, index) => {
+  mediaItems.forEach((item, index) => {
     const tile = document.createElement('div');
     tile.className = 'instafeed-new-layout-item ambassador-video-tile';
-    const video = document.createElement('video');
-    video.src = url;
-    video.muted = true;
-    video.loop = true;
-    video.autoplay = true;
-    video.playsInline = true;
-    video.controls = true;
-    video.preload = 'none';
-    video.setAttribute('aria-label', `Video ${index + 1}`);
-    tile.append(video);
+
+    if (item.type === 'image') {
+      const image = document.createElement('img');
+      image.src = item.url;
+      image.alt = 'ძაღლის ფოტო';
+      image.loading = 'lazy';
+      image.decoding = 'async';
+      tile.append(image);
+    } else {
+      const video = document.createElement('video');
+      video.dataset.src = item.url;
+      video.muted = true;
+      video.loop = true;
+      video.playsInline = true;
+      video.controls = true;
+      video.preload = 'none';
+      video.setAttribute('aria-label', `მოკლე ვიდეო ${index + 1}`);
+      tile.append(video);
+      observer.observe(video);
+    }
+
     wrapper.append(tile);
-    observer.observe(video);
   });
 })();

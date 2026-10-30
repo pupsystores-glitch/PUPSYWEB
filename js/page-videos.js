@@ -1,4 +1,20 @@
 (() => {
+  const previewObserver = new IntersectionObserver(entries => {
+    entries.forEach(({ target, isIntersecting }) => {
+      if (isIntersecting) {
+        if (!target.dataset.loaded) {
+          target.dataset.loaded = 'true';
+          target.src = target.dataset.src;
+          target.preload = 'metadata';
+          target.load();
+        }
+        target.play().catch(() => {});
+      } else {
+        target.pause();
+      }
+    });
+  }, { threshold: 0.15 });
+
   const getPageName = () => {
     const lastPart = window.location.pathname.split('/').filter(Boolean).pop();
     return (lastPart || 'index.html').toLowerCase();
@@ -6,12 +22,17 @@
 
   const createVideo = (item, preview = false) => {
     const video = document.createElement('video');
-    video.src = item.url;
     video.muted = true;
     video.loop = true;
     video.playsInline = true;
-    video.preload = preview ? 'metadata' : 'none';
-    if (preview) video.autoplay = true;
+    video.preload = 'none';
+    if (preview) {
+      video.dataset.src = item.url;
+      video.autoplay = true;
+      previewObserver.observe(video);
+    } else {
+      video.src = item.url;
+    }
     return video;
   };
 
