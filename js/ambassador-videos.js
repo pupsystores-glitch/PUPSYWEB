@@ -1,5 +1,5 @@
 (() => {
-  const galleries = [...document.querySelectorAll('.ambassador-community-gallery__grid, .ambassador-video-section__grid')];
+  const galleries = [...document.querySelectorAll('.ambassador-community-gallery__grid')];
   if (!galleries.length) return;
 
   const viewer = document.createElement('div');
