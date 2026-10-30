@@ -314,7 +314,6 @@ function switchMainTab(tab) {
 let editorSelection = null;
 let editorLoadedPage = '';
 let editorSelectedNode = null;
-let editorProductClick = { href: '', count: 0, timer: 0 };
 const boundEditorDocuments = new WeakSet();
 
 function loadEditorPage(force = false) {
@@ -322,8 +321,6 @@ function loadEditorPage(force = false) {
   const frame = document.getElementById('site-editor-frame');
   if (!page || !frame || (!force && editorLoadedPage === page)) return;
   editorLoadedPage = page;
-  clearTimeout(editorProductClick.timer);
-  editorProductClick = { href: '', count: 0, timer: 0 };
   clearEditorSelection();
   frame.src = `https://pupsystores-glitch.github.io/PUPSYWEB/${page}`;
 }
@@ -348,53 +345,28 @@ function bindEditorFrame() {
     if (boundEditorDocuments.has(doc)) return;
     boundEditorDocuments.add(doc);
     doc.querySelectorAll('body *').forEach(element => { element.style.cursor = 'crosshair'; });
-    const disableNativeLinks = () => doc.querySelectorAll('a[href]').forEach(link => {
-      if (!link.dataset.adminOriginalHref) link.dataset.adminOriginalHref = link.getAttribute('href');
-      link.removeAttribute('href');
-    });
+    const disableNativeLinks = () => {
+      doc.querySelectorAll('a[href]').forEach(link => {
+        if (!link.dataset.adminOriginalHref) link.dataset.adminOriginalHref = link.getAttribute('href');
+        link.removeAttribute('href');
+      });
+      doc.querySelectorAll('[data-product-link]').forEach(link => {
+        if (!link.dataset.adminOriginalProductLink) link.dataset.adminOriginalProductLink = link.getAttribute('data-product-link');
+        link.removeAttribute('data-product-link');
+      });
+    };
     disableNativeLinks();
     new doc.defaultView.MutationObserver(disableNativeLinks).observe(doc.documentElement, {
-      childList: true, subtree: true, attributes: true, attributeFilter: ['href'],
+      childList: true, subtree: true, attributes: true, attributeFilter: ['href', 'data-product-link'],
     });
     doc.defaultView.addEventListener('click', event => {
       document.getElementById('site-editor-status').textContent = '';
       const clicked = event.target.closest('img, video, h1, h2, h3, h4, h5, p, button, a, li, span, strong, label, summary, section, article, div');
-      const anchor = event.target.closest('a[data-admin-original-href], a[href]');
+      const anchor = event.target.closest('a[data-admin-original-href], a[data-admin-original-product-link], a[href]');
       const card = event.target.closest('.cms-product-card, [class*="product-card"], [class*="product-item"]')
         || anchor?.closest('.cms-product-card, [class*="product-card"], [class*="product-item"]');
-      const isLink = Boolean(anchor);
-      if (isLink && !event.editorParentPick) {
-        const linkHref = anchor.dataset.adminOriginalHref || anchor.getAttribute('href');
-        if (editorProductClick.href === linkHref) editorProductClick.count += 1;
-        else {
-          clearTimeout(editorProductClick.timer);
-          editorProductClick = { href: linkHref, count: 1, timer: 0 };
-        }
-        clearTimeout(editorProductClick.timer);
-        if (editorProductClick.count < 5) {
-          event.preventDefault();
-          event.stopImmediatePropagation();
-          const remaining = 5 - editorProductClick.count;
-          document.getElementById('site-editor-status').textContent = `ლინკის გასახსნელად კიდევ ${remaining} დაჭერა.`;
-          const currentHref = editorProductClick.href;
-          editorProductClick.timer = setTimeout(() => {
-            if (editorProductClick.href === currentHref) editorProductClick = { href: '', count: 0, timer: 0 };
-          }, 5000);
-        } else {
-          clearTimeout(editorProductClick.timer);
-          editorProductClick = { href: '', count: 0, timer: 0 };
-          event.preventDefault();
-          event.stopImmediatePropagation();
-          const targetUrl = new URL(linkHref, doc.baseURI);
-          if (targetUrl.protocol === 'http:' || targetUrl.protocol === 'https:') doc.defaultView.location.assign(targetUrl.href);
-          return;
-        }
-      } else {
-        clearTimeout(editorProductClick.timer);
-        editorProductClick = { href: '', count: 0, timer: 0 };
-        event.preventDefault();
-        event.stopImmediatePropagation();
-      }
+      event.preventDefault();
+      event.stopImmediatePropagation();
       const element = clicked || event.target;
       if (!(element instanceof doc.defaultView.HTMLElement)) return;
       doc.querySelectorAll('[data-admin-editor-selected]').forEach(item => {
@@ -442,8 +414,8 @@ function bindEditorFrame() {
         text: element.textContent.trim(),
         occurrence: Math.max(0, identityNodes.indexOf(element)),
         mediaOccurrence: sourceAttribute ? [...(card || doc).querySelectorAll(mediaTagName)].filter(item => item.getAttribute(sourceAttribute) === attributeValue).indexOf(mediaElement) : 0,
-        href: anchor?.dataset.adminOriginalHref || anchor?.getAttribute('href') || '',
-        productHref: card?.dataset.adminOriginalHref || card?.getAttribute('href') || card?.querySelector('a[data-admin-original-href], a[href]')?.dataset.adminOriginalHref || card?.querySelector('a[href]')?.getAttribute('href') || '',
+        href: anchor?.dataset.adminOriginalHref || anchor?.dataset.adminOriginalProductLink || anchor?.getAttribute('href') || '',
+        productHref: card?.dataset.adminOriginalHref || card?.dataset.adminOriginalProductLink || card?.getAttribute('href') || card?.querySelector('a[data-admin-original-href], a[data-admin-original-product-link], a[href]')?.dataset.adminOriginalHref || card?.querySelector('a[data-admin-original-product-link]')?.dataset.adminOriginalProductLink || card?.querySelector('a[href]')?.getAttribute('href') || '',
         productTitle,
         productId: card?.id || '',
         productTagName: card?.tagName.toLowerCase() || '',
