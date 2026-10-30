@@ -50,6 +50,7 @@
       video.poster = tile.querySelector('img')?.src || '';
       video.controls = true;
       video.autoplay = true;
+      video.muted = true;
       video.playsInline = true;
       video.preload = 'none';
       content.append(video);
