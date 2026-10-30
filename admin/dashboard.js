@@ -33,8 +33,12 @@ let detailFieldsCollectionId = null;
 let currentLayout = 'list';
 let products = [];
 let mediaFiles = [];
+let mediaFilesLoaded = false;
+let mediaFilesLoading = null;
 let collectionFiles = {};
 let pageVideosData = { pages: {} };
+let pageVideosLoaded = false;
+let pageVideosLoading = null;
 const stagedProductImageUploads = new Map();
 let accessToken = sessionStorage.getItem('pupsy_github_token') || '';
 let authPopup = null;
@@ -173,9 +177,6 @@ async function initializeDashboard() {
     return (file.data.products || []).map((raw, index) => productFromRaw(raw, collection, index));
   }));
   products = results.flat();
-  try { mediaFiles = await loadMediaFiles(); } catch { mediaFiles = []; }
-  const pageVideosFile = await githubFile('content/page-videos.json');
-  pageVideosData = pageVideosFile.data || { pages: {} };
 
   const firstWithProducts = collections.find(collection => products.some(product => product.collectionId === collection.id));
   if (!products.some(product => product.collectionId === activeCollectionId) && firstWithProducts) {
@@ -183,8 +184,6 @@ async function initializeDashboard() {
   }
   populateModalCollectionSelect();
   selectCollection(activeCollectionId);
-  renderMediaGallery();
-  renderPageVideos();
   initializeVoteStatsView();
   document.getElementById('auth-screen').classList.add('hidden');
   lucide.createIcons();
@@ -307,8 +306,28 @@ function switchMainTab(tab) {
   document.getElementById('site-editor-open')?.classList.toggle('ring-2', tab === 'editor');
   const main = document.querySelector('main');
   if (main) main.style.maxWidth = tab === 'editor' ? 'none' : '';
+  if (tab === 'media') loadMediaView();
+  if (tab === 'videos') loadPageVideosView();
   if (tab === 'editor') loadEditorPage();
   if (tab === 'stats') loadVoteStats();
+}
+
+async function loadMediaView() {
+  if (mediaFilesLoaded) return;
+  if (!mediaFilesLoading) mediaFilesLoading = loadMediaFiles()
+    .then(files => { mediaFiles = files; mediaFilesLoaded = true; renderMediaGallery(); })
+    .catch(error => showToast(error.message || 'Media library could not be loaded.'))
+    .finally(() => { mediaFilesLoading = null; });
+  await mediaFilesLoading;
+}
+
+async function loadPageVideosView() {
+  if (pageVideosLoaded) return;
+  if (!pageVideosLoading) pageVideosLoading = githubFile('content/page-videos.json')
+    .then(file => { pageVideosData = file.data || { pages: {} }; pageVideosLoaded = true; renderPageVideos(); })
+    .catch(error => showToast(error.message || 'Page videos could not be loaded.'))
+    .finally(() => { pageVideosLoading = null; });
+  await pageVideosLoading;
 }
 
 let editorSelection = null;
@@ -317,12 +336,13 @@ let editorSelectedNode = null;
 const boundEditorDocuments = new WeakSet();
 const pendingEditorHtml = new Map();
 const pendingEditorJson = new Map();
+const pendingEditorAssets = new Map();
 const pendingProductRoutes = new Set();
 
 function updateEditorSaveButton() {
   const button = document.getElementById('site-editor-save-changes');
   if (!button) return;
-  button.classList.toggle('hidden', !pendingEditorHtml.size && !pendingEditorJson.size && !pendingProductRoutes.size);
+  button.classList.toggle('hidden', !pendingEditorHtml.size && !pendingEditorJson.size && !pendingEditorAssets.size && !pendingProductRoutes.size);
 }
 
 function stageEditorHtml(path, sha, content, message) {
@@ -336,11 +356,54 @@ function stageEditorJson(path, data) {
   updateEditorSaveButton();
 }
 
+function replaceEditorAssetReferences(value, publishedAssets) {
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => { value[index] = replaceEditorAssetReferences(item, publishedAssets); });
+    return value;
+  }
+  if (value && typeof value === 'object') {
+    for (const [key, item] of Object.entries(value)) value[key] = replaceEditorAssetReferences(item, publishedAssets);
+    return value;
+  }
+  if (typeof value === 'string') {
+    let result = value;
+    for (const [token, url] of publishedAssets) result = result.replaceAll(token, url);
+    return result;
+  }
+  return value;
+}
+
 async function saveEditorChanges() {
   const status = document.getElementById('site-editor-status');
-  if (!pendingEditorHtml.size && !pendingEditorJson.size && !pendingProductRoutes.size) return;
+  if (!pendingEditorHtml.size && !pendingEditorJson.size && !pendingEditorAssets.size && !pendingProductRoutes.size) return;
   status.textContent = 'ცვლილებები ინახება…';
   try {
+    const stagedPayloads = [...pendingEditorHtml.values()].map(draft => draft.content).join('\n') + JSON.stringify([...pendingEditorJson.values()]);
+    for (const [token, asset] of pendingEditorAssets) {
+      if (!stagedPayloads.includes(token)) {
+        URL.revokeObjectURL(asset.previewUrl);
+        pendingEditorAssets.delete(token);
+      }
+    }
+    const publishedAssets = new Map();
+    for (const [token, asset] of pendingEditorAssets) {
+      if (!asset.publishedUrl) {
+        const content = encodeBase64Utf8FromBytes(await asset.file.arrayBuffer());
+        await githubRequest(`/repos/${GITHUB_REPO}/contents/images/uploads/${encodeURIComponent(asset.filename)}`, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: `Upload ${asset.filename} from visual editor`, content, branch: GITHUB_BRANCH }),
+        });
+        asset.publishedUrl = `/PUPSYWEB/images/uploads/${encodeURIComponent(asset.filename)}`;
+      }
+      publishedAssets.set(token, asset.publishedUrl);
+    }
+    if (publishedAssets.size) {
+      for (const [path, draft] of pendingEditorHtml) {
+        for (const [token, url] of publishedAssets) draft.content = draft.content.replaceAll(token, url);
+        pendingEditorHtml.set(path, draft);
+      }
+      for (const data of pendingEditorJson.values()) replaceEditorAssetReferences(data, publishedAssets);
+    }
     for (const [path, draft] of pendingEditorHtml) {
       await commitEditorHtml(path, draft.sha, draft.content, draft.message);
       pendingEditorHtml.delete(path);
@@ -356,6 +419,9 @@ async function saveEditorChanges() {
       pendingProductRoutes.delete(slug);
       updateEditorSaveButton();
     }
+    for (const asset of pendingEditorAssets.values()) URL.revokeObjectURL(asset.previewUrl);
+    pendingEditorAssets.clear();
+    updateEditorSaveButton();
     status.textContent = 'ცვლილებები შენახულია. გვერდი განახლდება…';
     loadEditorPage(true);
   } catch (error) {
@@ -391,36 +457,25 @@ function bindEditorFrame() {
     if (!doc) return;
     if (boundEditorDocuments.has(doc)) return;
     boundEditorDocuments.add(doc);
-    doc.querySelectorAll('body *').forEach(element => { element.style.cursor = 'crosshair'; });
-    const disableNativeLinks = () => {
-      doc.querySelectorAll('a[href]').forEach(link => {
-        if (!link.dataset.adminOriginalHref) link.dataset.adminOriginalHref = link.getAttribute('href');
-        link.removeAttribute('href');
-      });
-      doc.querySelectorAll('[data-product-link]').forEach(link => {
-        if (!link.dataset.adminOriginalProductLink) link.dataset.adminOriginalProductLink = link.getAttribute('data-product-link');
-        link.removeAttribute('data-product-link');
-      });
-    };
-    disableNativeLinks();
-    new doc.defaultView.MutationObserver(disableNativeLinks).observe(doc.documentElement, {
-      childList: true, subtree: true, attributes: true, attributeFilter: ['href', 'data-product-link'],
-    });
+    const editorStyle = doc.createElement('style');
+    editorStyle.dataset.adminEditorStyles = 'true';
+    editorStyle.textContent = '*{cursor:crosshair!important}';
+    (doc.head || doc.documentElement).append(editorStyle);
     doc.defaultView.addEventListener('click', event => {
       document.getElementById('site-editor-status').textContent = '';
       const clicked = event.target.closest('img, video, h1, h2, h3, h4, h5, p, button, a, li, span, strong, label, summary, section, article, div');
-      const anchor = event.target.closest('a[data-admin-original-href], a[data-admin-original-product-link], a[href]');
+      const anchor = event.target.closest('a[data-admin-original-href], a[data-admin-original-product-link], a[data-product-link], a[href]');
       const card = event.target.closest('.cms-product-card, [class*="product-card"], [class*="product-item"]')
         || anchor?.closest('.cms-product-card, [class*="product-card"], [class*="product-item"]');
       event.preventDefault();
       event.stopImmediatePropagation();
       const element = clicked || event.target;
       if (!(element instanceof doc.defaultView.HTMLElement)) return;
-      doc.querySelectorAll('[data-admin-editor-selected]').forEach(item => {
-        item.removeAttribute('data-admin-editor-selected');
-        item.style.outline = '';
-        item.style.outlineOffset = '';
-      });
+      if (editorSelectedNode?.ownerDocument === doc) {
+        editorSelectedNode.removeAttribute('data-admin-editor-selected');
+        editorSelectedNode.style.outline = '';
+        editorSelectedNode.style.outlineOffset = '';
+      }
       editorSelectedNode = element;
       element.setAttribute('data-admin-editor-selected', 'true');
       element.style.outline = '3px solid #f59e0b';
@@ -431,9 +486,16 @@ function bindEditorFrame() {
       const sourceAttribute = mediaElement && ['src', 'data-src', 'data-original'].find(name => mediaElement.getAttribute(name));
       const attributeValue = sourceAttribute ? mediaElement.getAttribute(sourceAttribute) : '';
       const identityClass = [...element.classList].find(name => !name.startsWith('admin-editor-')) || '';
-      const identityNodes = [...doc.querySelectorAll(tagName)].filter(item => element.id ? item.id === element.id : identityClass ? item.classList.contains(identityClass) : item.textContent.trim() === element.textContent.trim());
+      const identityNodes = element.id
+        ? [element]
+        : identityClass
+          ? doc.querySelectorAll(`${tagName}.${doc.defaultView.CSS.escape(identityClass)}`)
+          : doc.getElementsByTagName(tagName);
       const productIdentityClass = card ? ([...card.classList].find(name => !['grid-item', 'is-visible'].includes(name)) || '') : '';
-      const productNodes = card ? [...doc.querySelectorAll(card.tagName.toLowerCase())].filter(item => card.id ? item.id === card.id : productIdentityClass ? item.classList.contains(productIdentityClass) : false) : [];
+      const productNodes = card
+        ? card.id ? [card]
+          : productIdentityClass ? doc.querySelectorAll(`${card.tagName.toLowerCase()}.${doc.defaultView.CSS.escape(productIdentityClass)}`) : []
+        : [];
       const productAccordion = element.closest('.product-accordion');
       const accordionIndex = productAccordion ? [...doc.querySelectorAll('.product-accordion details')].indexOf(element.closest('details')) : -1;
       const productField = element.closest('.cms-product-card__title') ? 'title'
@@ -459,15 +521,15 @@ function bindEditorFrame() {
         className: element.className?.toString() || '',
         identityClass,
         text: element.textContent.trim(),
-        occurrence: Math.max(0, identityNodes.indexOf(element)),
+        occurrence: Math.max(0, Array.prototype.indexOf.call(identityNodes, element)),
         mediaOccurrence: sourceAttribute ? [...(card || doc).querySelectorAll(mediaTagName)].filter(item => item.getAttribute(sourceAttribute) === attributeValue).indexOf(mediaElement) : 0,
-        href: anchor?.dataset.adminOriginalHref || anchor?.dataset.adminOriginalProductLink || anchor?.getAttribute('href') || '',
-        productHref: card?.dataset.adminOriginalHref || card?.dataset.adminOriginalProductLink || card?.getAttribute('href') || card?.querySelector('a[data-admin-original-href], a[data-admin-original-product-link], a[href]')?.dataset.adminOriginalHref || card?.querySelector('a[data-admin-original-product-link]')?.dataset.adminOriginalProductLink || card?.querySelector('a[href]')?.getAttribute('href') || '',
+        href: anchor?.dataset.adminOriginalHref || anchor?.dataset.adminOriginalProductLink || anchor?.getAttribute('href') || anchor?.getAttribute('data-product-link') || '',
+        productHref: card?.dataset.adminOriginalHref || card?.dataset.adminOriginalProductLink || card?.getAttribute('href') || card?.getAttribute('data-product-link') || card?.querySelector('a[data-admin-original-href], a[data-admin-original-product-link], a[data-product-link], a[href]')?.dataset.adminOriginalHref || card?.querySelector('a[data-admin-original-product-link]')?.dataset.adminOriginalProductLink || card?.querySelector('a[href]')?.getAttribute('href') || card?.querySelector('a[data-product-link]')?.getAttribute('data-product-link') || '',
         productTitle,
         productId: card?.id || '',
         productTagName: card?.tagName.toLowerCase() || '',
         productIdentityClass,
-        productOccurrence: Math.max(0, productNodes.indexOf(card)),
+        productOccurrence: Math.max(0, Array.prototype.indexOf.call(productNodes, card)),
         isProductCard,
         productPrice: loadedProduct?.raw?.price ?? productPriceText.replace(/,/g, ''),
         productColors,
@@ -504,7 +566,7 @@ function bindEditorFrame() {
         document.getElementById('site-editor-product-price').value = productPriceText.replace(/,/g, '') || loadedProduct?.raw?.price || '';
         renderEditorProductColors(productColors);
       }
-      document.querySelector('#site-editor-text-tools label').textContent = editorSelection.canEditText ? 'Edit text' : 'Section selected';
+      document.querySelector('#site-editor-text-tools label').textContent = editorSelection.canEditText ? 'ტექსტის შეცვლა' : 'სექცია მონიშნულია';
     }, true);
   } catch {
     document.getElementById('site-editor-status').textContent = 'ამ გვერდის გადახედვა ვერ ჩაიტვირთა.';
@@ -654,7 +716,8 @@ async function findEditorProduct(selection) {
     const collection = collections.find(item => item.id === loaded?.collectionId);
     if (!loaded || !collection) return null;
     const path = `products/categories/${collection.file}`;
-    const file = await githubFile(path);
+    const pendingData = pendingEditorJson.get(path);
+    const file = pendingData ? { data: pendingData } : collectionFiles[collection.id] || await githubFile(path);
     const index = loaded.raw?.slug
       ? (file.data.products || []).findIndex(raw => raw.slug === loaded.raw.slug)
       : loaded.index;
@@ -662,7 +725,8 @@ async function findEditorProduct(selection) {
   }
   for (const collection of collections) {
     const path = `products/categories/${collection.file}`;
-    const file = await githubFile(path);
+    const pendingData = pendingEditorJson.get(path);
+    const file = pendingData ? { data: pendingData } : collectionFiles[collection.id] || await githubFile(path);
     const index = (file.data.products || []).findIndex(raw => raw.slug === slug || productSlugFromTitle(raw.title || '') === slug);
     if (index >= 0) return { path, file, raw: file.data.products[index], index, slug };
   }
@@ -774,21 +838,67 @@ function updateStaticProductColors(cardHtml, colors) {
   return cardHtml.slice(0, siblings.start) + block + cardHtml.slice(siblings.end);
 }
 
+function updateEditorProductPreview(title, price, colors) {
+  const card = editorSelectedNode?.closest('.cms-product-card, .product-item, [class*="product-card"], [class*="product-item"]')
+    || editorSelectedNode?.closest('.product__container, .product__information, main');
+  if (!card) return;
+  const titleNode = card.querySelector('.cms-product-card__title, .product-item__title, .product__title');
+  if (titleNode) titleNode.textContent = title;
+  const priceNode = card.querySelector('.cms-product-card__price, .product-item__price, [data-product-price]');
+  if (priceNode) {
+    const walker = priceNode.ownerDocument.createTreeWalker(priceNode, NodeFilter.SHOW_TEXT);
+    let candidate;
+    let textNode;
+    while ((textNode = walker.nextNode())) if (/\d/.test(textNode.textContent)) candidate = textNode;
+    if (candidate) candidate.textContent = candidate.textContent.replace(/[\d,.]+/, price.toFixed(2));
+    else priceNode.append(priceNode.ownerDocument.createTextNode(price.toFixed(2)));
+  }
+  let siblings = card.querySelector('product-siblings, .product__siblings, .product-item__siblings');
+  if (!colors.length) { siblings?.remove(); return; }
+  if (!siblings) {
+    siblings = card.ownerDocument.createElement('product-siblings');
+    siblings.className = 'product-item__siblings';
+    const scrollbar = card.ownerDocument.createElement('native-scrollbar');
+    siblings.append(scrollbar);
+    (priceNode || titleNode || card).after(siblings);
+  }
+  const scrollbar = siblings.querySelector('native-scrollbar') || siblings;
+  const swatches = [...scrollbar.querySelectorAll('tooltip-component[data-tooltip]')];
+  swatches.forEach((swatch, index) => {
+    if (index >= colors.length) { swatch.remove(); return; }
+    const name = colors[index];
+    swatch.setAttribute('data-tooltip', name);
+    swatch.className = `swatches swatch__button swatch__button--circle swatch-${productSlugFromTitle(name) || `color-${index + 1}`}`;
+    swatch.style.setProperty('--swatch', editorColorHex(name));
+  });
+  for (let index = swatches.length; index < colors.length; index += 1) {
+    const name = colors[index];
+    const swatch = card.ownerDocument.createElement('tooltip-component');
+    swatch.className = `swatches swatch__button swatch__button--circle swatch-${productSlugFromTitle(name) || `color-${index + 1}`}`;
+    swatch.style.setProperty('--swatch', editorColorHex(name));
+    swatch.setAttribute('data-tooltip', name);
+    swatch.tabIndex = 0;
+    const link = card.ownerDocument.createElement('div');
+    link.className = 'sibling__link';
+    swatch.append(link);
+    scrollbar.append(swatch);
+  }
+}
+
 async function saveSelectedProduct() {
   const status = document.getElementById('site-editor-status');
-  if (!editorSelection?.isProductCard) { status.textContent = 'მონიშნეთ პროდუქტი მის რედაქტირებამდე.'; return; }
+  if (!editorSelection?.isProductCard) { status.textContent = 'აირჩიეთ პროდუქტი რედაქტირებისთვის.'; return; }
   const title = document.getElementById('site-editor-product-title').value.trim();
   const price = Number(document.getElementById('site-editor-product-price').value);
   const colors = [...document.querySelectorAll('#site-editor-product-colors input[type="checkbox"]:checked')].map(input => input.value);
   if (!title || !Number.isFinite(price) || price < 0) { status.textContent = 'შეამოწმეთ პროდუქტის სახელი და ფასი.'; return; }
-  status.textContent = 'პროდუქტის ცვლილებები ინახება…';
   try {
     const product = await findEditorProduct(editorSelection);
     if (product) {
       product.raw.title = title;
       product.raw.price = price;
       product.raw.colors = colors;
-      await commitJson(product.path, product.file.data);
+      stageEditorJson(product.path, product.file.data);
       const cached = products.find(item => item.raw?.slug === product.slug || (item.title === editorSelection.productTitle && item.collectionId === collections.find(entry => entry.file === product.path.split('/').pop())?.id));
       if (cached) {
         cached.title = title;
@@ -797,21 +907,23 @@ async function saveSelectedProduct() {
         cached.raw = product.raw;
       }
     } else {
-      const page = await editorHtmlFile(editorSelection.page);
+      const pending = pendingEditorHtml.get(editorSelection.page);
+      const page = pending || await editorHtmlFile(editorSelection.page);
       const range = productCardRange(page.content, editorSelection);
-      if (!range) throw new Error('არჩეული პროდუქტი HTML-ში ვერ მოიძებნა.');
+      if (!range) throw new Error('მონიშნული პროდუქტი გვერდის HTML-ში ვერ მოიძებნა.');
       let cardHtml = page.content.slice(range.start, range.end);
       cardHtml = updateStaticProductTitle(cardHtml, title);
       cardHtml = updateStaticProductPrice(cardHtml, price);
       cardHtml = updateStaticProductColors(cardHtml, colors);
       const updated = page.content.slice(0, range.start) + cardHtml + page.content.slice(range.end);
-      await commitEditorHtml(editorSelection.page, page.sha, updated, `Edit product on ${editorSelection.page}`);
+      stageEditorHtml(editorSelection.page, page.sha, updated, `Edit product on ${editorSelection.page}`);
     }
-    status.textContent = 'პროდუქტი განახლდა. გვერდი ახლდება…';
-    loadEditorPage(true);
-  } catch (error) { status.textContent = error.message || 'პროდუქტის შენახვა ვერ მოხერხდა.'; }
+    updateEditorProductPreview(title, price, colors);
+    editorSelection.productTitle = title;
+    editorSelection.text = title;
+    status.textContent = 'პროდუქტი შეიცვალა წინასწარ ხედში. საიტზე ასატვირთად დააჭირეთ ქვემოთ „ცვლილებების შენახვა“ ღილაკს.';
+  } catch (error) { status.textContent = error.message || 'პროდუქტის ცვლილება ვერ მოხერხდა.'; }
 }
-
 async function deleteSelectedProduct() {
   if (!editorSelection?.isProductCard) return;
   if (!window.confirm('პროდუქტი და მისი ფერის ვარიანტები წაიშალოს?')) return;
@@ -848,26 +960,31 @@ async function saveEditorText() {
   const status = document.getElementById('site-editor-status');
   if (!editorSelection || !editorSelection.canEditText) { status.textContent = 'აირჩიეთ ტექსტური სათაური ან ველი.'; return; }
   const value = document.getElementById('site-editor-text-value').value;
-  status.textContent = 'ტექსტი ინახება…';
   try {
     const product = await findEditorProduct(editorSelection);
     if (product && (editorSelection.productField || product.raw.title === editorSelection.text)) {
       const field = editorSelection.productField || 'title';
-      if (field.startsWith('detailsLabel:')) {
+      if (field === 'price') {
+        const price = Number(value.replace(/,/g, '').replace(/[^\d.-]/g, ''));
+        if (!Number.isFinite(price) || price < 0) throw new Error('შეიყვანეთ სწორი ფასი.');
+        product.raw.price = price;
+      } else if (field.startsWith('detailsLabel:')) {
         const key = field.slice('detailsLabel:'.length);
         product.raw.detailsLabels = { ...(product.raw.detailsLabels || {}), [key]: value.trim() };
-      } else product.raw[field] = field === 'price' ? Number(value.replace(/,/g, '').replace(/[^\d.-]/g, '')) : value.trim();
-      await commitJson(product.path, product.file.data);
+      } else product.raw[field] = value.trim();
+      stageEditorJson(product.path, product.file.data);
     } else {
-      const page = await editorHtmlFile(editorSelection.page);
+      const path = editorSelection.page;
+      const pending = pendingEditorHtml.get(path);
+      const page = pending || await editorHtmlFile(path);
       const range = editorTagRange(page.content, editorSelection);
-      if (!range) throw new Error('ეს ტექსტი გვერდის HTML-ში ვერ მოიძებნა.');
+      if (!range) throw new Error('მონიშნული ტექსტი გვერდის HTML-ში ვერ მოიძებნა.');
       const updated = page.content.slice(0, range.openEnd) + escapeEditorText(value) + page.content.slice(range.closeStart);
-      await commitEditorHtml(editorSelection.page, page.sha, updated, `Edit text on ${editorSelection.page}`);
+      stageEditorHtml(path, page.sha, updated, `Edit text on ${path}`);
     }
-    status.textContent = 'ტექსტი შენახულია. გვერდი ახლდება…';
-    loadEditorPage(true);
-  } catch (error) { status.textContent = error.message || 'ტექსტის შენახვა ვერ მოხერხდა.'; }
+    if (editorSelectedNode?.isConnected) editorSelectedNode.textContent = value;
+    status.textContent = 'ტექსტი შეიცვალა წინასწარ ხედში. საიტზე ასატვირთად დააჭირეთ ქვემოთ „ცვლილებების შენახვა“ ღილაკს.';
+  } catch (error) { status.textContent = error.message || 'ტექსტის შეცვლა ვერ მოხერხდა.'; }
 }
 
 function selectEditorParent() {
@@ -915,6 +1032,61 @@ async function deleteEditorSelection() {
   } catch (error) { status.textContent = error.message || 'ელემენტის წაშლა ვერ მოხერხდა.'; }
 }
 
+function updateEditorMediaPreview(replacement, remove = false) {
+  const selected = editorSelectedNode;
+  if (!selected) return;
+  if (remove) {
+    (selected.closest('picture') || selected)?.remove();
+    document.getElementById('site-editor-selected-image')?.classList.add('hidden');
+    return;
+  }
+  const doc = selected.ownerDocument;
+  const isVideo = /^video\//i.test(replacement.type || '');
+  const currentIsVideo = selected.tagName.toLowerCase() === 'video';
+  let media = selected;
+  if (isVideo && !currentIsVideo) {
+    media = doc.createElement('video');
+    media.className = selected.className;
+    media.style.cssText = selected.style.cssText;
+    media.controls = true;
+    media.playsInline = true;
+    media.muted = true;
+    media.loop = true;
+    selected.replaceWith(media);
+  } else if (!isVideo && currentIsVideo) {
+    media = doc.createElement('img');
+    media.className = selected.className;
+    media.style.cssText = selected.style.cssText;
+    media.alt = selected.getAttribute('alt') || '';
+    selected.replaceWith(media);
+  }
+  if (media.tagName.toLowerCase() === 'video') {
+    media.src = replacement.url;
+    media.load();
+  } else {
+    media.removeAttribute('srcset');
+    media.removeAttribute('data-src');
+    media.removeAttribute('data-original');
+    if (media.parentElement?.tagName.toLowerCase() === 'picture') {
+      media.parentElement.querySelectorAll('source').forEach(source => source.remove());
+    }
+    media.src = replacement.url;
+  }
+  editorSelectedNode = media;
+  if (editorSelection) {
+    editorSelection.tagName = media.tagName.toLowerCase();
+    editorSelection.mediaTagName = media.tagName.toLowerCase();
+    editorSelection.sourceAttribute = 'src';
+    editorSelection.attributeValue = replacement.stagedUrl || replacement.url;
+    editorSelection.resolvedSrc = replacement.url;
+  }
+  const preview = document.getElementById('site-editor-selected-image');
+  if (media.tagName.toLowerCase() === 'img' && preview) {
+    preview.src = replacement.url;
+    preview.classList.remove('hidden');
+  } else preview?.classList.add('hidden');
+}
+
 function selectedProductPhoto(raw, selection) {
   const known = new Set([selection.attributeValue, selection.resolvedSrc]);
   const normalize = value => {
@@ -958,6 +1130,7 @@ async function saveEditorPageImage(replacement, remove = false) {
   const path = editorSelection.page;
   const pending = pendingEditorHtml.get(path);
   const result = pending ? { sha: pending.sha } : await githubRequest(`/repos/${GITHUB_REPO}/contents/${encodeURIComponent(path).replace(/%2F/g, '/')}?ref=${GITHUB_BRANCH}`);
+  const storedUrl = replacement ? replacement.stagedUrl || replacement.url : '';
   let html;
   if (pending) html = pending.content;
   else if (typeof result.content === 'string') html = decodeBase64Utf8(result.content);
@@ -983,7 +1156,7 @@ async function saveEditorPageImage(replacement, remove = false) {
       let updated;
       if (remove) updated = html.slice(0, targetStart) + html.slice(targetStart + targetMarkup.length);
       else if (/^video\//i.test(replacement.type || '')) {
-        const src = escapeHtmlAttribute(replacement.url);
+        const src = escapeHtmlAttribute(storedUrl);
         const className = /\bclass\s*=\s*(["'])(.*?)\1/i.exec(tag)?.[2] || '';
         const style = /\bstyle\s*=\s*(["'])(.*?)\1/i.exec(tag)?.[2] || '';
         const dimensions = ['width', 'height'].map(name => {
@@ -997,21 +1170,18 @@ async function saveEditorPageImage(replacement, remove = false) {
           const match = new RegExp(`\\b${name}\\s*=\\s*(["'])(.*?)\\1`, 'i').exec(tag);
           return match ? ` ${name}="${escapeHtmlAttribute(match[2])}"` : '';
         }).join('');
-        const image = `<img src="${escapeHtmlAttribute(replacement.url)}"${attrs}>`;
+        const image = `<img src="${escapeHtmlAttribute(storedUrl)}"${attrs}>`;
         updated = html.slice(0, targetStart) + image + html.slice(targetStart + targetMarkup.length);
       } else {
         const srcName = editorSelection.sourceAttribute;
         const attrPattern = new RegExp(`\\s${srcName}\\s*=\\s*(["'])(.*?)\\1`, 'i');
-        let updatedTag = tag.replace(attrPattern, '').replace(/\s+srcset\s*=\s*(["']).*?\1/i, '').replace(/\s+data-(?:src|original)\s*=\s*(["']).*?\1/gi, '').replace(/\s*\/?>(?=$)/, '') + ` src="${escapeHtmlAttribute(replacement.url)}">`;
+        let updatedTag = tag.replace(attrPattern, '').replace(/\s+srcset\s*=\s*(["']).*?\1/i, '').replace(/\s+data-(?:src|original)\s*=\s*(["']).*?\1/gi, '').replace(/\s*\/?>(?=$)/, '') + ` src="${escapeHtmlAttribute(storedUrl)}">`;
         let updatedMarkup = targetMarkup.replace(tag, updatedTag);
         if (inPicture) updatedMarkup = updatedMarkup.replace(/<source\b[^>]*>/gi, '');
         updated = html.slice(0, targetStart) + updatedMarkup + html.slice(targetStart + targetMarkup.length);
       }
-      if (remove) stageEditorHtml(path, result.sha, updated, `Remove image on ${path}`);
-      else await githubRequest(`/repos/${GITHUB_REPO}/contents/${encodeURIComponent(path).replace(/%2F/g, '/')}?ref=${GITHUB_BRANCH}`, {
-        method: 'PUT', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: `Replace image on ${path}`, content: encodeBase64Utf8(updated), sha: result.sha, branch: GITHUB_BRANCH }),
-      });
+      stageEditorHtml(path, result.sha, updated, remove ? `Remove image on ${path}` : `Replace image on ${path}`);
+      updateEditorMediaPreview(replacement, remove);
       return;
     }
   }
@@ -1019,31 +1189,31 @@ async function saveEditorPageImage(replacement, remove = false) {
   for (const collection of collections) {
     const filePath = `products/categories/${collection.file}`;
     const pendingData = pendingEditorJson.get(filePath);
-    const file = pendingData ? { data: pendingData } : await githubFile(filePath);
+    const file = pendingData ? { data: pendingData } : collectionFiles[collection.id] || await githubFile(filePath);
     const product = file.data.products?.find(item => selectedProductPhoto(item, editorSelection));
     if (!product) continue;
     const isVideo = !remove && /^video\//i.test(replacement.type || '');
     if ((editorSelection.mediaTagName || editorSelection.tagName) === 'video') {
       updateProductPhotoReferences(product, editorSelection, null);
       if (!remove && isVideo) {
-        product.visualEditorVideoUrl = replacement.url;
-        product.videoUrl = replacement.url;
-      } else if (!remove) product.image = replacement.url;
+        product.visualEditorVideoUrl = storedUrl;
+        product.videoUrl = storedUrl;
+      } else if (!remove) product.image = storedUrl;
       if (product.videoUrl === editorSelection.attributeValue || product.videoUrl === editorSelection.resolvedSrc) delete product.videoUrl;
       if (remove || !isVideo) delete product.visualEditorVideoUrl;
     } else if (isVideo) {
       updateProductPhotoReferences(product, editorSelection, null);
-      product.visualEditorVideoUrl = replacement.url;
-      product.videoUrl = replacement.url;
+      product.visualEditorVideoUrl = storedUrl;
+      product.videoUrl = storedUrl;
     } else {
-      updateProductPhotoReferences(product, editorSelection, remove ? null : replacement.url);
+      updateProductPhotoReferences(product, editorSelection, remove ? null : storedUrl);
       if (product.visualEditorVideoUrl) {
         if (product.videoUrl === product.visualEditorVideoUrl) delete product.videoUrl;
         delete product.visualEditorVideoUrl;
       }
     }
-    if (remove) stageEditorJson(filePath, file.data);
-    else await commitJson(filePath, file.data);
+    stageEditorJson(filePath, file.data);
+    updateEditorMediaPreview(replacement, remove);
     return;
   }
   throw new Error('არჩეული ფოტო გვერდის HTML-ში ან პროდუქტის მონაცემებში ვერ მოიძებნა. შესაძლოა ის CSS ფონის სურათი იყოს.');
@@ -1051,33 +1221,39 @@ async function saveEditorPageImage(replacement, remove = false) {
 
 async function uploadEditorMedia(file) {
   const safeName = file.name.normalize('NFKD').replace(/[^a-zA-Z0-9._-]+/g, '-');
-  const filename = `${Date.now()}-${safeName}`;
-  const content = encodeBase64Utf8FromBytes(await file.arrayBuffer());
-  await githubRequest(`/repos/${GITHUB_REPO}/contents/images/uploads/${encodeURIComponent(filename)}`, {
-    method: 'PUT', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: `Upload ${filename} from visual editor`, content, branch: GITHUB_BRANCH }),
-  });
-  return { url: `/PUPSYWEB/images/uploads/${encodeURIComponent(filename)}`, type: file.type };
+  const assetId = crypto.randomUUID();
+  const filename = `${Date.now()}-${assetId}-${safeName}`;
+  const token = `/__ADMIN_EDITOR_ASSET_${assetId}__`;
+  const previewUrl = URL.createObjectURL(file);
+  pendingEditorAssets.set(token, { file, filename, previewUrl });
+  updateEditorSaveButton();
+  return { url: previewUrl, stagedUrl: token, type: file.type };
 }
-
 async function replaceEditorImage() {
   const status = document.getElementById('site-editor-status');
   const file = document.getElementById('site-editor-file').files[0];
   const url = document.getElementById('site-editor-url').value.trim();
-  if (!editorSelection) { status.textContent = 'ჯერ აირჩიეთ ფოტო გადახედვაში.'; return; }
+  if (!editorSelection) { status.textContent = 'აირჩიეთ ფოტო ან ვიდეო გვერდის წინასწარ ხედში.'; return; }
   if (!file && !url) { status.textContent = 'აირჩიეთ ფაილი ან მიუთითეთ მედიის ბმული.'; return; }
-  status.textContent = 'ცვლილება ინახება…';
+  status.textContent = 'მედია იცვლება წინასწარ ხედში...';
+  let media;
   try {
     const videoMatch = url.match(/\.(mp4|webm|ogg)(?:$|\?)/i);
-    const media = file ? await uploadEditorMedia(file) : { url, type: videoMatch ? `video/${videoMatch[1].toLowerCase()}` : 'image/*' };
+    media = file ? await uploadEditorMedia(file) : { url, type: videoMatch ? `video/${videoMatch[1].toLowerCase()}` : 'image/*' };
     await saveEditorPageImage(media);
-    status.textContent = 'მედია წარმატებით ჩანაცვლდა. გვერდი ახლდება…';
+    status.textContent = 'მედია შეიცვალა წინასწარ ხედში. საიტზე ასატვირთად დააჭირეთ ქვემოთ „ცვლილებების შენახვა“ ღილაკს.';
     document.getElementById('site-editor-file').value = '';
     document.getElementById('site-editor-url').value = '';
-    loadEditorPage(true);
-  } catch (error) { status.textContent = error.message || 'მედიის შენახვა ვერ მოხერხდა.'; }
+  } catch (error) {
+    if (media?.stagedUrl && pendingEditorAssets.has(media.stagedUrl)) {
+      const asset = pendingEditorAssets.get(media.stagedUrl);
+      URL.revokeObjectURL(asset.previewUrl);
+      pendingEditorAssets.delete(media.stagedUrl);
+      updateEditorSaveButton();
+    }
+    status.textContent = error.message || 'მედიის შეცვლა ვერ მოხერხდა.';
+  }
 }
-
 async function deleteEditorImage() {
   const status = document.getElementById('site-editor-status');
   if (!editorSelection) { status.textContent = 'ჯერ აირჩიეთ ფოტო გადახედვაში.'; return; }
@@ -1399,10 +1575,10 @@ function renderProducts() {
   const fallback = 'https://placehold.co/200x200/1e293b/94a3b8?text=IMG';
   if (currentLayout === 'list') {
     container.className = 'space-y-2 pt-2';
-    container.innerHTML = filtered.map(product => `<div class="p-3 bg-slate-900/60 hover:bg-slate-800/60 border border-slate-800/80 rounded-xl flex items-center justify-between gap-3 transition-all group"><div class="flex items-center gap-3 min-w-0"><img src="${escapeAttribute(product.image || fallback)}" onerror="this.src='${fallback}'" alt="" class="w-12 h-12 rounded-lg object-cover border border-slate-800 bg-slate-950 shrink-0"><div class="min-w-0"><h4 class="font-bold text-slate-100 text-xs sm:text-sm truncate">${escapeHtml(product.title)}</h4><div class="flex items-center gap-2 mt-0.5"><span class="text-xs font-bold text-indigo-400">₾${Number(product.price).toFixed(2)}</span>${product.size ? `<span class="text-[10px] text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded">${escapeHtml(product.size)}</span>` : ''}</div></div></div><div class="flex items-center gap-1 shrink-0"><button onclick="openEditProductModal('${product.id}')" title="რედაქტირება" class="p-2 text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-all"><i data-lucide="edit-2" class="w-4 h-4"></i></button><button onclick="deleteProduct('${product.id}')" title="წაშლა" class="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div></div>`).join('');
+    container.innerHTML = filtered.map(product => `<div class="p-3 bg-slate-900/60 hover:bg-slate-800/60 border border-slate-800/80 rounded-xl flex items-center justify-between gap-3 transition-all group"><div class="flex items-center gap-3 min-w-0"><img loading="lazy" decoding="async" src="${escapeAttribute(product.image || fallback)}" onerror="this.src='${fallback}'" alt="" class="w-12 h-12 rounded-lg object-cover border border-slate-800 bg-slate-950 shrink-0"><div class="min-w-0"><h4 class="font-bold text-slate-100 text-xs sm:text-sm truncate">${escapeHtml(product.title)}</h4><div class="flex items-center gap-2 mt-0.5"><span class="text-xs font-bold text-indigo-400">₾${Number(product.price).toFixed(2)}</span>${product.size ? `<span class="text-[10px] text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded">${escapeHtml(product.size)}</span>` : ''}</div></div></div><div class="flex items-center gap-1 shrink-0"><button onclick="openEditProductModal('${product.id}')" title="რედაქტირება" class="p-2 text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-all"><i data-lucide="edit-2" class="w-4 h-4"></i></button><button onclick="deleteProduct('${product.id}')" title="წაშლა" class="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div></div>`).join('');
   } else {
     container.className = 'grid grid-cols-2 gap-3 pt-2';
-    container.innerHTML = filtered.map(product => `<div class="p-3 bg-slate-900/60 border border-slate-800/80 rounded-xl space-y-2 flex flex-col justify-between group"><div class="space-y-2"><div class="aspect-square w-full rounded-lg bg-slate-950 border border-slate-800 overflow-hidden relative"><img src="${escapeAttribute(product.image || fallback)}" onerror="this.src='${fallback}'" alt="" class="w-full h-full object-cover"></div><div><h4 class="font-bold text-slate-100 text-xs line-clamp-1">${escapeHtml(product.title)}</h4><p class="text-xs font-bold text-indigo-400 mt-0.5">₾${Number(product.price).toFixed(2)}</p></div></div><div class="flex items-center justify-end gap-1 pt-2 border-t border-slate-800/60"><button onclick="openEditProductModal('${product.id}')" class="p-1.5 text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-all"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button><button onclick="deleteProduct('${product.id}')" class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div></div>`).join('');
+    container.innerHTML = filtered.map(product => `<div class="p-3 bg-slate-900/60 border border-slate-800/80 rounded-xl space-y-2 flex flex-col justify-between group"><div class="space-y-2"><div class="aspect-square w-full rounded-lg bg-slate-950 border border-slate-800 overflow-hidden relative"><img loading="lazy" decoding="async" src="${escapeAttribute(product.image || fallback)}" onerror="this.src='${fallback}'" alt="" class="w-full h-full object-cover"></div><div><h4 class="font-bold text-slate-100 text-xs line-clamp-1">${escapeHtml(product.title)}</h4><p class="text-xs font-bold text-indigo-400 mt-0.5">₾${Number(product.price).toFixed(2)}</p></div></div><div class="flex items-center justify-end gap-1 pt-2 border-t border-slate-800/60"><button onclick="openEditProductModal('${product.id}')" class="p-1.5 text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-all"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button><button onclick="deleteProduct('${product.id}')" class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div></div>`).join('');
   }
   lucide.createIcons();
 }
@@ -1695,7 +1871,7 @@ async function deleteProduct(id) {
 function renderMediaGallery() {
   const grid = document.getElementById('media-grid');
   document.getElementById('media-count').textContent = mediaFiles.length;
-  grid.innerHTML = mediaFiles.map(file => `<div class="group relative bg-slate-900 border border-slate-800 rounded-xl overflow-hidden aspect-square flex items-center justify-center"><img src="${escapeAttribute(file.url)}" alt="" class="w-full h-full object-cover group-hover:scale-105 transition-transform"><div class="absolute inset-0 bg-slate-950/70 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2"><span class="text-[10px] text-slate-300 font-mono truncate">${escapeHtml(file.name)}</span><div class="flex items-center justify-end gap-1"><button onclick="copyMediaUrl('${escapeAttribute(file.url)}')" title="URL-ის კოპირება" class="p-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-all"><i data-lucide="copy" class="w-3.5 h-3.5"></i></button></div></div></div>`).join('');
+  grid.innerHTML = mediaFiles.map(file => `<div class="group relative bg-slate-900 border border-slate-800 rounded-xl overflow-hidden aspect-square flex items-center justify-center"><img loading="lazy" decoding="async" src="${escapeAttribute(file.url)}" alt="" class="w-full h-full object-cover group-hover:scale-105 transition-transform"><div class="absolute inset-0 bg-slate-950/70 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2"><span class="text-[10px] text-slate-300 font-mono truncate">${escapeHtml(file.name)}</span><div class="flex items-center justify-end gap-1"><button onclick="copyMediaUrl('${escapeAttribute(file.url)}')" title="URL-ის კოპირება" class="p-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-all"><i data-lucide="copy" class="w-3.5 h-3.5"></i></button></div></div></div>`).join('');
   lucide.createIcons();
 }
 
