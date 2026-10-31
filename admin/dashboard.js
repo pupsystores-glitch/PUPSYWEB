@@ -976,7 +976,19 @@ function editorProductSwatchMarkup(name, index, primaryColor = '') {
 
 function buildEditorProductSiblingsMarkup(colors, primaryColor = '') {
   const swatches = colors.map((name, index) => editorProductSwatchMarkup(name, index, primaryColor)).join('');
-  return `<product-siblings class="product-item__siblings product-item__swatches__holder product-item__swatches__holder--circle product-item__swatches__holder--slider"><native-scrollbar class="radio__fieldset radio__fieldset--swatches radio__fieldset--pgi is-visible" data-sibling-fieldset=""><div class="selector-wrapper__scrollbar" data-scrollbar="">${swatches}</div><div class="selector-wrapper__actions"><button type="button" class="radio__fieldset__arrow radio__fieldset__arrow--prev is-hidden" data-scrollbar-arrow-prev="" aria-label="Previous colors">‹</button><button type="button" class="radio__fieldset__arrow radio__fieldset__arrow--next is-hidden" data-scrollbar-arrow-next="" aria-label="Next colors">›</button></div></native-scrollbar></product-siblings>`;
+  return `<product-siblings class="product-item__siblings product-item__swatches__holder product-item__swatches__holder--circle product-item__swatches__holder--slider"><native-scrollbar class="radio__fieldset radio__fieldset--swatches radio__fieldset--pgi is-visible" data-sibling-fieldset=""><div class="selector-wrapper__scrollbar" data-scrollbar="">${swatches}</div><div class="selector-wrapper__actions"><button type="button" class="radio__fieldset__arrow radio__fieldset__arrow--prev is-hidden" data-scrollbar-arrow-prev="" aria-label="Previous colors">&#8249;</button><button type="button" class="radio__fieldset__arrow radio__fieldset__arrow--next is-hidden" data-scrollbar-arrow-next="" aria-label="Next colors">&#8250;</button></div></native-scrollbar></product-siblings>`;
+}
+
+function editorProductSiblingsTemplate(pageHtml) {
+  const siblingCount = [...pageHtml.matchAll(/<product-siblings\b[^>]*\bproduct-item__siblings\b/gi)].length;
+  let fallback = null;
+  for (let occurrence = 0; occurrence < siblingCount; occurrence += 1) {
+    const candidate = editorTagRange(pageHtml, { tagName: 'product-siblings', identityClass: 'product-item__siblings', occurrence });
+    if (!candidate || !/class\s*=\s*(["'])[^"']*\bselector-wrapper__scrollbar\b/i.test(pageHtml.slice(candidate.start, candidate.end))) continue;
+    fallback ||= candidate;
+    if (/<tooltip-component\b/i.test(pageHtml.slice(candidate.start, candidate.end))) return pageHtml.slice(candidate.start, candidate.end);
+  }
+  return fallback ? pageHtml.slice(fallback.start, fallback.end) : '';
 }
 
 function applyEditorPrimaryColorMarkup(markup, primaryColor) {
@@ -997,19 +1009,18 @@ function applyEditorPrimaryColorMarkup(markup, primaryColor) {
 function updateStaticProductColors(cardHtml, colors, pageHtml = '', primaryColor = '') {
   let siblings = editorTagRange(cardHtml, { tagName: 'product-siblings', identityClass: 'product-item__siblings', occurrence: 0 });
   let createdSection = false;
+  if (siblings && colors.length) {
+    const existingBlock = cardHtml.slice(siblings.start, siblings.end);
+    if (!/class\s*=\s*(["'])[^"']*\bselector-wrapper__scrollbar\b/i.test(existingBlock)) {
+      const markup = editorProductSiblingsTemplate(pageHtml) || buildEditorProductSiblingsMarkup([]);
+      cardHtml = cardHtml.slice(0, siblings.start) + markup + cardHtml.slice(siblings.end);
+      siblings = editorTagRange(cardHtml, { tagName: 'product-siblings', identityClass: 'product-item__siblings', occurrence: 0 });
+      createdSection = true;
+    }
+  }
   if (!siblings && colors.length) {
     createdSection = true;
-    const siblingCount = [...pageHtml.matchAll(/<product-siblings\b[^>]*\bproduct-item__siblings\b/gi)].length;
-    let templateRange = null;
-    for (let occurrence = 0; occurrence < siblingCount; occurrence += 1) {
-      const candidate = editorTagRange(pageHtml, { tagName: 'product-siblings', identityClass: 'product-item__siblings', occurrence });
-      if (candidate && /class\s*=\s*(["'])[^"']*\bselector-wrapper__scrollbar\b/i.test(pageHtml.slice(candidate.start, candidate.end))) {
-        templateRange = candidate;
-        if (/<tooltip-component\b/i.test(pageHtml.slice(candidate.start, candidate.end))) break;
-      }
-    }
-    let markup = templateRange ? pageHtml.slice(templateRange.start, templateRange.end) : buildEditorProductSiblingsMarkup([]);
-    markup = markup.replace(/<tooltip-component\b[\s\S]*?<\/tooltip-component>/gi, '');
+    let markup = editorProductSiblingsTemplate(pageHtml) || buildEditorProductSiblingsMarkup([]);
     const titleTag = /<[^>]*\bclass\s*=\s*(["'])[^"']*\bproduct-item__title\b[^"']*\1[^>]*>/i.exec(cardHtml);
     const insertionPoint = titleTag ? cardHtml.indexOf('</a>', titleTag.index) : -1;
     if (insertionPoint < 0) return cardHtml;
@@ -1069,6 +1080,28 @@ function updateEditorProductPreview(title, price, colors, primaryColor = '') {
   }
   let siblings = card.querySelector('product-siblings, .product__siblings, .product-item__siblings');
   if (!colors.length) { siblings?.remove(); return; }
+  if (siblings && !siblings.querySelector('.selector-wrapper__scrollbar')) {
+    const template = [...card.ownerDocument.querySelectorAll('product-siblings.product-item__siblings, product-siblings.product__siblings')]
+      .find(item => item.querySelector('.selector-wrapper__scrollbar'));
+    if (template) {
+      const replacement = template.cloneNode(true);
+      siblings.replaceWith(replacement);
+      siblings = replacement;
+    } else {
+      let scrollbar = siblings.querySelector('native-scrollbar');
+      if (!scrollbar) {
+        scrollbar = card.ownerDocument.createElement('native-scrollbar');
+        scrollbar.className = 'radio__fieldset radio__fieldset--swatches radio__fieldset--pgi is-visible';
+        scrollbar.dataset.siblingFieldset = '';
+        siblings.append(scrollbar);
+      }
+      const scrollContent = card.ownerDocument.createElement('div');
+      scrollContent.className = 'selector-wrapper__scrollbar';
+      scrollContent.dataset.scrollbar = '';
+      const actions = scrollbar.querySelector('.selector-wrapper__actions');
+      actions ? scrollbar.insertBefore(scrollContent, actions) : scrollbar.append(scrollContent);
+    }
+  }
   if (!siblings) {
     const template = [...card.ownerDocument.querySelectorAll('product-siblings.product-item__siblings, product-siblings.product__siblings')]
       .find(item => item.querySelector('.selector-wrapper__scrollbar'));
@@ -1085,7 +1118,6 @@ function updateEditorProductPreview(title, price, colors, primaryColor = '') {
       scrollbar.append(scrollContent);
       siblings.append(scrollbar);
     }
-    siblings.querySelectorAll('tooltip-component[data-tooltip]').forEach(swatch => swatch.remove());
     const productLink = titleNode?.closest('a[href]');
     (productLink || priceNode || titleNode || card).after(siblings);
   }
