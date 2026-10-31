@@ -1008,19 +1008,16 @@ function applyEditorPrimaryColorMarkup(markup, primaryColor) {
 
 function updateStaticProductColors(cardHtml, colors, pageHtml = '', primaryColor = '') {
   let siblings = editorTagRange(cardHtml, { tagName: 'product-siblings', identityClass: 'product-item__siblings', occurrence: 0 });
-  let createdSection = false;
-  if (siblings && colors.length) {
-    const existingBlock = cardHtml.slice(siblings.start, siblings.end);
-    if (!/class\s*=\s*(["'])[^"']*\bselector-wrapper__scrollbar\b/i.test(existingBlock)) {
-      const markup = editorProductSiblingsTemplate(pageHtml) || buildEditorProductSiblingsMarkup([]);
-      cardHtml = cardHtml.slice(0, siblings.start) + markup + cardHtml.slice(siblings.end);
-      siblings = editorTagRange(cardHtml, { tagName: 'product-siblings', identityClass: 'product-item__siblings', occurrence: 0 });
-      createdSection = true;
-    }
-  }
-  if (!siblings && colors.length) {
-    createdSection = true;
-    let markup = editorProductSiblingsTemplate(pageHtml) || buildEditorProductSiblingsMarkup([]);
+  if (!colors.length) return siblings ? cardHtml.slice(0, siblings.start) + cardHtml.slice(siblings.end) : cardHtml;
+
+  // Normalize every edited card to the same populated section template so
+  // existing, empty, and newly restored swatches all share the exact layout.
+  const markup = editorProductSiblingsTemplate(pageHtml) || buildEditorProductSiblingsMarkup([]);
+  let createdSection = true;
+  if (siblings) {
+    cardHtml = cardHtml.slice(0, siblings.start) + markup + cardHtml.slice(siblings.end);
+    siblings = editorTagRange(cardHtml, { tagName: 'product-siblings', identityClass: 'product-item__siblings', occurrence: 0 });
+  } else {
     const titleTag = /<[^>]*\bclass\s*=\s*(["'])[^"']*\bproduct-item__title\b[^"']*\1[^>]*>/i.exec(cardHtml);
     const insertionPoint = titleTag ? cardHtml.indexOf('</a>', titleTag.index) : -1;
     if (insertionPoint < 0) return cardHtml;
@@ -1028,7 +1025,6 @@ function updateStaticProductColors(cardHtml, colors, pageHtml = '', primaryColor
     siblings = editorTagRange(cardHtml, { tagName: 'product-siblings', identityClass: 'product-item__siblings', occurrence: 0 });
   }
   if (!siblings) return cardHtml;
-  if (!colors.length) return cardHtml.slice(0, siblings.start) + cardHtml.slice(siblings.end);
   let block = cardHtml.slice(siblings.start, siblings.end);
   const existingCount = [...block.matchAll(/<tooltip-component\b[^>]*\bdata-tooltip=/gi)].length;
   for (let index = existingCount - 1; index >= 0; index -= 1) {
@@ -1080,46 +1076,37 @@ function updateEditorProductPreview(title, price, colors, primaryColor = '') {
   }
   let siblings = card.querySelector('product-siblings, .product__siblings, .product-item__siblings');
   if (!colors.length) { siblings?.remove(); return; }
-  if (siblings && !siblings.querySelector('.selector-wrapper__scrollbar')) {
-    const template = [...card.ownerDocument.querySelectorAll('product-siblings.product-item__siblings, product-siblings.product__siblings')]
-      .find(item => item.querySelector('.selector-wrapper__scrollbar'));
-    if (template) {
-      const replacement = template.cloneNode(true);
-      siblings.replaceWith(replacement);
-      siblings = replacement;
-    } else {
-      let scrollbar = siblings.querySelector('native-scrollbar');
-      if (!scrollbar) {
-        scrollbar = card.ownerDocument.createElement('native-scrollbar');
-        scrollbar.className = 'radio__fieldset radio__fieldset--swatches radio__fieldset--pgi is-visible';
-        scrollbar.dataset.siblingFieldset = '';
-        siblings.append(scrollbar);
-      }
-      const scrollContent = card.ownerDocument.createElement('div');
-      scrollContent.className = 'selector-wrapper__scrollbar';
-      scrollContent.dataset.scrollbar = '';
-      const actions = scrollbar.querySelector('.selector-wrapper__actions');
-      actions ? scrollbar.insertBefore(scrollContent, actions) : scrollbar.append(scrollContent);
-    }
-  }
-  if (!siblings) {
-    const template = [...card.ownerDocument.querySelectorAll('product-siblings.product-item__siblings, product-siblings.product__siblings')]
-      .find(item => item.querySelector('.selector-wrapper__scrollbar'));
-    if (template) siblings = template.cloneNode(true);
+  const templates = [...card.ownerDocument.querySelectorAll('product-siblings.product-item__siblings, product-siblings.product__siblings')];
+  const template = templates.find(item => item.querySelector('.selector-wrapper__scrollbar tooltip-component[data-tooltip]'))
+    || templates.find(item => item.querySelector('.selector-wrapper__scrollbar'));
+  if (template) {
+    const replacement = template.cloneNode(true);
+    if (siblings) siblings.replaceWith(replacement);
     else {
-      siblings = card.ownerDocument.createElement('product-siblings');
-      siblings.className = 'product-item__siblings product-item__swatches__holder product-item__swatches__holder--circle product-item__swatches__holder--slider';
-      const scrollbar = card.ownerDocument.createElement('native-scrollbar');
-      scrollbar.className = 'radio__fieldset radio__fieldset--swatches radio__fieldset--pgi is-visible';
-      scrollbar.dataset.siblingFieldset = '';
-      const scrollContent = card.ownerDocument.createElement('div');
-      scrollContent.className = 'selector-wrapper__scrollbar';
-      scrollContent.dataset.scrollbar = '';
-      scrollbar.append(scrollContent);
-      siblings.append(scrollbar);
+      const productLink = titleNode?.closest('a[href]');
+      (productLink || priceNode || titleNode || card).after(replacement);
     }
+    siblings = replacement;
+  } else if (!siblings) {
+    siblings = card.ownerDocument.createElement('product-siblings');
+    siblings.className = 'product-item__siblings product-item__swatches__holder product-item__swatches__holder--circle product-item__swatches__holder--slider';
+    const scrollbar = card.ownerDocument.createElement('native-scrollbar');
+    scrollbar.className = 'radio__fieldset radio__fieldset--swatches radio__fieldset--pgi is-visible';
+    scrollbar.dataset.siblingFieldset = '';
+    const scrollContent = card.ownerDocument.createElement('div');
+    scrollContent.className = 'selector-wrapper__scrollbar';
+    scrollContent.dataset.scrollbar = '';
+    scrollbar.append(scrollContent);
+    siblings.append(scrollbar);
     const productLink = titleNode?.closest('a[href]');
     (productLink || priceNode || titleNode || card).after(siblings);
+  } else if (!siblings.querySelector('.selector-wrapper__scrollbar')) {
+    const scrollbar = siblings.querySelector('native-scrollbar') || siblings;
+    const scrollContent = card.ownerDocument.createElement('div');
+    scrollContent.className = 'selector-wrapper__scrollbar';
+    scrollContent.dataset.scrollbar = '';
+    const actions = scrollbar.querySelector('.selector-wrapper__actions');
+    actions ? scrollbar.insertBefore(scrollContent, actions) : scrollbar.append(scrollContent);
   }
   const scrollbar = siblings.querySelector('native-scrollbar') || siblings;
   const swatches = [...scrollbar.querySelectorAll('tooltip-component[data-tooltip]')];
