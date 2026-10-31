@@ -9,22 +9,20 @@
       "size": "პატარა",
       "colors": [
         "ყავისფერი",
-        "ტერაკოტა",
         "ლურჯი",
         "მწვანე",
         "ლავანდისფერი",
         "ვარდისფერი",
-        "ბორდოსფერი"
+        "ბორდოსფერი",
+        "შავი"
       ],
       "photos": [
         {
-          "source": "gallery",
-          "images": [
-            "/PUPSYWEB/images/uploads/att.47s-a3uatiqt1fmqaypghdtdies2b0us1pxoltyr8-a.jpeg",
-            "/PUPSYWEB/images/uploads/att.iehogbsmky_13taiwwia2yqggjds1b43tb6tt8yhcc4.jpeg",
-            "/PUPSYWEB/images/uploads/img_8869.jpeg",
-            "/PUPSYWEB/images/uploads/db542509-8a47-429e-97f7-de4e381ab668.png"
-          ]
+          "source": "links",
+          "link1": "/PUPSYWEB/images/uploads/att.47s-a3uatiqt1fmqaypghdtdies2b0us1pxoltyr8-a.jpeg",
+          "link2": "/PUPSYWEB/images/uploads/att.iehogbsmky_13taiwwia2yqggjds1b43tb6tt8yhcc4.jpeg",
+          "link3": "/PUPSYWEB/images/uploads/img_8869.jpeg",
+          "link4": "/PUPSYWEB/images/uploads/db542509-8a47-429e-97f7-de4e381ab668.png"
         }
       ],
       "attributes": [
@@ -32,7 +30,19 @@
       ],
       "published": true,
       "primaryColor": "ყავისფერი",
-      "colorsEnabled": true
+      "colorsEnabled": true,
+      "categoryId": "harnesses",
+      "comingSoon": false,
+      "videoUrl": "",
+      "sizeDetails": "ძალიან პატარა\nკისრის გარშემოწერილობა: 18–32 სმ | 7–12.5 დუიმი\nმუცლის გარშემოწერილობა: 32–40 სმ | 12.5–15.5 დუიმი\n\nპატარა\nკისრის გარშემოწერილობა: 27–42 სმ | 10.5–16.5 დუიმი\nმუცლის გარშემოწერილობა: 38–55 სმ | 15–21.5 დუიმი\n\nსაშუალო\nკისრის გარშემოწერილობა: 34–52 სმ | 13–20 დუიმი\nმუცლის გარშემოწერილობა: 47–70 სმ | 18.5–27.5 დუიმი\n\nდიდი\nკისრის გარშემოწერილობა: 45–62 სმ | 17.5–24 დუიმი\nმუცლის გარშემოწერილობა: 62–95 სმ | 24–37 დუიმი\n\nთუ ზომებს შორის ხართ, აირჩიეთ უფრო დიდი ზომა.\nდიდი ზომის ძაღლებისთვის, რომლებიც ქაჩავენ, წელსამაგრს არ გირჩევთ.\nზომების ყველა გზამკვლევი: guide.html",
+      "benefits": "რატომ მოგეწონებათ:\nსუნთქვადი და რბილი საფენი მკერდის არეში\nრეგულირების ოთხი წერტილი ზუსტი და კომფორტული მორგებისთვის\nY-ს ფორმის წინა ნაწილი კისერზე ზეწოლის გარეშე\nღია ოქროსფერი D-რგოლი დახვეწილი იერისთვის\nფერადი შესაკრავები სუფთა და თანამედროვე იერს ქმნის",
+      "materialCare": "დამზადებულია პრემიუმ ნეილონის თასმებისა და რბილი, სუნთქვადი მიტონგის ქსოვილისგან.",
+      "detailsLabels": {
+        "size": "ზომები",
+        "benefits": "მთავარი უპირატესობები",
+        "material": "მასალა და მოვლა"
+      },
+      "image": "/PUPSYWEB/images/uploads/att.47s-a3uatiqt1fmqaypghdtdies2b0us1pxoltyr8-a.jpeg"
     }
   ]
 }
