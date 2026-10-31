@@ -200,7 +200,30 @@
     if (!document.querySelector("#cms-selected-color-style")) {
       const style = document.createElement("style");
       style.id = "cms-selected-color-style";
-      style.textContent = ".product__siblings .swatches.cms-selected-color .sibling__link{overflow:initial;box-shadow:0 0 0 2px var(--bg)}.product__siblings .swatches.cms-selected-color .sibling__link:after{opacity:1;transform:translateZ(0);overflow:hidden}";
+      style.textContent = `
+        .product__siblings .radio__fieldset--swatches { width: 100%; max-width: 100%; min-width: 0; }
+        .product__siblings .radio__buttons {
+          display: flex !important;
+          flex-wrap: nowrap !important;
+          align-items: center;
+          gap: 10px;
+          box-sizing: border-box;
+          width: 100%;
+          max-width: 100%;
+          min-width: 0;
+          overflow-x: auto !important;
+          overflow-y: hidden !important;
+          -webkit-overflow-scrolling: touch;
+          overscroll-behavior-x: contain;
+          touch-action: pan-x;
+          scrollbar-width: none;
+          scroll-snap-type: x proximity;
+        }
+        .product__siblings .radio__buttons::-webkit-scrollbar { display: none; }
+        .product__siblings .radio__buttons > tooltip-component { flex: 0 0 auto; scroll-snap-align: start; }
+        .product__siblings .swatches.cms-selected-color .sibling__link { overflow: initial; box-shadow: 0 0 0 2px var(--bg); }
+        .product__siblings .swatches.cms-selected-color .sibling__link:after { opacity: 1; transform: translateZ(0); overflow: hidden; }
+      `;
       document.head.append(style);
     }
   }
