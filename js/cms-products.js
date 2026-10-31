@@ -84,43 +84,19 @@
     const ordered = primary && colors.includes(primary)
       ? [primary, ...colors.filter((color) => color !== primary)]
       : colors;
-    const row = document.createElement("product-siblings");
-    row.className = "cms-product-card__colors product-item__siblings product-item__swatches__holder product-item__swatches__holder--circle product-item__swatches__holder--slider";
+    const row = document.createElement("div");
+    row.className = "cms-product-card__colors";
+    row.setAttribute("role", "list");
     row.setAttribute("aria-label", ordered.join(", "));
-    const scrollbar = document.createElement("native-scrollbar");
-    scrollbar.className = "radio__fieldset radio__fieldset--swatches radio__fieldset--pgi is-visible";
-    scrollbar.dataset.siblingFieldset = "";
-    const content = document.createElement("div");
-    content.className = "selector-wrapper__scrollbar";
-    content.dataset.scrollbar = "";
     ordered.forEach((color, index) => {
-      const swatch = document.createElement("tooltip-component");
-      swatch.className = "swatches swatch__button swatch__button--circle";
-      swatch.style.setProperty("--swatch", colorValue(color));
-      swatch.style.setProperty("--animation-delay", `${index * 50}ms`);
-      swatch.setAttribute("data-tooltip", color);
-      swatch.tabIndex = 0;
-      const swatchLink = document.createElement("div");
-      swatchLink.className = "sibling__link";
-      if (index === 0 && primary) {
-        swatchLink.classList.add("sibling__link--current");
-      }
-      swatch.append(swatchLink);
-      content.append(swatch);
+      const swatch = document.createElement("span");
+      swatch.className = `cms-product-card__color${index === 0 && primary ? " is-primary" : ""}`;
+      swatch.style.setProperty("--cms-swatch", colorValue(color));
+      swatch.title = color;
+      swatch.setAttribute("aria-label", color);
+      swatch.setAttribute("role", "listitem");
+      row.append(swatch);
     });
-    const actions = document.createElement("div");
-    actions.className = "selector-wrapper__actions";
-    [["prev", "Previous colors", "‹"], ["next", "Next colors", "›"]].forEach(([direction, label, text]) => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = `radio__fieldset__arrow radio__fieldset__arrow--${direction} is-hidden`;
-      button.setAttribute(`data-scrollbar-arrow-${direction}`, "");
-      button.setAttribute("aria-label", label);
-      button.textContent = text;
-      actions.append(button);
-    });
-    scrollbar.append(content, actions);
-    row.append(scrollbar);
     return row;
   }
 

@@ -1082,29 +1082,45 @@ function updateEditorProductPreview(title, price, colors, primaryColor = '') {
     if (candidate) candidate.textContent = candidate.textContent.replace(/[\d,.]+/, price.toFixed(2));
     else priceNode.append(priceNode.ownerDocument.createTextNode(price.toFixed(2)));
   }
-  let siblings = card.querySelector('product-siblings, .product__siblings, .product-item__siblings');
-  if (isCmsProductCard && !siblings) {
+  if (isCmsProductCard) {
     const orphan = card.nextElementSibling;
     if (orphan?.matches('product-siblings.product-item__siblings, product-siblings.product__siblings')) orphan.remove();
+    let row = card.querySelector('.cms-product-card__colors');
+    if (!colors.length) { row?.remove(); return; }
+    if (!row) {
+      row = card.ownerDocument.createElement('div');
+      row.className = 'cms-product-card__colors';
+      row.setAttribute('role', 'list');
+      card.append(row);
+    }
+    row.setAttribute('aria-label', colors.join(', '));
+    row.replaceChildren(...colors.map((name, index) => {
+      const swatch = card.ownerDocument.createElement('span');
+      swatch.className = `cms-product-card__color${index === 0 && name === primaryColor ? ' is-primary' : ''}`;
+      swatch.style.setProperty('--cms-swatch', editorColorHex(name));
+      swatch.title = name;
+      swatch.setAttribute('aria-label', name);
+      swatch.setAttribute('role', 'listitem');
+      return swatch;
+    }));
+    return;
   }
+  let siblings = card.querySelector('product-siblings, .product__siblings, .product-item__siblings');
   if (!colors.length) { siblings?.remove(); return; }
   const templates = [...card.ownerDocument.querySelectorAll('product-siblings.product-item__siblings, product-siblings.product__siblings')];
   const template = templates.find(item => item.querySelector('.selector-wrapper__scrollbar tooltip-component[data-tooltip]'))
     || templates.find(item => item.querySelector('.selector-wrapper__scrollbar'));
   if (template) {
     const replacement = template.cloneNode(true);
-    if (isCmsProductCard) replacement.classList.add('cms-product-card__colors');
     if (siblings) siblings.replaceWith(replacement);
-    else if (isCmsProductCard) {
-      card.append(replacement);
-    } else {
+    else {
       const productLink = titleNode?.closest('a[href]');
       (productLink || priceNode || titleNode || card).after(replacement);
     }
     siblings = replacement;
   } else if (!siblings) {
     siblings = card.ownerDocument.createElement('product-siblings');
-    siblings.className = `product-item__siblings product-item__swatches__holder product-item__swatches__holder--circle product-item__swatches__holder--slider${isCmsProductCard ? ' cms-product-card__colors' : ''}`;
+    siblings.className = 'product-item__siblings product-item__swatches__holder product-item__swatches__holder--circle product-item__swatches__holder--slider';
     const scrollbar = card.ownerDocument.createElement('native-scrollbar');
     scrollbar.className = 'radio__fieldset radio__fieldset--swatches radio__fieldset--pgi is-visible';
     scrollbar.dataset.siblingFieldset = '';
@@ -1113,11 +1129,8 @@ function updateEditorProductPreview(title, price, colors, primaryColor = '') {
     scrollContent.dataset.scrollbar = '';
     scrollbar.append(scrollContent);
     siblings.append(scrollbar);
-    if (isCmsProductCard) card.append(siblings);
-    else {
-      const productLink = titleNode?.closest('a[href]');
-      (productLink || priceNode || titleNode || card).after(siblings);
-    }
+    const productLink = titleNode?.closest('a[href]');
+    (productLink || priceNode || titleNode || card).after(siblings);
   } else if (!siblings.querySelector('.selector-wrapper__scrollbar')) {
     const scrollbar = siblings.querySelector('native-scrollbar') || siblings;
     const scrollContent = card.ownerDocument.createElement('div');
