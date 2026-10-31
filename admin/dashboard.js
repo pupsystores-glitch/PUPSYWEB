@@ -67,10 +67,11 @@ function uniqueProductSlug(title, currentId) {
   return `${base}-${suffix}`;
 }
 
-function productRouteStub() {
-  return '<!doctype html><html lang="ka"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PUPSY პროდუქტი</title></head><body><script src="../js/cms-product-route.js" defer></script></body></html>\n';
+function productRouteStub(slug) {
+  const image = 'https://pupsystores-glitch.github.io/PUPSYWEB/images/logo_PUPSY_optimized.png';
+  const url = `https://pupsystores-glitch.github.io/PUPSYWEB/product-pages/${encodeURIComponent(slug)}.html`;
+  return `<!doctype html><html lang="ka"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PUPSY Product</title><meta name="description" content="Discover PUPSY products for dogs."><meta property="og:type" content="product"><meta property="og:site_name" content="PUPSY"><meta property="og:title" content="PUPSY Product"><meta property="og:description" content="Discover PUPSY products for dogs."><meta property="og:url" content="${url}"><meta property="og:image" content="${image}"><meta property="og:image:secure_url" content="${image}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="PUPSY Product"><meta name="twitter:description" content="Discover PUPSY products for dogs."><meta name="twitter:image" content="${image}"><link rel="icon" type="image/png" href="../images/logo_PUPSY_optimized.png"><link rel="apple-touch-icon" href="../images/logo_PUPSY_optimized.png"></head><body><script src="../js/cms-product-route.js" defer></script></body></html>\n`;
 }
-
 async function saveProductRoute(slug) {
   const path = `product-pages/${slug}.html`;
   let sha;
@@ -84,7 +85,7 @@ async function saveProductRoute(slug) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       message: `Update product page ${slug}`,
-      content: encodeBase64Utf8(productRouteStub()),
+      content: encodeBase64Utf8(productRouteStub(slug)),
       ...(sha ? { sha } : {}),
       branch: GITHUB_BRANCH,
     }),
@@ -553,8 +554,10 @@ function bindEditorFrame() {
       const loadedProduct = products.find(item => item.raw?.slug === pageSlug || productSlugFromTitle(item.title) === pageSlug || (productTitle && item.title === productTitle));
       const fieldValue = productField && loadedProduct ? loadedProduct.raw[productField] : undefined;
       const productPriceText = card?.querySelector('.cms-product-card__price, .product-item__price')?.textContent.match(/[\d,]+(?:\.\d+)?/g)?.at(-1) || '';
-      const productColors = loadedProduct?.raw?.colors || [...(card?.querySelectorAll('tooltip-component[data-tooltip]') || [])].map(item => item.getAttribute('data-tooltip')).filter(Boolean);
-      const selectedSwatch = card?.querySelector('tooltip-component .sibling__link--current')?.closest('tooltip-component');
+      const productDetail = Boolean(!card && pageSlug && loadedProduct && doc.querySelector('.product__siblings'));
+      const colorScope = card || (productDetail ? doc.querySelector('.product__siblings') : null);
+      const productColors = loadedProduct?.raw?.colors || [...(colorScope?.querySelectorAll('tooltip-component[data-tooltip]') || [])].map(item => item.getAttribute('data-tooltip')).filter(Boolean);
+      const selectedSwatch = colorScope?.querySelector('tooltip-component .sibling__link--current')?.closest('tooltip-component');
       const productPrimaryColor = loadedProduct?.raw?.primaryColor || selectedSwatch?.getAttribute('data-tooltip') || productColors[0] || '';
       const isProductCard = Boolean(card && (card.classList.contains('cms-product-card') || card.classList.contains('product-item') || card.classList.contains('product-card')));
       editorSelection = {
@@ -575,6 +578,7 @@ function bindEditorFrame() {
         productIdentityClass,
         productOccurrence: Math.max(0, Array.prototype.indexOf.call(productNodes, card)),
         isProductCard,
+        isProductDetail: productDetail,
         productPrice: loadedProduct?.raw?.price ?? productPriceText.replace(/,/g, ''),
         productColors,
         productPrimaryColor,
@@ -594,7 +598,7 @@ function bindEditorFrame() {
       const isMedia = Boolean(mediaElement || backgroundElement);
       document.getElementById('site-editor-media-tools').classList.toggle('hidden', !isMedia);
       document.getElementById('site-editor-text-tools').classList.toggle('hidden', isMedia);
-      document.getElementById('site-editor-product-tools').classList.toggle('hidden', !isProductCard);
+      document.getElementById('site-editor-product-tools').classList.toggle('hidden', !isProductCard && !productDetail);
       if (mediaTagName === 'video') preview.classList.add('hidden');
       else if (backgroundElement) {
         preview.src = backgroundUrl;
@@ -611,7 +615,7 @@ function bindEditorFrame() {
       document.getElementById('site-editor-text-value').disabled = !editorSelection.canEditText;
       document.getElementById('site-editor-save-text').disabled = !editorSelection.canEditText;
       document.getElementById('site-editor-save-text').classList.toggle('opacity-40', !editorSelection.canEditText);
-      if (isProductCard) {
+      if (isProductCard || productDetail) {
         document.getElementById('site-editor-product-title').value = productTitle;
         document.getElementById('site-editor-product-price').value = productPriceText.replace(/,/g, '') || loadedProduct?.raw?.price || '';
         editorPrimaryColor = productPrimaryColor;
@@ -1137,9 +1141,36 @@ function updateEditorProductPreview(title, price, colors, primaryColor = '') {
   }
 }
 
+function updateEditorProductDetailPreview(colors, primaryColor = '') {
+  const doc = editorSelectedNode?.ownerDocument;
+  const block = doc?.querySelector('.product__siblings');
+  if (!doc || !block) return;
+  block.hidden = colors.length === 0;
+  if (!colors.length) return;
+  const buttons = block.querySelector('.radio__buttons');
+  const prototype = buttons?.querySelector('tooltip-component[data-tooltip]');
+  if (!buttons || !prototype) return;
+  const hiddenColor = block.querySelector('input[name="properties[Color]"]');
+  if (hiddenColor) hiddenColor.value = primaryColor;
+  const legendValue = block.querySelector('.radio__legend__value');
+  if (legendValue) legendValue.textContent = primaryColor;
+  buttons.replaceChildren(...colors.map((name, index) => {
+    const swatch = prototype.cloneNode(true);
+    swatch.className = `swatches swatch__button swatch__button--circle swatch-${productSlugFromTitle(name) || `color-${index + 1}`}`;
+    swatch.setAttribute('data-tooltip', name);
+    swatch.style.setProperty('--animation-delay', `${index * 50}ms`);
+    swatch.style.setProperty('--swatch', editorColorHex(name));
+    const link = swatch.querySelector('.sibling__link');
+    if (link) link.classList.toggle('sibling__link--current', name === primaryColor);
+    const label = swatch.querySelector('.visually-hidden');
+    if (label) label.textContent = name;
+    return swatch;
+  }));
+}
+
 async function saveSelectedProduct() {
   const status = document.getElementById('site-editor-status');
-  if (!editorSelection?.isProductCard) {
+  if (!editorSelection?.isProductCard && !editorSelection?.isProductDetail) {
     status.textContent = 'აირჩიეთ პროდუქტი რედაქტირებისთვის.';
     return;
   }
@@ -1164,6 +1195,7 @@ async function saveSelectedProduct() {
 
   let htmlStaged = false;
   try {
+    if (!editorSelection.isProductDetail) {
     const pending = pendingEditorHtml.get(editorSelection.page);
     const page = pending || await editorHtmlFile(editorSelection.page);
     const range = productCardRange(page.content, editorSelection);
@@ -1178,6 +1210,7 @@ async function saveSelectedProduct() {
       const updated = page.content.slice(0, range.start) + cardHtml + page.content.slice(range.end);
       stageEditorHtml(editorSelection.page, page.sha, updated, `Edit product on ${editorSelection.page}`);
       htmlStaged = true;
+    }
     }
   } catch (error) {
     if (!product) {
@@ -1216,7 +1249,8 @@ async function saveSelectedProduct() {
   editorPrimaryColor = primaryColor;
   editorSelection.productPrimaryColor = primaryColor;
   editorSelection.productColors = colors;
-  updateEditorProductPreview(title, price, colors, primaryColor);
+  if (editorSelection.isProductDetail) updateEditorProductDetailPreview(colors, primaryColor);
+  else updateEditorProductPreview(title, price, colors, primaryColor);
   editorSelection.productTitle = title;
   editorSelection.text = title;
   status.textContent = 'ცვლილება გამოჩნდა 1:1 ხედში. საიტზე ასასახად დააჭირეთ მთავარ შენახვას.';

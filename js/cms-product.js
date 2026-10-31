@@ -58,6 +58,22 @@
       .map((color) => String(color || "").trim()).filter(Boolean))];
   }
 
+  function colorSlug(value) {
+    return String(value || "color").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "color";
+  }
+
+  function colorValue(value) {
+    const name = String(value || "").toLowerCase();
+    const palette = [
+      [/black|შავ/, "#171717"], [/white|თეთრ/, "#f7f5f2"], [/blue|ლურჯ/, "#3284c7"],
+      [/green|მწვან/, "#3e8b58"], [/red|წითელ/, "#c74c4c"], [/pink|ვარდისფ/, "#df8fa7"],
+      [/beige|cream|კრემ|ბეჟ/, "#d9c3a3"], [/brown|ყავისფ/, "#80543e"],
+      [/gray|grey|ნაცრისფ/, "#8a8a8a"], [/yellow|ყვითელ/, "#e5bc42"],
+      [/purple|იისფ/, "#8b68ad"], [/terracotta|ტერაკოტ/, "#b96b4d"],
+    ];
+    return palette.find(([pattern]) => pattern.test(name))?.[1] || value;
+  }
+
   function hideProductHeaderIcons() {
     if (document.querySelector("#cms-product-header-icons-style")) return;
     const style = document.createElement("style");
@@ -82,15 +98,43 @@
 
     const selectedColors = new Set(productColors(product));
     if (!selectedColors.size) {
-      document.querySelectorAll(".product__siblings").forEach((block) => block.remove());
+      colorsBlock.hidden = true;
       return;
     }
+    colorsBlock.hidden = false;
+    const buttons = colorsBlock.querySelector(".radio__buttons");
+    const template = buttons?.querySelector("tooltip-component[data-tooltip]");
+    if (!buttons || !template) return;
+    const colors = [...selectedColors];
+    buttons.replaceChildren(...colors.map((color, index) => {
+      const swatch = template.cloneNode(true);
+      const link = swatch.querySelector(".sibling__link");
+      const labelNode = swatch.querySelector(".visually-hidden");
+      swatch.className = `swatches swatch__button swatch__button--circle swatch-${colorSlug(color)}`;
+      swatch.dataset.tooltip = color;
+      swatch.style.setProperty("--animation-delay", `${index * 50}ms`);
+      swatch.style.setProperty("--swatch", colorValue(color));
+      if (link) {
+        link.classList.remove("sibling__link--current");
+        link.removeAttribute("data-product-impression-tracked");
+        link.removeAttribute("data-product-click-tracked");
+      }
+      if (labelNode) labelNode.textContent = color;
+      return swatch;
+    }));
+    const primaryColor = selectedColors.has(product.primaryColor) ? product.primaryColor : colors[0];
+    const primarySwatch = [...buttons.querySelectorAll("tooltip-component")]
+      .find((swatch) => swatch.dataset.tooltip === primaryColor);
+    primarySwatch?.querySelector(".sibling__link")?.classList.add("sibling__link--current");
+    const colorInput = colorsBlock.querySelector('input[name="properties[Color]"]');
+    if (colorInput) colorInput.value = primaryColor;
+    const legendValue = colorsBlock.querySelector(".radio__legend__value");
+    if (legendValue) legendValue.textContent = primaryColor;
     const swatches = [...colorsBlock.querySelectorAll(".swatches")];
     swatches.forEach((swatch) => {
       const link = swatch.querySelector(".sibling__link");
       const label = swatch.querySelector(".visually-hidden")?.textContent.trim();
       if (!link) return;
-      link.classList.remove("sibling__link--current");
       swatch.classList.toggle("cms-selected-color", selectedColors.has(label));
     });
 
