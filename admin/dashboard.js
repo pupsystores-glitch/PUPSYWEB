@@ -1060,55 +1060,80 @@ function updateEditorProductPreview(title, price, colors) {
 
 async function saveSelectedProduct() {
   const status = document.getElementById('site-editor-status');
-  if (!editorSelection?.isProductCard) { status.textContent = 'აირჩიეთ პროდუქტი რედაქტირებისთვის.'; return; }
-  const title = document.getElementById('site-editor-product-title').value.trim();
-  const price = Number(document.getElementById('site-editor-product-price').value);
-  const colors = [...document.querySelectorAll('#site-editor-product-colors input[type="checkbox"]:checked')].map(input => input.value);
-  if (!title || !Number.isFinite(price) || price < 0) { status.textContent = 'შეამოწმეთ პროდუქტის სახელი და ფასი.'; return; }
+  if (!editorSelection?.isProductCard) {
+    status.textContent = 'აირჩიეთ პროდუქტი რედაქტირებისთვის.';
+    return;
+  }
+
+  const title = document.getElementById('site-editor-product-title').value.trim()
+    || editorSelection.productTitle || editorSelection.text || '';
+  const priceField = document.getElementById('site-editor-product-price').value;
+  const price = priceField === '' ? Number(editorSelection.productPrice || 0) : Number(priceField);
+  const colors = [...document.querySelectorAll('#site-editor-product-colors input[type="checkbox"]:checked')]
+    .map(input => input.value);
+  if (!title || !Number.isFinite(price) || price < 0) {
+    status.textContent = 'შეამოწმეთ პროდუქტის სახელი და ფასი.';
+    return;
+  }
+
+  let product = null;
+  let productDataError = null;
+  try { product = await findEditorProduct(editorSelection); }
+  catch (error) { productDataError = error; }
+
+  let htmlStaged = false;
   try {
-    const product = await findEditorProduct(editorSelection);
-    if (product) {
+    const pending = pendingEditorHtml.get(editorSelection.page);
+    const page = pending || await editorHtmlFile(editorSelection.page);
+    const range = productCardRange(page.content, editorSelection);
+    if (range) {
+      const originalCard = page.content.slice(range.start, range.end);
+      let cardHtml = updateStaticProductTitle(originalCard, title);
+      cardHtml = updateStaticProductPrice(cardHtml, price);
+      cardHtml = updateStaticProductColors(cardHtml, colors, page.content);
+      if (colors.length && cardHtml === originalCard) {
+        throw new Error('ფერის სექცია პროდუქტში ვერ დაემატა. ხელახლა მონიშნეთ პროდუქტი და სცადეთ.');
+      }
+      const updated = page.content.slice(0, range.start) + cardHtml + page.content.slice(range.end);
+      stageEditorHtml(editorSelection.page, page.sha, updated, `Edit product on ${editorSelection.page}`);
+      htmlStaged = true;
+    }
+  } catch (error) {
+    if (!product) {
+      status.textContent = error.message || 'პროდუქტის HTML ცვლილება ვერ მოინიშნა.';
+      return;
+    }
+  }
+
+  let jsonStaged = false;
+  if (product) {
+    try {
       product.raw.title = title;
       product.raw.price = price;
       product.raw.colors = colors;
       stageEditorJson(product.path, product.file.data);
-      const cached = products.find(item => item.raw?.slug === product.slug || (item.title === editorSelection.productTitle && item.collectionId === collections.find(entry => entry.file === product.path.split('/').pop())?.id));
+      jsonStaged = true;
+      const cached = products.find(item => item.raw?.slug === product.slug
+        || (item.title === editorSelection.productTitle
+          && item.collectionId === collections.find(entry => entry.file === product.path.split('/').pop())?.id));
       if (cached) {
         cached.title = title;
         cached.price = price;
         cached.colors = colors;
         cached.raw = product.raw;
       }
-    } else {
-      const pending = pendingEditorHtml.get(editorSelection.page);
-      const page = pending || await editorHtmlFile(editorSelection.page);
-      const range = productCardRange(page.content, editorSelection);
-      if (!range) throw new Error('მონიშნული პროდუქტი გვერდის HTML-ში ვერ მოიძებნა.');
-      let cardHtml = page.content.slice(range.start, range.end);
-      cardHtml = updateStaticProductTitle(cardHtml, title);
-      cardHtml = updateStaticProductPrice(cardHtml, price);
-      cardHtml = updateStaticProductColors(cardHtml, colors, page.content);
-      const updated = page.content.slice(0, range.start) + cardHtml + page.content.slice(range.end);
-      stageEditorHtml(editorSelection.page, page.sha, updated, `Edit product on ${editorSelection.page}`);
-    }
-    if (product) {
-      const pending = pendingEditorHtml.get(editorSelection.page);
-      const page = pending || await editorHtmlFile(editorSelection.page);
-      const range = productCardRange(page.content, editorSelection);
-      if (range) {
-        let cardHtml = page.content.slice(range.start, range.end);
-        cardHtml = updateStaticProductTitle(cardHtml, title);
-        cardHtml = updateStaticProductPrice(cardHtml, price);
-        cardHtml = updateStaticProductColors(cardHtml, colors, page.content);
-        const updated = page.content.slice(0, range.start) + cardHtml + page.content.slice(range.end);
-        stageEditorHtml(editorSelection.page, page.sha, updated, `Edit product on ${editorSelection.page}`);
-      }
-    }
-    updateEditorProductPreview(title, price, colors);
-    editorSelection.productTitle = title;
-    editorSelection.text = title;
-    status.textContent = 'პროდუქტი შეიცვალა წინასწარ ხედში. საიტზე ასატვირთად დააჭირეთ ქვემოთ „ცვლილებების შენახვა“ ღილაკს.';
-  } catch (error) { status.textContent = error.message || 'პროდუქტის ცვლილება ვერ მოხერხდა.'; }
+    } catch (error) { productDataError = error; }
+  }
+
+  if (!htmlStaged && !jsonStaged) {
+    status.textContent = productDataError?.message || 'პროდუქტის ცვლილება ვერ მოინიშნა შესანახად. ხელახლა მონიშნეთ პროდუქტი და სცადეთ.';
+    return;
+  }
+
+  updateEditorProductPreview(title, price, colors);
+  editorSelection.productTitle = title;
+  editorSelection.text = title;
+  status.textContent = 'ცვლილება გამოჩნდა 1:1 ხედში. საიტზე ასასახად დააჭირეთ მთავარ შენახვას.';
 }
 async function deleteSelectedProduct() {
   if (!editorSelection?.isProductCard) return;
