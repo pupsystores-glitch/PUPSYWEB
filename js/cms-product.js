@@ -182,7 +182,9 @@
       const link = swatch.querySelector(".sibling__link");
       const label = swatch.querySelector(".visually-hidden")?.textContent.trim();
       if (!link) return;
-      swatch.classList.toggle("cms-selected-color", selectedColors.has(label));
+      const isPrimaryColor = label === primaryColor;
+      swatch.classList.toggle("cms-selected-color", isPrimaryColor);
+      link.classList.toggle("sibling__link--current", isPrimaryColor);
     });
 
     if (!document.querySelector("#cms-selected-color-style")) {
