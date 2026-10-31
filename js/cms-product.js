@@ -60,6 +60,14 @@
   }
 
   function colorSlug(value) {
+    const name = String(value || "").toLowerCase();
+    const knownColors = [
+      [/brown|ყავისფ/, "brown"], [/terracotta|ტერაკოტ/, "terracotta"], [/blue|ლურჯ/, "blue"],
+      [/green|მწვან/, "green"], [/lavender|ლავანდ|იისფ/, "lavender"], [/pink|ვარდისფ/, "powder-rose"],
+      [/bordeaux|burgundy|ბორდო/, "bordeaux"], [/black|შავ/, "black"], [/tan|ღია\s*ყავისფ/, "tan"],
+    ];
+    const known = knownColors.find(([pattern]) => pattern.test(name))?.[1];
+    if (known) return known;
     return String(value || "color").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "color";
   }
 
@@ -156,17 +164,19 @@
         link.append(hiddenLabel);
         swatch.append(link);
       }
-      const labelNode = swatch.querySelector(".visually-hidden");
       swatch.className = `swatches swatch__button swatch__button--circle swatch-${colorSlug(color)}`;
       swatch.dataset.tooltip = color;
+      swatch.title = color;
+      swatch.setAttribute("aria-label", color);
       swatch.style.setProperty("--animation-delay", `${index * 50}ms`);
       swatch.style.setProperty("--swatch", colorValue(color));
       if (link) {
         link.classList.remove("sibling__link--current");
-        link.removeAttribute("data-product-impression-tracked");
-        link.removeAttribute("data-product-click-tracked");
+        [...link.attributes].forEach((attribute) => {
+          if (attribute.name !== "class") link.removeAttribute(attribute.name);
+        });
       }
-      if (labelNode) labelNode.textContent = color;
+      swatch.querySelectorAll(".visually-hidden").forEach((labelNode) => { labelNode.textContent = color; });
       return swatch;
     }));
     const primaryColor = selectedColors.has(product.primaryColor) ? product.primaryColor : colors[0];
