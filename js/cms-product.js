@@ -150,22 +150,19 @@
     }
     colorsBlock.hidden = false;
     const buttons = colorsBlock.querySelector(".radio__buttons");
-    const template = buttons?.querySelector("tooltip-component[data-tooltip]");
     if (!buttons) return;
     const colors = [...selectedColors];
     const colorInput = colorsBlock.querySelector('input[name="properties[Color]"]');
     const legendValue = colorsBlock.querySelector(".radio__legend__value");
     buttons.replaceChildren(...colors.map((color, index) => {
-      const swatch = template?.cloneNode(true) || document.createElement("tooltip-component");
-      let link = swatch.querySelector(".sibling__link");
-      if (!link) {
-        link = document.createElement("a");
-        link.className = "sibling__link";
-        const hiddenLabel = document.createElement("span");
-        hiddenLabel.className = "visually-hidden";
-        link.append(hiddenLabel);
-        swatch.append(link);
-      }
+      const swatch = document.createElement("tooltip-component");
+      const link = document.createElement("a");
+      link.className = "sibling__link";
+      const hiddenLabel = document.createElement("span");
+      hiddenLabel.className = "visually-hidden";
+      hiddenLabel.textContent = color;
+      link.append(hiddenLabel);
+      swatch.append(link);
       swatch.className = `swatches swatch__button swatch__button--circle swatch-${colorSlug(color)}`;
       swatch.dataset.tooltip = color;
       swatch.title = color;
@@ -178,7 +175,6 @@
           if (attribute.name !== "class") link.removeAttribute(attribute.name);
         });
       }
-      swatch.querySelectorAll(".visually-hidden").forEach((labelNode) => { labelNode.textContent = color; });
       swatch.addEventListener("click", (event) => {
         event.preventDefault();
         buttons.querySelectorAll("tooltip-component").forEach((item) => {
@@ -188,7 +184,11 @@
         swatch.classList.add("cms-selected-color");
         swatch.querySelector(".sibling__link")?.classList.add("sibling__link--current");
         if (colorInput) colorInput.value = color;
-        if (legendValue) legendValue.textContent = color;
+        if (legendValue) {
+          legendValue.textContent = color;
+          legendValue.style.setProperty("display", "inline-block", "important");
+          legendValue.style.setProperty("text-decoration", "none", "important");
+        }
       });
       return swatch;
     }));
@@ -213,6 +213,7 @@
       style.id = "cms-selected-color-style";
       style.textContent = `
         .product__siblings .radio__fieldset--swatches { width: 100%; max-width: 100%; min-width: 0; }
+        .product__siblings .radio__legend__value { display: inline-block !important; text-decoration: none !important; }
         .product__siblings .radio__buttons {
           display: flex !important;
           flex-wrap: nowrap !important;
