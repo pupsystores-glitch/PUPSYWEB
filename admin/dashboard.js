@@ -492,8 +492,8 @@ function bindEditorFrame() {
       if (!target) return;
       const clicked = target.closest('img, video, h1, h2, h3, h4, h5, p, button, a, li, span, strong, label, summary, section, article, div');
       const anchor = target.closest('a[data-admin-original-href], a[data-admin-original-product-link], a[data-product-link], a[href]');
-      const card = target.closest('.cms-product-card, [class*="product-card"], [class*="product-item"]')
-        || anchor?.closest('.cms-product-card, [class*="product-card"], [class*="product-item"]');
+      const card = target.closest('.cms-product-card, .product-item, .product-card')
+        || anchor?.closest('.cms-product-card, .product-item, .product-card');
       let element = clicked || target;
       if (!(element instanceof doc.defaultView.HTMLElement)) return;
       let backgroundElement = null;
@@ -556,7 +556,7 @@ function bindEditorFrame() {
       const productColors = loadedProduct?.raw?.colors || [...(card?.querySelectorAll('tooltip-component[data-tooltip]') || [])].map(item => item.getAttribute('data-tooltip')).filter(Boolean);
       const selectedSwatch = card?.querySelector('tooltip-component .sibling__link--current')?.closest('tooltip-component');
       const productPrimaryColor = loadedProduct?.raw?.primaryColor || selectedSwatch?.getAttribute('data-tooltip') || productColors[0] || '';
-      const isProductCard = Boolean(card && (card.classList.contains('cms-product-card') || card.classList.contains('product-item') || card.className.toString().includes('product-item')));
+      const isProductCard = Boolean(card && (card.classList.contains('cms-product-card') || card.classList.contains('product-item') || card.classList.contains('product-card')));
       editorSelection = {
         page: document.getElementById('site-editor-page').value,
         tagName,
@@ -842,7 +842,7 @@ async function commitEditorHtml(path, sha, content, message) {
 
 function selectedProductSlug(selection) {
   const href = selection.productHref || selection.href || '';
-  const match = href.match(/product-pages\/([^/?#]+)\.html/i);
+  const match = href.match(/(?:product-pages|products)\/([^/?#]+?)(?:\.html)?(?:[?#]|$)/i);
   const pageMatch = selection.page?.match(/product-pages\/([^/?#]+)\.html/i);
   return match ? decodeURIComponent(match[1]) : pageMatch ? decodeURIComponent(pageMatch[1]) : selection.productSlug || '';
 }
@@ -1064,7 +1064,7 @@ function updateStaticProductColors(cardHtml, colors, pageHtml = '', primaryColor
 }
 
 function updateEditorProductPreview(title, price, colors, primaryColor = '') {
-  const card = editorSelectedNode?.closest('.cms-product-card, .product-item, [class*="product-card"], [class*="product-item"]')
+  const card = editorSelectedNode?.closest('.cms-product-card, .product-item, .product-card')
     || editorSelectedNode?.closest('.product__container, .product__information, main');
   if (!card) return;
   const titleNode = card.querySelector('.cms-product-card__title, .product-item__title, .product__title');
@@ -1161,9 +1161,10 @@ async function saveSelectedProduct() {
     || editorSelection.productTitle || editorSelection.text || '';
   const priceField = document.getElementById('site-editor-product-price').value;
   const price = priceField === '' ? Number(editorSelection.productPrice || 0) : Number(priceField);
-  const colors = [...document.querySelectorAll('#site-editor-product-colors input[type="checkbox"]:checked')]
+  const selectedColors = [...document.querySelectorAll('#site-editor-product-colors input[type="checkbox"]:checked')]
     .map(input => input.value);
-  const primaryColor = colors.includes(editorPrimaryColor) ? editorPrimaryColor : colors[0] || '';
+  const primaryColor = selectedColors.includes(editorPrimaryColor) ? editorPrimaryColor : selectedColors[0] || '';
+  const colors = primaryColor ? [primaryColor, ...selectedColors.filter(color => color !== primaryColor)] : selectedColors;
   if (!title || !Number.isFinite(price) || price < 0) {
     status.textContent = 'შეამოწმეთ პროდუქტის სახელი და ფასი.';
     return;
