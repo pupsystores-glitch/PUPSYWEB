@@ -553,8 +553,9 @@ function bindEditorFrame() {
         || doc.querySelector('.product__title')?.textContent.trim() || '';
       const loadedProduct = products.find(item => item.raw?.slug === pageSlug || productSlugFromTitle(item.title) === pageSlug || (productTitle && item.title === productTitle));
       const fieldValue = productField && loadedProduct ? loadedProduct.raw[productField] : undefined;
-      const productPriceText = card?.querySelector('.cms-product-card__price, .product-item__price')?.textContent.match(/[\d,]+(?:\.\d+)?/g)?.at(-1) || '';
-      const productDetail = Boolean(!card && pageSlug && loadedProduct && doc.querySelector('.product__siblings'));
+      const productPriceText = (card?.querySelector('.cms-product-card__price, .product-item__price')
+        || doc.querySelector('[data-product-price]'))?.textContent.match(/[\d,]+(?:\.\d+)?/g)?.at(-1) || '';
+      const productDetail = Boolean(!card && pageSlug && doc.querySelector('.product__title'));
       const colorScope = card || (productDetail ? doc.querySelector('.product__siblings') : null);
       const productColors = loadedProduct?.raw?.colors || [...(colorScope?.querySelectorAll('tooltip-component[data-tooltip]') || [])].map(item => item.getAttribute('data-tooltip')).filter(Boolean);
       const selectedSwatch = colorScope?.querySelector('tooltip-component .sibling__link--current')?.closest('tooltip-component');
@@ -1143,24 +1144,45 @@ function updateEditorProductPreview(title, price, colors, primaryColor = '') {
 
 function updateEditorProductDetailPreview(colors, primaryColor = '') {
   const doc = editorSelectedNode?.ownerDocument;
-  const block = doc?.querySelector('.product__siblings');
-  if (!doc || !block) return;
+  if (!doc) return;
+  let block = doc.querySelector('.product__siblings');
+  if (!block && colors.length) {
+    block = doc.createElement('div');
+    block.className = 'product__block product__block--lines product__siblings block-padding';
+    block.style.setProperty('--block-padding-bottom', '16px');
+    const formId = doc.querySelector('form[id^="ProductForm"]')?.id;
+    const formAttribute = formId ? ` form="${escapeHtmlAttribute(formId)}"` : '';
+    block.innerHTML = `<input type="hidden" name="properties[Color]" value=""${formAttribute}><fieldset><div class="radio__fieldset radio__fieldset--swatches"><legend class="radio__legend"><span class="radio__legend__label"><span class="radio__legend__option-name">ფერი</span><small class="radio__legend__value"></small></span></legend><div class="radio__buttons"></div></div></fieldset>`;
+    const container = doc.querySelector('.form__width, .product__blocks, .product__information') || doc.querySelector('#MainContent');
+    const before = [...(container?.children || [])].find(child => child.matches('.product__block--buttons, .product__block--quantity, .product-form__buttons'));
+    if (container) container.insertBefore(block, before || null);
+  }
+  if (!block) return;
   block.hidden = colors.length === 0;
   if (!colors.length) return;
   const buttons = block.querySelector('.radio__buttons');
   const prototype = buttons?.querySelector('tooltip-component[data-tooltip]');
-  if (!buttons || !prototype) return;
+  if (!buttons) return;
   const hiddenColor = block.querySelector('input[name="properties[Color]"]');
   if (hiddenColor) hiddenColor.value = primaryColor;
   const legendValue = block.querySelector('.radio__legend__value');
   if (legendValue) legendValue.textContent = primaryColor;
   buttons.replaceChildren(...colors.map((name, index) => {
-    const swatch = prototype.cloneNode(true);
+    const swatch = prototype?.cloneNode(true) || doc.createElement('tooltip-component');
     swatch.className = `swatches swatch__button swatch__button--circle swatch-${productSlugFromTitle(name) || `color-${index + 1}`}`;
     swatch.setAttribute('data-tooltip', name);
     swatch.style.setProperty('--animation-delay', `${index * 50}ms`);
     swatch.style.setProperty('--swatch', editorColorHex(name));
-    const link = swatch.querySelector('.sibling__link');
+    let link = swatch.querySelector('.sibling__link');
+    if (!link) {
+      link = doc.createElement('a');
+      link.className = 'sibling__link';
+      const label = doc.createElement('span');
+      label.className = 'visually-hidden';
+      label.textContent = name;
+      link.append(label);
+      swatch.append(link);
+    }
     if (link) link.classList.toggle('sibling__link--current', name === primaryColor);
     const label = swatch.querySelector('.visually-hidden');
     if (label) label.textContent = name;

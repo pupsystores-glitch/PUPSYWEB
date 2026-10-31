@@ -93,22 +93,62 @@
   }
 
   function setSelectedColors(product) {
-    const colorsBlock = document.querySelector(".product__siblings");
-    if (!colorsBlock) return;
-
     const selectedColors = new Set(productColors(product));
+    let colorsBlock = document.querySelector(".product__siblings");
     if (!selectedColors.size) {
-      colorsBlock.hidden = true;
+      if (colorsBlock) colorsBlock.hidden = true;
       return;
+    }
+    if (!colorsBlock) {
+      colorsBlock = document.createElement("div");
+      colorsBlock.className = "product__block product__block--lines product__siblings block-padding";
+      colorsBlock.style.setProperty("--block-padding-bottom", "16px");
+      const formId = document.querySelector('form[id^="ProductForm"]')?.id;
+      const colorInput = document.createElement("input");
+      colorInput.type = "hidden";
+      colorInput.name = "properties[Color]";
+      if (formId) colorInput.setAttribute("form", formId);
+      const fieldset = document.createElement("fieldset");
+      const radioFieldset = document.createElement("div");
+      radioFieldset.className = "radio__fieldset radio__fieldset--swatches";
+      const legend = document.createElement("legend");
+      legend.className = "radio__legend";
+      const label = document.createElement("span");
+      label.className = "radio__legend__label";
+      const optionName = document.createElement("span");
+      optionName.className = "radio__legend__option-name";
+      optionName.textContent = "ფერი";
+      const value = document.createElement("small");
+      value.className = "radio__legend__value";
+      label.append(optionName, value);
+      legend.append(label);
+      const buttons = document.createElement("div");
+      buttons.className = "radio__buttons";
+      radioFieldset.append(legend, buttons);
+      fieldset.append(radioFieldset);
+      colorsBlock.append(colorInput, fieldset);
+      const container = document.querySelector(".form__width, .product__blocks, .product__information")
+        || document.querySelector("#MainContent");
+      const before = [...(container?.children || [])]
+        .find((child) => child.matches(".product__block--buttons, .product__block--quantity, .product-form__buttons"));
+      if (container) container.insertBefore(colorsBlock, before || null);
     }
     colorsBlock.hidden = false;
     const buttons = colorsBlock.querySelector(".radio__buttons");
     const template = buttons?.querySelector("tooltip-component[data-tooltip]");
-    if (!buttons || !template) return;
+    if (!buttons) return;
     const colors = [...selectedColors];
     buttons.replaceChildren(...colors.map((color, index) => {
-      const swatch = template.cloneNode(true);
-      const link = swatch.querySelector(".sibling__link");
+      const swatch = template?.cloneNode(true) || document.createElement("tooltip-component");
+      let link = swatch.querySelector(".sibling__link");
+      if (!link) {
+        link = document.createElement("a");
+        link.className = "sibling__link";
+        const hiddenLabel = document.createElement("span");
+        hiddenLabel.className = "visually-hidden";
+        link.append(hiddenLabel);
+        swatch.append(link);
+      }
       const labelNode = swatch.querySelector(".visually-hidden");
       swatch.className = `swatches swatch__button swatch__button--circle swatch-${colorSlug(color)}`;
       swatch.dataset.tooltip = color;
