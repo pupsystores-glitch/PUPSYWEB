@@ -335,6 +335,7 @@ let editorLoadedPage = '';
 let editorLoadedUrl = '';
 let editorFrameBindGeneration = 0;
 let editorSelectedNode = null;
+let editorPrimaryColor = '';
 const boundEditorDocuments = new WeakSet();
 const pendingEditorHtml = new Map();
 const pendingEditorJson = new Map();
@@ -553,6 +554,8 @@ function bindEditorFrame() {
       const fieldValue = productField && loadedProduct ? loadedProduct.raw[productField] : undefined;
       const productPriceText = card?.querySelector('.cms-product-card__price, .product-item__price')?.textContent.match(/[\d,]+(?:\.\d+)?/g)?.at(-1) || '';
       const productColors = loadedProduct?.raw?.colors || [...(card?.querySelectorAll('tooltip-component[data-tooltip]') || [])].map(item => item.getAttribute('data-tooltip')).filter(Boolean);
+      const selectedSwatch = card?.querySelector('tooltip-component .sibling__link--current')?.closest('tooltip-component');
+      const productPrimaryColor = loadedProduct?.raw?.primaryColor || selectedSwatch?.getAttribute('data-tooltip') || productColors[0] || '';
       const isProductCard = Boolean(card && (card.classList.contains('cms-product-card') || card.classList.contains('product-item') || card.className.toString().includes('product-item')));
       editorSelection = {
         page: document.getElementById('site-editor-page').value,
@@ -574,6 +577,7 @@ function bindEditorFrame() {
         isProductCard,
         productPrice: loadedProduct?.raw?.price ?? productPriceText.replace(/,/g, ''),
         productColors,
+        productPrimaryColor,
         productField,
         sourceAttribute,
         mediaTagName,
@@ -610,7 +614,8 @@ function bindEditorFrame() {
       if (isProductCard) {
         document.getElementById('site-editor-product-title').value = productTitle;
         document.getElementById('site-editor-product-price').value = productPriceText.replace(/,/g, '') || loadedProduct?.raw?.price || '';
-        renderEditorProductColors(productColors);
+        editorPrimaryColor = productPrimaryColor;
+        renderEditorProductColors(productColors, editorPrimaryColor);
       }
       document.querySelector('#site-editor-text-tools label').textContent = editorSelection.canEditText ? 'ტექსტის შეცვლა' : 'სექცია მონიშნულია';
     }, true);
@@ -905,16 +910,19 @@ function editorColorHex(name) {
   return palette.find(([pattern]) => pattern.test(value))?.[1] || '#8a8a8a';
 }
 
-function renderEditorProductColors(selectedColors = editorSelection?.productColors || []) {
+function renderEditorProductColors(selectedColors = editorSelection?.productColors || [], primaryColor = editorPrimaryColor) {
   const container = document.getElementById('site-editor-product-colors');
   if (!container) return;
   const availableColors = [...document.querySelectorAll('#form-product-colors input[type="checkbox"]')].map(input => input.value);
   const colors = [...new Set([...availableColors, ...selectedColors])];
   const selected = new Set(selectedColors);
+  editorPrimaryColor = selected.has(primaryColor) ? primaryColor : selectedColors[0] || '';
   container.replaceChildren();
   colors.forEach(name => {
+    const row = document.createElement('div');
+    row.className = 'flex min-w-0 items-center justify-between gap-2 rounded-xl border border-slate-800 bg-slate-950 px-2.5 py-2 text-xs text-slate-300';
     const label = document.createElement('label');
-    label.className = 'flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-300 cursor-pointer hover:border-indigo-500/60 transition-all';
+    label.className = 'flex min-w-0 flex-1 items-center gap-2 cursor-pointer';
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.value = name;
@@ -923,8 +931,31 @@ function renderEditorProductColors(selectedColors = editorSelection?.productColo
     const swatch = document.createElement('span');
     swatch.className = 'h-3 w-3 shrink-0 rounded-full border border-white/30';
     swatch.style.backgroundColor = editorColorHex(name);
-    label.append(checkbox, swatch, document.createTextNode(` ${name}`));
-    container.append(label);
+    const nameNode = document.createElement('span');
+    nameNode.className = 'truncate';
+    nameNode.textContent = name;
+    label.append(checkbox, swatch, nameNode);
+    const primaryLabel = document.createElement('label');
+    primaryLabel.className = 'flex shrink-0 items-center gap-1 text-[10px] text-slate-400 cursor-pointer';
+    primaryLabel.title = 'მთავარი ფერი';
+    const radio = document.createElement('input');
+    radio.type = 'radio';
+    radio.name = 'site-editor-primary-color';
+    radio.value = name;
+    radio.checked = name === editorPrimaryColor;
+    radio.disabled = !checkbox.checked;
+    radio.className = 'accent-indigo-500';
+    primaryLabel.append(radio, document.createTextNode('მთავარი'));
+    checkbox.addEventListener('change', () => {
+      const checked = [...container.querySelectorAll('input[type="checkbox"]:checked')].map(input => input.value);
+      const nextPrimary = checked.includes(editorPrimaryColor) ? editorPrimaryColor : checked[0] || '';
+      renderEditorProductColors(checked, nextPrimary);
+    });
+    radio.addEventListener('change', () => {
+      if (radio.checked) editorPrimaryColor = radio.value;
+    });
+    row.append(label, primaryLabel);
+    container.append(row);
   });
 }
 
@@ -934,26 +965,51 @@ function addEditorProductColor() {
   if (!name) return;
   const current = [...document.querySelectorAll('#site-editor-product-colors input:checked')].map(checkbox => checkbox.value);
   if (!current.includes(name)) current.push(name);
-  renderEditorProductColors(current);
+  renderEditorProductColors(current, editorPrimaryColor || name);
   input.value = '';
 }
-function editorProductSwatchMarkup(name, index) {
+function editorProductSwatchMarkup(name, index, primaryColor = '') {
   const slug = productSlugFromTitle(name) || `color-${index + 1}`;
-  return `<tooltip-component class="swatches swatch__button swatch__button--circle swatch-${slug}" style="--animation-delay: ${index * 50}ms; --swatch: ${editorColorHex(name)};" data-tooltip="${escapeHtmlAttribute(name)}" tabindex="0"><div class="sibling__link"></div></tooltip-component>`;
+  const currentClass = name === primaryColor ? ' sibling__link--current' : '';
+  return `<tooltip-component class="swatches swatch__button swatch__button--circle swatch-${slug}" style="--animation-delay: ${index * 50}ms; --swatch: ${editorColorHex(name)};" data-tooltip="${escapeHtmlAttribute(name)}" tabindex="0"><div class="sibling__link${currentClass}"></div></tooltip-component>`;
 }
 
-function buildEditorProductSiblingsMarkup(colors) {
-  const swatches = colors.map(editorProductSwatchMarkup).join('');
-  return `<product-siblings class="product-item__siblings product-item__swatches__holder product-item__swatches__holder--circle product-item__swatches__holder--slider"><native-scrollbar class="radio__fieldset radio__fieldset--swatches radio__fieldset--pgi is-visible" data-sibling-fieldset=""><div class="selector-wrapper__scrollbar" data-scrollbar="">${swatches}</div></native-scrollbar></product-siblings>`;
+function buildEditorProductSiblingsMarkup(colors, primaryColor = '') {
+  const swatches = colors.map((name, index) => editorProductSwatchMarkup(name, index, primaryColor)).join('');
+  return `<product-siblings class="product-item__siblings product-item__swatches__holder product-item__swatches__holder--circle product-item__swatches__holder--slider"><native-scrollbar class="radio__fieldset radio__fieldset--swatches radio__fieldset--pgi is-visible" data-sibling-fieldset=""><div class="selector-wrapper__scrollbar" data-scrollbar="">${swatches}</div><div class="selector-wrapper__actions"><button type="button" class="radio__fieldset__arrow radio__fieldset__arrow--prev is-hidden" data-scrollbar-arrow-prev="" aria-label="Previous colors">‹</button><button type="button" class="radio__fieldset__arrow radio__fieldset__arrow--next is-hidden" data-scrollbar-arrow-next="" aria-label="Next colors">›</button></div></native-scrollbar></product-siblings>`;
 }
 
-function updateStaticProductColors(cardHtml, colors, pageHtml = '') {
+function applyEditorPrimaryColorMarkup(markup, primaryColor) {
+  const primaryValue = escapeHtmlAttribute(primaryColor);
+  return markup.replace(/(<tooltip-component\b[^>]*\bdata-tooltip\s*=\s*(["'])(.*?)\2[^>]*>)([\s\S]*?)(<\/tooltip-component>)/gi,
+    (_match, openTag, _quote, colorName, inner, closeTag) => {
+      const isPrimary = colorName === primaryValue;
+      const updatedInner = inner.replace(/(\bclass\s*=\s*)(["'])([^"']*\bsibling__link\b[^"']*)(\2)/i,
+        (_classMatch, prefix, quote, className, ending) => {
+          const classes = className.split(/\s+/).filter(Boolean).filter(name => name !== 'sibling__link--current');
+          if (isPrimary) classes.push('sibling__link--current');
+          return `${prefix}${quote}${classes.join(' ')}${ending}`;
+        });
+      return `${openTag}${updatedInner}${closeTag}`;
+    });
+}
+
+function updateStaticProductColors(cardHtml, colors, pageHtml = '', primaryColor = '') {
   let siblings = editorTagRange(cardHtml, { tagName: 'product-siblings', identityClass: 'product-item__siblings', occurrence: 0 });
   let createdSection = false;
   if (!siblings && colors.length) {
     createdSection = true;
-    const templateRange = editorTagRange(pageHtml, { tagName: 'product-siblings', identityClass: 'product-item__siblings', occurrence: 0 });
+    const siblingCount = [...pageHtml.matchAll(/<product-siblings\b[^>]*\bproduct-item__siblings\b/gi)].length;
+    let templateRange = null;
+    for (let occurrence = 0; occurrence < siblingCount; occurrence += 1) {
+      const candidate = editorTagRange(pageHtml, { tagName: 'product-siblings', identityClass: 'product-item__siblings', occurrence });
+      if (candidate && /class\s*=\s*(["'])[^"']*\bselector-wrapper__scrollbar\b/i.test(pageHtml.slice(candidate.start, candidate.end))) {
+        templateRange = candidate;
+        if (/<tooltip-component\b/i.test(pageHtml.slice(candidate.start, candidate.end))) break;
+      }
+    }
     let markup = templateRange ? pageHtml.slice(templateRange.start, templateRange.end) : buildEditorProductSiblingsMarkup([]);
+    markup = markup.replace(/<tooltip-component\b[\s\S]*?<\/tooltip-component>/gi, '');
     const titleTag = /<[^>]*\bclass\s*=\s*(["'])[^"']*\bproduct-item__title\b[^"']*\1[^>]*>/i.exec(cardHtml);
     const insertionPoint = titleTag ? cardHtml.indexOf('</a>', titleTag.index) : -1;
     if (insertionPoint < 0) return cardHtml;
@@ -987,15 +1043,16 @@ function updateStaticProductColors(cardHtml, colors, pageHtml = '') {
   }
   for (let index = existingCount; index < colors.length; index += 1) {
     const name = colors[index];
-    const markup = editorProductSwatchMarkup(name, index);
+    const markup = editorProductSwatchMarkup(name, index, primaryColor);
     const scrollRange = editorTagRange(block, { tagName: 'div', identityClass: 'selector-wrapper__scrollbar', occurrence: 0 });
     if (scrollRange) block = block.slice(0, scrollRange.closeStart) + markup + block.slice(scrollRange.closeStart);
     else block = block.replace(/<\/native-scrollbar>/i, `${markup}</native-scrollbar>`);
   }
+  block = applyEditorPrimaryColorMarkup(block, primaryColor);
   return cardHtml.slice(0, siblings.start) + block + cardHtml.slice(siblings.end);
 }
 
-function updateEditorProductPreview(title, price, colors) {
+function updateEditorProductPreview(title, price, colors, primaryColor = '') {
   const card = editorSelectedNode?.closest('.cms-product-card, .product-item, [class*="product-card"], [class*="product-item"]')
     || editorSelectedNode?.closest('.product__container, .product__information, main');
   if (!card) return;
@@ -1013,7 +1070,8 @@ function updateEditorProductPreview(title, price, colors) {
   let siblings = card.querySelector('product-siblings, .product__siblings, .product-item__siblings');
   if (!colors.length) { siblings?.remove(); return; }
   if (!siblings) {
-    const template = card.ownerDocument.querySelector('product-siblings.product-item__siblings, product-siblings.product__siblings');
+    const template = [...card.ownerDocument.querySelectorAll('product-siblings.product-item__siblings, product-siblings.product__siblings')]
+      .find(item => item.querySelector('.selector-wrapper__scrollbar'));
     if (template) siblings = template.cloneNode(true);
     else {
       siblings = card.ownerDocument.createElement('product-siblings');
@@ -1041,6 +1099,8 @@ function updateEditorProductPreview(title, price, colors) {
     swatch.style.setProperty('--swatch', editorColorHex(name));
     swatch.style.setProperty('--animation-delay', `${index * 50}ms`);
     ['data-sibling-link', 'data-sibling-price', 'data-sibling-compare-at-price', 'data-sibling-cutline', 'data-sibling-image'].forEach(attribute => swatch.removeAttribute(attribute));
+    const link = swatch.querySelector('.sibling__link');
+    link?.classList.toggle('sibling__link--current', name === primaryColor);
   });
   const swatchContainer = scrollbar.querySelector('.selector-wrapper__scrollbar') || scrollbar;
   for (let index = swatches.length; index < colors.length; index += 1) {
@@ -1051,7 +1111,7 @@ function updateEditorProductPreview(title, price, colors) {
     swatch.setAttribute('data-tooltip', name);
     swatch.tabIndex = 0;
     const link = card.ownerDocument.createElement('div');
-    link.className = 'sibling__link';
+    link.className = `sibling__link${name === primaryColor ? ' sibling__link--current' : ''}`;
     swatch.append(link);
     swatch.style.setProperty('--animation-delay', `${index * 50}ms`);
     swatchContainer.append(swatch);
@@ -1071,6 +1131,7 @@ async function saveSelectedProduct() {
   const price = priceField === '' ? Number(editorSelection.productPrice || 0) : Number(priceField);
   const colors = [...document.querySelectorAll('#site-editor-product-colors input[type="checkbox"]:checked')]
     .map(input => input.value);
+  const primaryColor = colors.includes(editorPrimaryColor) ? editorPrimaryColor : colors[0] || '';
   if (!title || !Number.isFinite(price) || price < 0) {
     status.textContent = 'შეამოწმეთ პროდუქტის სახელი და ფასი.';
     return;
@@ -1090,7 +1151,7 @@ async function saveSelectedProduct() {
       const originalCard = page.content.slice(range.start, range.end);
       let cardHtml = updateStaticProductTitle(originalCard, title);
       cardHtml = updateStaticProductPrice(cardHtml, price);
-      cardHtml = updateStaticProductColors(cardHtml, colors, page.content);
+      cardHtml = updateStaticProductColors(cardHtml, colors, page.content, primaryColor);
       if (colors.length && cardHtml === originalCard) {
         throw new Error('ფერის სექცია პროდუქტში ვერ დაემატა. ხელახლა მონიშნეთ პროდუქტი და სცადეთ.');
       }
@@ -1111,6 +1172,7 @@ async function saveSelectedProduct() {
       product.raw.title = title;
       product.raw.price = price;
       product.raw.colors = colors;
+      product.raw.primaryColor = primaryColor;
       stageEditorJson(product.path, product.file.data);
       jsonStaged = true;
       const cached = products.find(item => item.raw?.slug === product.slug
@@ -1120,6 +1182,7 @@ async function saveSelectedProduct() {
         cached.title = title;
         cached.price = price;
         cached.colors = colors;
+        cached.raw.primaryColor = primaryColor;
         cached.raw = product.raw;
       }
     } catch (error) { productDataError = error; }
@@ -1130,7 +1193,10 @@ async function saveSelectedProduct() {
     return;
   }
 
-  updateEditorProductPreview(title, price, colors);
+  editorPrimaryColor = primaryColor;
+  editorSelection.productPrimaryColor = primaryColor;
+  editorSelection.productColors = colors;
+  updateEditorProductPreview(title, price, colors, primaryColor);
   editorSelection.productTitle = title;
   editorSelection.text = title;
   status.textContent = 'ცვლილება გამოჩნდა 1:1 ხედში. საიტზე ასასახად დააჭირეთ მთავარ შენახვას.';
