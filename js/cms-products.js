@@ -59,6 +59,48 @@
     }).format(amount);
   }
 
+  function colorValue(value) {
+    const candidate = String(value || "").trim();
+    const name = candidate.toLowerCase();
+    const palette = [
+      [/black/, "#171717"], [/white/, "#f7f5f2"], [/blue/, "#3284c7"],
+      [/green/, "#3e8b58"], [/red/, "#c74c4c"], [/pink/, "#df8fa7"],
+      [/beige|cream/, "#d9c3a3"], [/brown/, "#80543e"], [/gray|grey/, "#8a8a8a"],
+      [/yellow/, "#e5bc42"], [/purple|lavender/, "#8b68ad"], [/bordeaux|burgundy/, "#6f1937"],
+      [/terracotta/, "#b96b4d"],
+    ];
+    const mapped = palette.find(([pattern]) => pattern.test(name))?.[1];
+    if (mapped) return mapped;
+    if (window.CSS?.supports?.("color", candidate)) return candidate;
+    return "#8a8a8a";
+  }
+
+  function renderCardColors(product) {
+    const colors = [...new Set((Array.isArray(product.colors) ? product.colors : [])
+      .map((color) => String(color || "").trim()).filter(Boolean))];
+    if (!colors.length) return null;
+    const primary = String(product.primaryColor || "").trim();
+    const ordered = primary && colors.includes(primary)
+      ? [primary, ...colors.filter((color) => color !== primary)]
+      : colors;
+    const row = document.createElement("span");
+    row.className = "cms-product-card__colors";
+    row.setAttribute("aria-label", ordered.join(", "));
+    ordered.forEach((color, index) => {
+      const swatch = document.createElement("span");
+      swatch.className = "cms-product-card__color";
+      swatch.style.setProperty("--cms-swatch", colorValue(color));
+      swatch.title = color;
+      swatch.setAttribute("aria-label", color);
+      if (index === 0 && primary) {
+        swatch.classList.add("is-primary");
+        swatch.setAttribute("aria-current", "true");
+      }
+      row.append(swatch);
+    });
+    return row;
+  }
+
   function safeImagePath(path, width) {
     if (!path) return "";
     try {
@@ -143,6 +185,8 @@
     price.append(currency, amount);
     details.append(title, price);
     card.append(details);
+    const colorRow = renderCardColors(product);
+    if (colorRow) card.append(colorRow);
     if (product.comingSoon === true) {
       window.PupsyComingSoonVotes?.mount(productSlug(product), product.title || "პროდუქტი", card, { inline: true });
     }

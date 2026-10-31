@@ -1068,6 +1068,7 @@ function updateEditorProductPreview(title, price, colors, primaryColor = '') {
   const card = editorSelectedNode?.closest('.cms-product-card, .product-item, .product-card')
     || editorSelectedNode?.closest('.product__container, .product__information, main');
   if (!card) return;
+  const isCmsProductCard = card.matches('.cms-product-card');
   const titleNode = card.querySelector('.cms-product-card__title, .product-item__title, .product__title');
   if (titleNode) titleNode.textContent = title;
   const priceNode = card.querySelector('.cms-product-card__price, .product-item__price, [data-product-price]');
@@ -1078,6 +1079,30 @@ function updateEditorProductPreview(title, price, colors, primaryColor = '') {
     while ((textNode = walker.nextNode())) if (/\d/.test(textNode.textContent)) candidate = textNode;
     if (candidate) candidate.textContent = candidate.textContent.replace(/[\d,.]+/, price.toFixed(2));
     else priceNode.append(priceNode.ownerDocument.createTextNode(price.toFixed(2)));
+  }
+  if (isCmsProductCard) {
+    // Remove swatches left as grid siblings by earlier versions of the editor.
+    const orphan = card.nextElementSibling;
+    if (orphan?.matches('product-siblings.product-item__siblings, product-siblings.product__siblings')) orphan.remove();
+    let row = card.querySelector('.cms-product-card__colors');
+    if (!colors.length) { row?.remove(); return; }
+    if (!row) {
+      row = card.ownerDocument.createElement('span');
+      row.className = 'cms-product-card__colors';
+      card.append(row);
+    }
+    row.replaceChildren(...colors.map((name, index) => {
+      const swatch = card.ownerDocument.createElement('span');
+      swatch.className = `cms-product-card__color${index === 0 && name === primaryColor ? ' is-primary' : ''}`;
+      swatch.style.setProperty('--cms-swatch', editorColorHex(name));
+      swatch.title = name;
+      swatch.setAttribute('aria-label', name);
+      if (index === 0 && name === primaryColor) {
+        swatch.setAttribute('aria-current', 'true');
+      }
+      return swatch;
+    }));
+    return;
   }
   let siblings = card.querySelector('product-siblings, .product__siblings, .product-item__siblings');
   if (!colors.length) { siblings?.remove(); return; }
