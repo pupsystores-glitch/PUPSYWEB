@@ -557,7 +557,9 @@ function bindEditorFrame() {
         || doc.querySelector('[data-product-price]'))?.textContent.match(/[\d,]+(?:\.\d+)?/g)?.at(-1) || '';
       const productDetail = Boolean(!card && pageSlug && doc.querySelector('.product__title'));
       const colorScope = card || (productDetail ? doc.querySelector('.product__siblings') : null);
-      const productColors = loadedProduct?.raw?.colors || [...(colorScope?.querySelectorAll('tooltip-component[data-tooltip]') || [])].map(item => item.getAttribute('data-tooltip')).filter(Boolean);
+      const productColors = loadedProduct
+        ? (loadedProduct.raw?.colorsEnabled === true ? loadedProduct.raw.colors || [] : [])
+        : [...(colorScope?.querySelectorAll('tooltip-component[data-tooltip]') || [])].map(item => item.getAttribute('data-tooltip')).filter(Boolean);
       const selectedSwatch = colorScope?.querySelector('tooltip-component .sibling__link--current')?.closest('tooltip-component');
       const productPrimaryColor = loadedProduct?.raw?.primaryColor || selectedSwatch?.getAttribute('data-tooltip') || productColors[0] || '';
       const isProductCard = Boolean(card && (card.classList.contains('cms-product-card') || card.classList.contains('product-item') || card.classList.contains('product-card')));
@@ -1080,46 +1082,29 @@ function updateEditorProductPreview(title, price, colors, primaryColor = '') {
     if (candidate) candidate.textContent = candidate.textContent.replace(/[\d,.]+/, price.toFixed(2));
     else priceNode.append(priceNode.ownerDocument.createTextNode(price.toFixed(2)));
   }
-  if (isCmsProductCard) {
-    // Remove swatches left as grid siblings by earlier versions of the editor.
+  let siblings = card.querySelector('product-siblings, .product__siblings, .product-item__siblings');
+  if (isCmsProductCard && !siblings) {
     const orphan = card.nextElementSibling;
     if (orphan?.matches('product-siblings.product-item__siblings, product-siblings.product__siblings')) orphan.remove();
-    let row = card.querySelector('.cms-product-card__colors');
-    if (!colors.length) { row?.remove(); return; }
-    if (!row) {
-      row = card.ownerDocument.createElement('span');
-      row.className = 'cms-product-card__colors';
-      card.append(row);
-    }
-    row.replaceChildren(...colors.map((name, index) => {
-      const swatch = card.ownerDocument.createElement('span');
-      swatch.className = `cms-product-card__color${index === 0 && name === primaryColor ? ' is-primary' : ''}`;
-      swatch.style.setProperty('--cms-swatch', editorColorHex(name));
-      swatch.title = name;
-      swatch.setAttribute('aria-label', name);
-      if (index === 0 && name === primaryColor) {
-        swatch.setAttribute('aria-current', 'true');
-      }
-      return swatch;
-    }));
-    return;
   }
-  let siblings = card.querySelector('product-siblings, .product__siblings, .product-item__siblings');
   if (!colors.length) { siblings?.remove(); return; }
   const templates = [...card.ownerDocument.querySelectorAll('product-siblings.product-item__siblings, product-siblings.product__siblings')];
   const template = templates.find(item => item.querySelector('.selector-wrapper__scrollbar tooltip-component[data-tooltip]'))
     || templates.find(item => item.querySelector('.selector-wrapper__scrollbar'));
   if (template) {
     const replacement = template.cloneNode(true);
+    if (isCmsProductCard) replacement.classList.add('cms-product-card__colors');
     if (siblings) siblings.replaceWith(replacement);
-    else {
+    else if (isCmsProductCard) {
+      card.append(replacement);
+    } else {
       const productLink = titleNode?.closest('a[href]');
       (productLink || priceNode || titleNode || card).after(replacement);
     }
     siblings = replacement;
   } else if (!siblings) {
     siblings = card.ownerDocument.createElement('product-siblings');
-    siblings.className = 'product-item__siblings product-item__swatches__holder product-item__swatches__holder--circle product-item__swatches__holder--slider';
+    siblings.className = `product-item__siblings product-item__swatches__holder product-item__swatches__holder--circle product-item__swatches__holder--slider${isCmsProductCard ? ' cms-product-card__colors' : ''}`;
     const scrollbar = card.ownerDocument.createElement('native-scrollbar');
     scrollbar.className = 'radio__fieldset radio__fieldset--swatches radio__fieldset--pgi is-visible';
     scrollbar.dataset.siblingFieldset = '';
@@ -1128,8 +1113,11 @@ function updateEditorProductPreview(title, price, colors, primaryColor = '') {
     scrollContent.dataset.scrollbar = '';
     scrollbar.append(scrollContent);
     siblings.append(scrollbar);
-    const productLink = titleNode?.closest('a[href]');
-    (productLink || priceNode || titleNode || card).after(siblings);
+    if (isCmsProductCard) card.append(siblings);
+    else {
+      const productLink = titleNode?.closest('a[href]');
+      (productLink || priceNode || titleNode || card).after(siblings);
+    }
   } else if (!siblings.querySelector('.selector-wrapper__scrollbar')) {
     const scrollbar = siblings.querySelector('native-scrollbar') || siblings;
     const scrollContent = card.ownerDocument.createElement('div');
@@ -1273,6 +1261,7 @@ async function saveSelectedProduct() {
       product.raw.price = price;
       product.raw.colors = colors;
       product.raw.primaryColor = primaryColor;
+      product.raw.colorsEnabled = colors.length > 0;
       stageEditorJson(product.path, product.file.data);
       jsonStaged = true;
       const cached = products.find(item => item.raw?.slug === product.slug
@@ -2227,6 +2216,9 @@ function productToRaw(product, collection, values, isNew) {
   raw.videoUrl = values.videoUrl;
   raw.size = values.size;
   raw.colors = values.colors;
+  raw.colorsEnabled = values.colors.length > 0;
+  if (raw.colorsEnabled && !values.colors.includes(raw.primaryColor)) raw.primaryColor = values.colors[0];
+  if (!raw.colorsEnabled) raw.primaryColor = '';
   raw.sizeDetails = values.sizeDetails;
   raw.benefits = values.benefits;
   raw.materialCare = values.materialCare;

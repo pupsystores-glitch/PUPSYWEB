@@ -54,6 +54,7 @@
   }
 
   function productColors(product) {
+    if (product.colorsEnabled !== true) return [];
     return [...new Set((Array.isArray(product.colors) ? product.colors : [product.color])
       .map((color) => String(color || "").trim()).filter(Boolean))];
   }
@@ -69,9 +70,15 @@
       [/green|მწვან/, "#3e8b58"], [/red|წითელ/, "#c74c4c"], [/pink|ვარდისფ/, "#df8fa7"],
       [/beige|cream|კრემ|ბეჟ/, "#d9c3a3"], [/brown|ყავისფ/, "#80543e"],
       [/gray|grey|ნაცრისფ/, "#8a8a8a"], [/yellow|ყვითელ/, "#e5bc42"],
-      [/purple|იისფ/, "#8b68ad"], [/terracotta|ტერაკოტ/, "#b96b4d"],
+      [/purple|lavender|ლავანდ|იისფ/, "#8b68ad"], [/bordeaux|burgundy|ბორდო/, "#6f1937"],
+      [/light\s*brown|ღია\s*ყავისფ/, "#b7a282"], [/terracotta|ტერაკოტ/, "#b96b4d"],
     ];
-    return palette.find(([pattern]) => pattern.test(name))?.[1] || value;
+    const mapped = palette.find(([pattern]) => pattern.test(name))?.[1];
+    if (mapped) return mapped;
+    const candidate = String(value || "").trim();
+    if (/^#(?:[\da-f]{3,4}|[\da-f]{6}|[\da-f]{8})$/i.test(candidate)) return candidate;
+    if (window.CSS?.supports?.("color", candidate)) return candidate;
+    return "#8a8a8a";
   }
 
   function hideProductHeaderIcons() {

@@ -63,11 +63,11 @@
     const candidate = String(value || "").trim();
     const name = candidate.toLowerCase();
     const palette = [
-      [/black/, "#171717"], [/white/, "#f7f5f2"], [/blue/, "#3284c7"],
-      [/green/, "#3e8b58"], [/red/, "#c74c4c"], [/pink/, "#df8fa7"],
-      [/beige|cream/, "#d9c3a3"], [/brown/, "#80543e"], [/gray|grey/, "#8a8a8a"],
-      [/yellow/, "#e5bc42"], [/purple|lavender/, "#8b68ad"], [/bordeaux|burgundy/, "#6f1937"],
-      [/terracotta/, "#b96b4d"],
+      [/black|შავ/, "#171717"], [/white|თეთრ/, "#f7f5f2"], [/blue|ლურჯ/, "#3284c7"],
+      [/green|მწვან/, "#3e8b58"], [/red|წითელ/, "#c74c4c"], [/pink|ვარდისფ/, "#df8fa7"],
+      [/beige|cream|კრემ|ბეჟ/, "#d9c3a3"], [/brown|ყავისფ/, "#80543e"], [/gray|grey|ნაცრისფ/, "#8a8a8a"],
+      [/yellow|ყვითელ/, "#e5bc42"], [/purple|lavender|ლავანდ|იისფ/, "#8b68ad"], [/bordeaux|burgundy|ბორდო/, "#6f1937"],
+      [/terracotta|ტერაკოტ/, "#b96b4d"],
     ];
     const mapped = palette.find(([pattern]) => pattern.test(name))?.[1];
     if (mapped) return mapped;
@@ -76,6 +76,7 @@
   }
 
   function renderCardColors(product) {
+    if (product.colorsEnabled !== true) return null;
     const colors = [...new Set((Array.isArray(product.colors) ? product.colors : [])
       .map((color) => String(color || "").trim()).filter(Boolean))];
     if (!colors.length) return null;
@@ -83,21 +84,43 @@
     const ordered = primary && colors.includes(primary)
       ? [primary, ...colors.filter((color) => color !== primary)]
       : colors;
-    const row = document.createElement("span");
-    row.className = "cms-product-card__colors";
+    const row = document.createElement("product-siblings");
+    row.className = "cms-product-card__colors product-item__siblings product-item__swatches__holder product-item__swatches__holder--circle product-item__swatches__holder--slider";
     row.setAttribute("aria-label", ordered.join(", "));
+    const scrollbar = document.createElement("native-scrollbar");
+    scrollbar.className = "radio__fieldset radio__fieldset--swatches radio__fieldset--pgi is-visible";
+    scrollbar.dataset.siblingFieldset = "";
+    const content = document.createElement("div");
+    content.className = "selector-wrapper__scrollbar";
+    content.dataset.scrollbar = "";
     ordered.forEach((color, index) => {
-      const swatch = document.createElement("span");
-      swatch.className = "cms-product-card__color";
-      swatch.style.setProperty("--cms-swatch", colorValue(color));
-      swatch.title = color;
-      swatch.setAttribute("aria-label", color);
+      const swatch = document.createElement("tooltip-component");
+      swatch.className = "swatches swatch__button swatch__button--circle";
+      swatch.style.setProperty("--swatch", colorValue(color));
+      swatch.style.setProperty("--animation-delay", `${index * 50}ms`);
+      swatch.setAttribute("data-tooltip", color);
+      swatch.tabIndex = 0;
+      const swatchLink = document.createElement("div");
+      swatchLink.className = "sibling__link";
       if (index === 0 && primary) {
-        swatch.classList.add("is-primary");
-        swatch.setAttribute("aria-current", "true");
+        swatchLink.classList.add("sibling__link--current");
       }
-      row.append(swatch);
+      swatch.append(swatchLink);
+      content.append(swatch);
     });
+    const actions = document.createElement("div");
+    actions.className = "selector-wrapper__actions";
+    [["prev", "Previous colors", "‹"], ["next", "Next colors", "›"]].forEach(([direction, label, text]) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = `radio__fieldset__arrow radio__fieldset__arrow--${direction} is-hidden`;
+      button.setAttribute(`data-scrollbar-arrow-${direction}`, "");
+      button.setAttribute("aria-label", label);
+      button.textContent = text;
+      actions.append(button);
+    });
+    scrollbar.append(content, actions);
+    row.append(scrollbar);
     return row;
   }
 
@@ -118,9 +141,11 @@
   }
 
   function renderCard(product) {
-    const card = document.createElement("a");
+    const card = document.createElement("div");
     card.className = "cms-product-card";
-    card.href = new URL(`product-pages/${encodeURIComponent(productSlug(product))}.html`, baseUrl).href;
+    const link = document.createElement("a");
+    link.className = "cms-product-card__link";
+    link.href = new URL(`product-pages/${encodeURIComponent(productSlug(product))}.html`, baseUrl).href;
 
     const imagePath = productImages(product)[0];
     const videoUrl = String(product.visualEditorVideoUrl || "").trim();
@@ -134,7 +159,7 @@
       video.playsInline = true;
       video.preload = "metadata";
       video.setAttribute("aria-label", product.title || "PUPSY პროდუქტი");
-      card.append(video);
+      link.append(video);
     } else {
       const image = document.createElement("img");
       image.className = "cms-product-card__image";
@@ -148,7 +173,7 @@
       }
       image.alt = product.title || "PUPSY პროდუქტი";
       image.loading = "lazy";
-      card.append(image);
+      link.append(image);
     }
 
     if (product.comingSoon === true) {
@@ -184,7 +209,8 @@
     price.style.cssText = "display:inline-flex;align-items:center;gap:.1em;font-weight:600;line-height:1.2;vertical-align:middle;";
     price.append(currency, amount);
     details.append(title, price);
-    card.append(details);
+    link.append(details);
+    card.append(link);
     const colorRow = renderCardColors(product);
     if (colorRow) card.append(colorRow);
     if (product.comingSoon === true) {
