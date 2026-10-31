@@ -68,7 +68,7 @@ function uniqueProductSlug(title, currentId) {
 }
 
 function productRouteStub(slug) {
-  const image = 'https://pupsystores-glitch.github.io/PUPSYWEB/images/logo_PUPSY_optimized.png';
+  const image = 'https://pupsystores-glitch.github.io/PUPSYWEB/images/pupsy-share-preview-v2.png';
   const url = `https://pupsystores-glitch.github.io/PUPSYWEB/product-pages/${encodeURIComponent(slug)}.html`;
   return `<!doctype html><html lang="ka"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PUPSY Product</title><meta name="description" content="Discover PUPSY products for dogs."><meta property="og:type" content="product"><meta property="og:site_name" content="PUPSY"><meta property="og:title" content="PUPSY Product"><meta property="og:description" content="Discover PUPSY products for dogs."><meta property="og:url" content="${url}"><meta property="og:image" content="${image}"><meta property="og:image:secure_url" content="${image}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="PUPSY Product"><meta name="twitter:description" content="Discover PUPSY products for dogs."><meta name="twitter:image" content="${image}"><link rel="icon" type="image/png" href="../images/logo_PUPSY_optimized.png"><link rel="apple-touch-icon" href="../images/logo_PUPSY_optimized.png"></head><body><script src="../js/cms-product-route.js" defer></script></body></html>\n`;
 }
