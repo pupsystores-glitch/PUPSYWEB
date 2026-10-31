@@ -153,6 +153,8 @@
     const template = buttons?.querySelector("tooltip-component[data-tooltip]");
     if (!buttons) return;
     const colors = [...selectedColors];
+    const colorInput = colorsBlock.querySelector('input[name="properties[Color]"]');
+    const legendValue = colorsBlock.querySelector(".radio__legend__value");
     buttons.replaceChildren(...colors.map((color, index) => {
       const swatch = template?.cloneNode(true) || document.createElement("tooltip-component");
       let link = swatch.querySelector(".sibling__link");
@@ -177,15 +179,24 @@
         });
       }
       swatch.querySelectorAll(".visually-hidden").forEach((labelNode) => { labelNode.textContent = color; });
+      swatch.addEventListener("click", (event) => {
+        event.preventDefault();
+        buttons.querySelectorAll("tooltip-component").forEach((item) => {
+          item.classList.remove("cms-selected-color");
+          item.querySelector(".sibling__link")?.classList.remove("sibling__link--current");
+        });
+        swatch.classList.add("cms-selected-color");
+        swatch.querySelector(".sibling__link")?.classList.add("sibling__link--current");
+        if (colorInput) colorInput.value = color;
+        if (legendValue) legendValue.textContent = color;
+      });
       return swatch;
     }));
     const primaryColor = selectedColors.has(product.primaryColor) ? product.primaryColor : colors[0];
     const primarySwatch = [...buttons.querySelectorAll("tooltip-component")]
       .find((swatch) => swatch.dataset.tooltip === primaryColor);
     primarySwatch?.querySelector(".sibling__link")?.classList.add("sibling__link--current");
-    const colorInput = colorsBlock.querySelector('input[name="properties[Color]"]');
     if (colorInput) colorInput.value = primaryColor;
-    const legendValue = colorsBlock.querySelector(".radio__legend__value");
     if (legendValue) legendValue.textContent = primaryColor;
     const swatches = [...colorsBlock.querySelectorAll(".swatches")];
     swatches.forEach((swatch) => {
