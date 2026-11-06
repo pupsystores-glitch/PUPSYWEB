@@ -18,11 +18,10 @@
       ],
       "photos": [
         {
-          "source": "links",
-          "link1": "/PUPSYWEB/images/uploads/att.47s-a3uatiqt1fmqaypghdtdies2b0us1pxoltyr8-a.jpeg",
-          "link2": "/PUPSYWEB/images/uploads/att.iehogbsmky_13taiwwia2yqggjds1b43tb6tt8yhcc4.jpeg",
-          "link3": "/PUPSYWEB/images/uploads/img_8869.jpeg",
-          "link4": "/PUPSYWEB/images/uploads/db542509-8a47-429e-97f7-de4e381ab668.png"
+          "source": "gallery",
+          "images": [
+            "/PUPSYWEB/images/uploads/1793988654890-6a0ed803-af3f-4180-b453-457b872b6efa-6D9113C9-598F-408A-92BD-E6078E274DD4.jpeg"
+          ]
         }
       ],
       "attributes": [
@@ -42,7 +41,10 @@
         "benefits": "მთავარი უპირატესობები",
         "material": "მასალა და მოვლა"
       },
-      "image": "/PUPSYWEB/images/uploads/att.47s-a3uatiqt1fmqaypghdtdies2b0us1pxoltyr8-a.jpeg"
+      "image": "/PUPSYWEB/images/uploads/1793988654890-6a0ed803-af3f-4180-b453-457b872b6efa-6D9113C9-598F-408A-92BD-E6078E274DD4.jpeg",
+      "images": [
+        "/PUPSYWEB/images/uploads/1793988654890-6a0ed803-af3f-4180-b453-457b872b6efa-6D9113C9-598F-408A-92BD-E6078E274DD4.jpeg"
+      ]
     }
   ]
 }
