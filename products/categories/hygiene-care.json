@@ -6,7 +6,7 @@
       "title": "ორთქლის სავარცხელი",
       "comingSoon": false,
       "slug": "ortklis-savartskheli",
-      "price": 29,
+      "price": 34,
       "description": "💨 ნაზი ორთქლის ტექნოლოგია: ინტეგრირებული სისტემა გამოყოფს მსუბუქ ორთქლოვან ნისლს, რომელიც ეფექტურად ატენიანებს ბეწვს, არ აფრქვევს მას ჰაერში და აქრობს სტატიკურ ელექტროენერგიას.\n 🐈‍⬛🐶 2-ერთში (ვარცხნა + მასაჟი): რბილი სილიკონის/მეტალის კბილები ღრმად ასუფთავებს ქვებეწვს, აცილებს მკვდარ ქსოვილს და ამავდროულად უკეთებს დამამშვიდებელ მასაჟს შენს კატასა თუ ძაღლს.  \n 💧 სპა-ეფექტი ესენციით: სპეციალურ ავზში დამატებული არომატული/მოვლის ესენცია ანიჭებს შენს ფუმფულა მეგობარს სალონურ სისუფთავესა და ჯანსაღ, მბზინავ იერს.\n 🔋 თანამედროვე და პრაქტიკული: იტენება USB Type-C კაბელით, არის მსუბუქი, კომფორტული ხელში და მარტივი გამოსაყენებლად.",
       "videoUrl": "",
       "size": "არ აქვს",
@@ -24,14 +24,12 @@
       "published": true,
       "photos": [
         {
-          "source": "gallery",
-          "images": [
-            "/PUPSYWEB/images/uploads/1793978887574-7b5f13fd-41b9-4245-8f92-dc5eaef3722c-IMG_9496.jpeg",
-            "/PUPSYWEB/images/uploads/1793978889763-8f831f9b-9d0f-49fe-a1ae-fb6f92d40852-7DAE2BE2-A0B4-465E-B75A-BB6FCFBB116D.jpeg",
-            "/PUPSYWEB/images/uploads/1793978891745-db0afd27-11db-4185-9cf2-60df5d147f4b-4A74E13E-B06F-48A8-9ECB-0AB1917D580D.jpeg",
-            "/PUPSYWEB/images/uploads/1793978893302-bf4fe36c-09e7-47fc-9f16-fd542d820f60-IMG_9497.jpeg",
-            "/PUPSYWEB/images/uploads/1793978894841-984dbb6e-f491-4fb5-a218-bcce60c3a08d-IMG_9498.jpeg"
-          ]
+          "source": "links",
+          "link1": "/PUPSYWEB/images/uploads/1793978887574-7b5f13fd-41b9-4245-8f92-dc5eaef3722c-IMG_9496.jpeg",
+          "link2": "/PUPSYWEB/images/uploads/1793978889763-8f831f9b-9d0f-49fe-a1ae-fb6f92d40852-7DAE2BE2-A0B4-465E-B75A-BB6FCFBB116D.jpeg",
+          "link3": "/PUPSYWEB/images/uploads/1793978891745-db0afd27-11db-4185-9cf2-60df5d147f4b-4A74E13E-B06F-48A8-9ECB-0AB1917D580D.jpeg",
+          "link4": "/PUPSYWEB/images/uploads/1793978893302-bf4fe36c-09e7-47fc-9f16-fd542d820f60-IMG_9497.jpeg",
+          "link5": "/PUPSYWEB/images/uploads/1793978894841-984dbb6e-f491-4fb5-a218-bcce60c3a08d-IMG_9498.jpeg"
         }
       ],
       "image": "/PUPSYWEB/images/uploads/1793978887574-7b5f13fd-41b9-4245-8f92-dc5eaef3722c-IMG_9496.jpeg"
