@@ -844,6 +844,10 @@ function isEditorLinkDestination(value, base) {
   }
 }
 
+function editorLinkValue(value) {
+  return value.trim().replace(/^\/(?:PUPSYWEB\/)?(?=product-pages\/)/i, '');
+}
+
 function editorNavigation(target) {
   for (let element = target; element; element = element.parentElement) {
     const attributes = [];
@@ -865,7 +869,7 @@ async function saveEditorLink() {
   const navigation = selection?.navigation;
   if (!navigation) return;
   const status = document.getElementById('site-editor-status');
-  const value = document.getElementById('site-editor-link-value').value.trim();
+  const value = editorLinkValue(document.getElementById('site-editor-link-value').value);
   const button = document.getElementById('site-editor-save-link');
   if (!isEditorLinkDestination(value, navigation.element.ownerDocument.baseURI)) {
     status.textContent = 'მიუთითეთ სწორი ბმული.';
@@ -906,6 +910,7 @@ async function saveEditorLink() {
     stageEditorHtml(selection.page, page.sha, updated, `Edit navigation link on ${selection.page}`);
     navigation.attributes.forEach(attribute => editorLinkAttribute(navigation.element, attribute, value));
     navigation.value = value;
+    document.getElementById('site-editor-link-value').value = value;
     status.textContent = 'ბმული შეიცვალა გადახედვაში. გამოსაქვეყნებლად დააჭირეთ „ცვლილებების შენახვა“.';
   } catch (error) {
     status.textContent = error.message || 'ბმული ვერ შეიცვალა.';
@@ -1087,10 +1092,13 @@ function updateStaticProductLink(cardHtml, previous, next) {
   if (!previous || !next) return cardHtml;
   const encodedPrevious = escapeHtmlAttribute(previous);
   const encodedNext = escapeHtml(next);
-  return cardHtml.replace(/<a\b(?:[^"'<>]|"[^"]*"|'[^']*')*>/gi, tag =>
-    tag.replace(/(\s(?:href|data-product-link)\s*=\s*)(["'])(.*?)\2/gi, (attribute, prefix, quote, value) =>
-      value === previous || value === encodedPrevious || value === escapeHtml(previous)
-        ? `${prefix}${quote}${encodedNext}${quote}` : attribute));
+  return cardHtml.replace(/<a\b(?:[^"'<>]|"[^"]*"|'[^']*')*>/gi, tag => {
+    const classes = /\sclass\s*=\s*(["'])(.*?)\1/i.exec(tag)?.[2].split(/\s+/) || [];
+    const primary = classes.includes('product-link');
+    return tag.replace(/(\s(?:href|data-product-link)\s*=\s*)(["'])(.*?)\2/gi, (attribute, prefix, quote, value) =>
+      primary || value === previous || value === encodedPrevious || value === escapeHtml(previous)
+        ? `${prefix}${quote}${encodedNext}${quote}` : attribute);
+  });
 }
 
 function editorColorHex(name) {
@@ -1416,7 +1424,7 @@ async function saveSelectedProduct() {
     || editorSelection.productTitle || editorSelection.text || '';
   const priceField = document.getElementById('site-editor-product-price').value;
   const price = priceField === '' ? Number(editorSelection.productPrice || 0) : Number(priceField);
-  const linkField = selection.canEditProductLink ? document.getElementById('site-editor-product-link').value.trim() : '';
+  const linkField = selection.canEditProductLink ? editorLinkValue(document.getElementById('site-editor-product-link').value) : '';
   const card = editorSelectedNode?.closest('.cms-product-card, .product-item, .product-card');
   const base = editorSelectedNode?.ownerDocument.baseURI || PUBLIC_SITE;
   if (linkField) {
@@ -1513,7 +1521,8 @@ async function saveSelectedProduct() {
     if (card?.matches(selector)) links.push(card);
     links.forEach(link => {
       for (const attribute of ['href', 'data-product-link']) {
-        if ((editorSelection.isCmsProductCard && attribute === 'href') || link.getAttribute(attribute) === previousLink) {
+        if ((link.matches('.cms-product-card__link, .product-link') && link.hasAttribute(attribute))
+          || link.getAttribute(attribute) === previousLink) {
           link.setAttribute(attribute, destination);
         }
       }

@@ -126,7 +126,8 @@
     link.href = new URL(`product-pages/${encodeURIComponent(slug)}.html`, baseUrl).href;
     if (typeof product.productLink === "string" && product.productLink.trim()) {
       try {
-        const destination = new URL(product.productLink, baseUrl);
+        const path = product.productLink.trim().replace(/^\/(?:PUPSYWEB\/)?(?=product-pages\/)/i, "");
+        const destination = new URL(path, baseUrl);
         if (["http:", "https:"].includes(destination.protocol)) link.href = destination.href;
       } catch { /* Keep the generated product page for an invalid destination. */ }
     }
