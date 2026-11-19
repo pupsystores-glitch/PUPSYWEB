@@ -2,6 +2,7 @@ const GITHUB_REPO = 'pupsystores-glitch/PUPSYWEB';
 const GITHUB_BRANCH = 'main';
 const GITHUB_API = 'https://api.github.com';
 const OAUTH_BASE = 'https://pupsy-decap-oauth.pupsystores.workers.dev';
+const PUBLIC_SITE = 'https://pupsystores-glitch.github.io/PUPSYWEB/';
 const collections = [
   { id: 'collars', file: 'collars.json', name: 'საყელურები', icon: 'shield', desc: 'ძაღლისა და კატის საყელურები' },
   { id: 'harnesses', file: 'harnesses.json', name: 'წელსამაგრები', icon: 'paperclip', desc: 'კომფორტული და უსაფრთხო წელსამაგრები' },
@@ -30,6 +31,7 @@ const categoryDetails = {
 
 let activeCollectionId = 'collars';
 let detailFieldsCollectionId = null;
+let productPreviewObjectUrl = '';
 let currentLayout = 'list';
 let products = [];
 let mediaFiles = [];
@@ -39,9 +41,11 @@ let collectionFiles = {};
 let pageVideosData = { pages: {} };
 let pageVideosLoaded = false;
 let pageVideosLoading = null;
+let pageVideoWriteInProgress = false;
 const stagedProductImageUploads = new Map();
 let accessToken = sessionStorage.getItem('pupsy_github_token') || '';
 let authPopup = null;
+let productWriteInProgress = false;
 
 const productSlugLetters = {
   ა: 'a', ბ: 'b', გ: 'g', დ: 'd', ე: 'e', ვ: 'v', ზ: 'z', თ: 't', ი: 'i', კ: 'k',
@@ -110,12 +114,18 @@ async function deleteProductRoute(slug) {
 }
 
 window.addEventListener('load', () => {
-  lucide.createIcons();
   document.getElementById('github-login-button').addEventListener('click', loginWithGithub);
   document.getElementById('logout-button').addEventListener('click', logout);
   window.addEventListener('message', handleAuthMessage);
   if (accessToken) initializeDashboard().catch(handleLoadError);
+  window.lucide?.createIcons();
 });
+
+function resetGithubLoginButton() {
+  const button = document.getElementById('github-login-button');
+  button.disabled = false;
+  button.textContent = 'GitHub-ით შესვლა';
+}
 
 function loginWithGithub() {
   const button = document.getElementById('github-login-button');
@@ -125,22 +135,30 @@ function loginWithGithub() {
   if (!authPopup) {
     window.location.assign(`${OAUTH_BASE}/auth?provider=github&scope=repo,user&mode=redirect`);
     return;
-    button.disabled = false;
-    button.textContent = 'GitHub-ით შესვლა';
-    setAuthMessage('ავტორიზაციის ფანჯარა დაიბლოკა. დაუშვი popup-ები და თავიდან სცადე.');
-    return;
   }
-  authPopup.focus();
+  const popup = authPopup;
+  popup.focus();
+  const checkPopup = window.setInterval(() => {
+    if (!popup.closed && authPopup === popup) return;
+    window.clearInterval(checkPopup);
+    if (authPopup === popup) {
+      authPopup = null;
+      resetGithubLoginButton();
+    }
+  }, 500);
 }
 
 function handleAuthMessage(event) {
-  if (event.origin !== OAUTH_BASE) return;
+  if (event.origin !== OAUTH_BASE || !authPopup || event.source !== authPopup) return;
   if (event.data === 'authorizing:github') {
     authPopup?.postMessage(event.data, event.origin);
     return;
   }
   if (typeof event.data !== 'string') return;
   if (event.data.startsWith('authorization:github:error:')) {
+    authPopup.close();
+    authPopup = null;
+    resetGithubLoginButton();
     setAuthMessage('GitHub-მა ავტორიზაცია ვერ დაასრულა. თავიდან სცადე.');
     return;
   }
@@ -150,10 +168,12 @@ function handleAuthMessage(event) {
     if (!payload.token) throw new Error('GitHub token ვერ მოიძებნა.');
     accessToken = payload.token;
     sessionStorage.setItem('pupsy_github_token', accessToken);
-    authPopup?.close();
+    authPopup.close();
+    authPopup = null;
     setAuthMessage('GitHub-ის მონაცემები იტვირთება…');
     initializeDashboard().catch(handleLoadError);
   } catch (error) {
+    resetGithubLoginButton();
     setAuthMessage(error.message || 'ავტორიზაციის პასუხი ვერ წავიკითხე.');
   }
 }
@@ -166,6 +186,7 @@ function setAuthMessage(message) {
 function logout() {
   accessToken = '';
   sessionStorage.removeItem('pupsy_github_token');
+  resetGithubLoginButton();
   document.getElementById('auth-screen').classList.remove('hidden');
   setAuthMessage('ადმინ პანელში შესასვლელად დაუკავშირე GitHub ანგარიში.');
 }
@@ -187,13 +208,16 @@ async function initializeDashboard() {
   selectCollection(activeCollectionId);
   initializeVoteStatsView();
   document.getElementById('auth-screen').classList.add('hidden');
-  lucide.createIcons();
+  window.lucide?.createIcons();
 }
 
 function handleLoadError(error) {
+  if (error.status === 401) {
+    accessToken = '';
+    sessionStorage.removeItem('pupsy_github_token');
+  }
   setAuthMessage(error.message || 'GitHub-ის მონაცემები ვერ ჩაიტვირთა. თავიდან შედი.');
-  document.getElementById('github-login-button').disabled = false;
-  document.getElementById('github-login-button').textContent = 'GitHub-ით შესვლა';
+  resetGithubLoginButton();
   document.getElementById('auth-screen').classList.remove('hidden');
   showToast(error.message || 'GitHub-თან დაკავშირება ვერ მოხერხდა');
 }
@@ -224,8 +248,18 @@ function productPhotoUrls(raw) {
     if (photo.source === 'gallery' && Array.isArray(photo.images)) images.push(...photo.images);
     if (photo.source === 'links') images.push(photo.link1, photo.link2, photo.link3, photo.link4, photo.link5);
   });
-  if (!images.length) images.push(raw.image, ...(Array.isArray(raw.images) ? raw.images : []));
+  if (!images.length) images.push(raw.image || raw.imageUrl, ...(Array.isArray(raw.images) ? raw.images : []));
   return [...new Set(images.filter(value => typeof value === 'string' && value.trim()).map(value => value.trim()))];
+}
+
+function adminAssetUrl(value, fallback = '') {
+  if (!value) return fallback;
+  try {
+    const base = value.startsWith('/PUPSYWEB/') ? PUBLIC_SITE : new URL('../', window.location.href);
+    return new URL(value, base).href;
+  } catch {
+    return fallback;
+  }
 }
 
 async function githubRequest(path, options = {}) {
@@ -267,16 +301,21 @@ async function githubFile(path) {
   return { sha: result.sha, data: JSON.parse(decodeBase64Utf8(result.content)) };
 }
 
-async function commitJson(path, data) {
+async function commitJson(path, data, expectedSha) {
   for (let attempt = 0; attempt < 3; attempt += 1) {
     const latest = await githubFile(path);
+    if (expectedSha && latest.sha !== expectedSha) {
+      throw new Error('ფაილი GitHub-ზე შეიცვალა. გადაამოწმე უახლესი ვერსია და ცვლილება ხელახლა შეიტანე.');
+    }
+    const next = typeof data === 'function' ? data(latest.data) : data;
+    if (next === latest.data) return latest.sha;
     try {
       const result = await githubRequest(`/repos/${GITHUB_REPO}/contents/${path}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: `Update ${path.split('/').pop()} from PUPSY CMS`,
-          content: encodeBase64Utf8(`${JSON.stringify(data, null, 2)}\n`),
+          content: encodeBase64Utf8(`${JSON.stringify(next, null, 2)}\n`),
           sha: latest.sha,
           branch: GITHUB_BRANCH,
         }),
@@ -355,8 +394,8 @@ function stageEditorHtml(path, sha, content, message) {
   updateEditorSaveButton();
 }
 
-function stageEditorJson(path, data) {
-  pendingEditorJson.set(path, data);
+function stageEditorJson(path, file) {
+  pendingEditorJson.set(path, file);
   updateEditorSaveButton();
 }
 
@@ -379,7 +418,10 @@ function replaceEditorAssetReferences(value, publishedAssets) {
 
 async function saveEditorChanges() {
   const status = document.getElementById('site-editor-status');
+  const button = document.getElementById('site-editor-save-changes');
+  if (button.disabled) return;
   if (!pendingEditorHtml.size && !pendingEditorJson.size && !pendingEditorAssets.size && !pendingProductRoutes.size) return;
+  button.disabled = true;
   status.textContent = 'ცვლილებები ინახება…';
   try {
     const stagedPayloads = [...pendingEditorHtml.values()].map(draft => draft.content).join('\n') + JSON.stringify([...pendingEditorJson.values()]);
@@ -406,15 +448,22 @@ async function saveEditorChanges() {
         for (const [token, url] of publishedAssets) draft.content = draft.content.replaceAll(token, url);
         pendingEditorHtml.set(path, draft);
       }
-      for (const data of pendingEditorJson.values()) replaceEditorAssetReferences(data, publishedAssets);
+      for (const draft of pendingEditorJson.values()) replaceEditorAssetReferences(draft.data, publishedAssets);
     }
     for (const [path, draft] of pendingEditorHtml) {
       await commitEditorHtml(path, draft.sha, draft.content, draft.message);
       pendingEditorHtml.delete(path);
       updateEditorSaveButton();
     }
-    for (const [path, data] of pendingEditorJson) {
-      await commitJson(path, data);
+    for (const [path, draft] of pendingEditorJson) {
+      const sha = await commitJson(path, draft.data, draft.sha);
+      const collection = collections.find(item => path === `products/categories/${item.file}`);
+      if (collection) {
+        collectionFiles[collection.id] = { sha, data: draft.data };
+        products = products.filter(product => product.collectionId !== collection.id)
+          .concat(draft.data.products.map((raw, index) => productFromRaw(raw, collection, index)));
+        renderProducts();
+      }
       pendingEditorJson.delete(path);
       updateEditorSaveButton();
     }
@@ -426,10 +475,12 @@ async function saveEditorChanges() {
     for (const asset of pendingEditorAssets.values()) URL.revokeObjectURL(asset.previewUrl);
     pendingEditorAssets.clear();
     updateEditorSaveButton();
-    status.textContent = 'ცვლილებები შენახულია. გვერდი განახლდება…';
     loadEditorPage(true);
+    status.textContent = 'ცვლილებები შენახულია. გვერდი განახლდება…';
   } catch (error) {
     status.textContent = error.message || 'ცვლილებების შენახვა ვერ მოხერხდა.';
+  } finally {
+    button.disabled = false;
   }
 }
 
@@ -439,7 +490,9 @@ function loadEditorPage(force = false) {
   if (!page || !frame || (!force && editorLoadedPage === page)) return;
   editorLoadedPage = page;
   clearEditorSelection();
-  editorLoadedUrl = `https://pupsystores-glitch.github.io/PUPSYWEB/${page}?admin-preview=${Date.now()}`;
+  const url = new URL(`../${page}`, window.location.href);
+  url.searchParams.set('admin-preview', Date.now());
+  editorLoadedUrl = url.href;
   frame.src = editorLoadedUrl;
   editorFrameBindGeneration += 1;
   bindEditorFrameWhenReady(page, editorFrameBindGeneration, editorLoadedUrl);
@@ -546,7 +599,8 @@ function bindEditorFrame() {
             : productAccordion ? (['description', 'sizeDetails', 'benefits', 'materialCare'][accordionIndex] || '')
             : element.closest('.product__title') ? 'title'
               : element.closest('[data-product-price]') ? 'price' : '';
-      const pageSlug = document.getElementById('site-editor-page').value.match(/product-pages\/([^/]+)\.html/i)?.[1]
+      const pageSlug = card?.dataset.productSlug
+        || document.getElementById('site-editor-page').value.match(/product-pages\/([^/]+)\.html/i)?.[1]
         || card?.getAttribute('href')?.match(/product-pages\/([^/]+)\.html/i)?.[1] || '';
       const productTitle = card?.querySelector('.cms-product-card__title')?.textContent.trim()
         || card?.querySelector('.product-item__title')?.textContent.trim()
@@ -581,6 +635,7 @@ function bindEditorFrame() {
         productIdentityClass,
         productOccurrence: Math.max(0, Array.prototype.indexOf.call(productNodes, card)),
         isProductCard,
+        isCmsProductCard: Boolean(card?.matches('.cms-product-card')),
         isProductDetail: productDetail,
         productPrice: loadedProduct?.raw?.price ?? productPriceText.replace(/,/g, ''),
         productColors,
@@ -621,6 +676,14 @@ function bindEditorFrame() {
       if (isProductCard || productDetail) {
         document.getElementById('site-editor-product-title').value = productTitle;
         document.getElementById('site-editor-product-price').value = productPriceText.replace(/,/g, '') || loadedProduct?.raw?.price || '';
+        if (productDetail) {
+          const collection = collections.find(item => item.id === loadedProduct?.collectionId);
+          const draft = collection && pendingEditorJson.get(`products/categories/${collection.file}`);
+          const pendingProduct = draft?.data.products.find(item => item.slug === loadedProduct.raw.slug);
+          editorSelection.productHref = (pendingProduct || loadedProduct?.raw)?.productLink
+            || new URL(`product-pages/${encodeURIComponent(pageSlug)}.html`, doc.baseURI).href;
+        }
+        document.getElementById('site-editor-product-link').value = editorSelection.productHref;
         editorPrimaryColor = productPrimaryColor;
         renderEditorProductColors(productColors, editorPrimaryColor);
       }
@@ -848,14 +911,18 @@ async function commitEditorHtml(path, sha, content, message) {
 }
 
 function selectedProductSlug(selection) {
+  if (selection.productSlug) return selection.productSlug;
   const href = selection.productHref || selection.href || '';
   const match = href.match(/(?:product-pages|products)\/([^/?#]+?)(?:\.html)?(?:[?#]|$)/i);
   const pageMatch = selection.page?.match(/product-pages\/([^/?#]+)\.html/i);
-  return match ? decodeURIComponent(match[1]) : pageMatch ? decodeURIComponent(pageMatch[1]) : selection.productSlug || '';
+  const encodedSlug = match?.[1] || pageMatch?.[1] || '';
+  try { return decodeURIComponent(encodedSlug); } catch { return encodedSlug; }
 }
 
 async function findEditorProduct(selection) {
-  const slug = selectedProductSlug(selection);
+  const slug = selection.isProductCard && !selection.isCmsProductCard && selection.productTitle
+    ? products.find(item => item.title === selection.productTitle)?.raw?.slug || selectedProductSlug(selection)
+    : selectedProductSlug(selection);
   const normalizeSlug = value => String(value || '').trim().replace(/\\/g, '/').split('/').pop().replace(/\.html$/i, '').toLocaleLowerCase();
   const normalizedTitle = value => String(value || '').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
   const loaded = products.find(item =>
@@ -866,12 +933,11 @@ async function findEditorProduct(selection) {
   const wantedSlug = normalizeSlug(slug);
   for (const collection of collections) {
     const path = `products/categories/${collection.file}`;
-    const pendingData = pendingEditorJson.get(path);
-    const file = pendingData ? { data: pendingData } : collectionFiles[collection.id] || await githubFile(path);
+    const file = structuredClone(pendingEditorJson.get(path) || collectionFiles[collection.id] || await githubFile(path));
     const index = (file.data.products || []).findIndex(raw =>
       (wantedSlug && normalizeSlug(raw.slug) === wantedSlug)
       || (wantedSlug && normalizeSlug(productSlugFromTitle(raw.title || '')) === wantedSlug)
-      || (loaded && normalizedTitle(raw.title) === normalizedTitle(loaded.title))
+      || (!selection.productSlug && loaded && normalizedTitle(raw.title) === normalizedTitle(loaded.title))
     );
     if (index >= 0) return { path, file, raw: file.data.products[index], index, slug: file.data.products[index].slug || slug };
   }
@@ -903,6 +969,16 @@ function updateStaticProductPrice(cardHtml, price) {
   const block = cardHtml.slice(range.start, range.end);
   const updated = block.replace(/(<img\b[^>]*(?:lari-currency-logo|Lari_logo)[^>]*>)([\s\S]*?)(\d[\d,.]*)/i, `$1$2${price.toFixed(2)}`);
   return cardHtml.slice(0, range.start) + updated + cardHtml.slice(range.end);
+}
+
+function updateStaticProductLink(cardHtml, previous, next) {
+  if (!previous || !next) return cardHtml;
+  const encodedPrevious = escapeHtmlAttribute(previous);
+  const encodedNext = escapeHtml(next);
+  return cardHtml.replace(/<a\b(?:[^"'<>]|"[^"]*"|'[^']*')*>/gi, tag =>
+    tag.replace(/(\s(?:href|data-product-link)\s*=\s*)(["'])(.*?)\2/gi, (attribute, prefix, quote, value) =>
+      value === previous || value === encodedPrevious || value === escapeHtml(previous)
+        ? `${prefix}${quote}${encodedNext}${quote}` : attribute));
 }
 
 function editorColorHex(name) {
@@ -1222,11 +1298,23 @@ async function saveSelectedProduct() {
     status.textContent = 'აირჩიეთ პროდუქტი რედაქტირებისთვის.';
     return;
   }
+  const selection = editorSelection;
 
   const title = document.getElementById('site-editor-product-title').value.trim()
     || editorSelection.productTitle || editorSelection.text || '';
   const priceField = document.getElementById('site-editor-product-price').value;
   const price = priceField === '' ? Number(editorSelection.productPrice || 0) : Number(priceField);
+  const linkField = document.getElementById('site-editor-product-link').value.trim();
+  const card = editorSelectedNode?.closest('.cms-product-card, .product-item, .product-card');
+  const base = editorSelectedNode?.ownerDocument.baseURI || PUBLIC_SITE;
+  if (linkField) {
+    try {
+      if (!['http:', 'https:'].includes(new URL(linkField, base).protocol)) throw new Error();
+    } catch {
+      status.textContent = 'მიუთითეთ სწორი HTTP, HTTPS ან საიტის შიდა ბმული.';
+      return;
+    }
+  }
   const selectedColors = [...document.querySelectorAll('#site-editor-product-colors input[type="checkbox"]:checked')]
     .map(input => input.value);
   const primaryColor = selectedColors.includes(editorPrimaryColor) ? editorPrimaryColor : selectedColors[0] || '';
@@ -1238,30 +1326,42 @@ async function saveSelectedProduct() {
 
   let product = null;
   let productDataError = null;
-  try { product = await findEditorProduct(editorSelection); }
+  try { product = await findEditorProduct(selection); }
   catch (error) { productDataError = error; }
+  if (editorSelection !== selection) return;
+  const previousLink = editorSelection.productHref;
+  const isStaticCard = editorSelection.isProductCard && !editorSelection.isCmsProductCard;
+  const linkChanged = linkField !== previousLink;
+  if (!product && !isStaticCard) {
+    status.textContent = productDataError?.message || 'პროდუქტი კატალოგში ვერ მოიძებნა.';
+    return;
+  }
+  if (isStaticCard && linkChanged && !linkField) {
+    status.textContent = 'პროდუქტის ბარათისთვის მიუთითეთ ბმული.';
+    return;
+  }
 
   let htmlStaged = false;
   try {
-    if (!editorSelection.isProductDetail) {
+    if (isStaticCard) {
     const pending = pendingEditorHtml.get(editorSelection.page);
     const page = pending || await editorHtmlFile(editorSelection.page);
+    if (editorSelection !== selection) return;
     const range = productCardRange(page.content, editorSelection);
     if (range) {
       const originalCard = page.content.slice(range.start, range.end);
-      let cardHtml = updateStaticProductTitle(originalCard, title);
+      const linkedCard = linkChanged ? updateStaticProductLink(originalCard, previousLink, linkField) : originalCard;
+      if (linkChanged && linkedCard === originalCard) throw new Error('პროდუქტის ბმული გვერდის წყაროში ვერ მოიძებნა.');
+      let cardHtml = updateStaticProductTitle(linkedCard, title);
       cardHtml = updateStaticProductPrice(cardHtml, price);
       cardHtml = updateStaticProductColors(cardHtml, colors, page.content, primaryColor);
-      if (colors.length && cardHtml === originalCard) {
-        throw new Error('ფერის სექცია პროდუქტში ვერ დაემატა. ხელახლა მონიშნეთ პროდუქტი და სცადეთ.');
-      }
       const updated = page.content.slice(0, range.start) + cardHtml + page.content.slice(range.end);
       stageEditorHtml(editorSelection.page, page.sha, updated, `Edit product on ${editorSelection.page}`);
       htmlStaged = true;
-    }
+    } else if (linkChanged) throw new Error('პროდუქტის ბარათი გვერდის წყაროში ვერ მოიძებნა.');
     }
   } catch (error) {
-    if (!product) {
+    if (!product || linkChanged) {
       status.textContent = error.message || 'პროდუქტის HTML ცვლილება ვერ მოინიშნა.';
       return;
     }
@@ -1275,18 +1375,12 @@ async function saveSelectedProduct() {
       product.raw.colors = colors;
       product.raw.primaryColor = primaryColor;
       product.raw.colorsEnabled = colors.length > 0;
-      stageEditorJson(product.path, product.file.data);
-      jsonStaged = true;
-      const cached = products.find(item => item.raw?.slug === product.slug
-        || (item.title === editorSelection.productTitle
-          && item.collectionId === collections.find(entry => entry.file === product.path.split('/').pop())?.id));
-      if (cached) {
-        cached.title = title;
-        cached.price = price;
-        cached.colors = colors;
-        cached.raw.primaryColor = primaryColor;
-        cached.raw = product.raw;
+      if (linkChanged) {
+        if (linkField) product.raw.productLink = linkField;
+        else delete product.raw.productLink;
       }
+      stageEditorJson(product.path, product.file);
+      jsonStaged = true;
     } catch (error) { productDataError = error; }
   }
 
@@ -1300,6 +1394,21 @@ async function saveSelectedProduct() {
   editorSelection.productColors = colors;
   if (editorSelection.isProductDetail) updateEditorProductDetailPreview(colors, primaryColor);
   else updateEditorProductPreview(title, price, colors, primaryColor);
+  if (linkChanged) {
+    const destination = linkField || new URL(`product-pages/${encodeURIComponent(product.slug)}.html`, base).href;
+    const selector = editorSelection.isCmsProductCard ? '.cms-product-card__link' : 'a[href], a[data-product-link]';
+    const links = card ? [...card.querySelectorAll(selector)] : [];
+    if (card?.matches(selector)) links.push(card);
+    links.forEach(link => {
+      for (const attribute of ['href', 'data-product-link']) {
+        if ((editorSelection.isCmsProductCard && attribute === 'href') || link.getAttribute(attribute) === previousLink) {
+          link.setAttribute(attribute, destination);
+        }
+      }
+    });
+    editorSelection.productHref = destination;
+    document.getElementById('site-editor-product-link').value = destination;
+  }
   editorSelection.productTitle = title;
   editorSelection.text = title;
   status.textContent = 'ცვლილება გამოჩნდა 1:1 ხედში. საიტზე ასასახად დააჭირეთ მთავარ შენახვას.';
@@ -1312,11 +1421,11 @@ async function deleteSelectedProduct() {
   try {
     const product = await findEditorProduct(editorSelection);
     if (product) {
-      const data = pendingEditorJson.get(product.path) || product.file.data;
+      const data = product.file.data;
       const index = data.products.findIndex(item => item.slug === product.slug || productSlugFromTitle(item.title || '') === product.slug);
       if (index < 0) throw new Error('Product no longer exists.');
       data.products.splice(index, 1);
-      stageEditorJson(product.path, data);
+      stageEditorJson(product.path, product.file);
       pendingProductRoutes.add(product.slug);
       updateEditorSaveButton();
       (editorSelectedNode?.closest('.cms-product-card, .product-item, [class*="product-card"], [class*="product-item"]') || editorSelectedNode)?.remove();
@@ -1345,14 +1454,15 @@ async function saveEditorText() {
     if (product && (editorSelection.productField || product.raw.title === editorSelection.text)) {
       const field = editorSelection.productField || 'title';
       if (field === 'price') {
-        const price = Number(value.replace(/,/g, '').replace(/[^\d.-]/g, ''));
-        if (!Number.isFinite(price) || price < 0) throw new Error('შეიყვანეთ სწორი ფასი.');
+        const amount = value.replace(/[,₾\s]/g, '');
+        const price = Number(amount);
+        if (!amount || !Number.isFinite(price) || price < 0) throw new Error('შეიყვანეთ სწორი ფასი.');
         product.raw.price = price;
       } else if (field.startsWith('detailsLabel:')) {
         const key = field.slice('detailsLabel:'.length);
         product.raw.detailsLabels = { ...(product.raw.detailsLabels || {}), [key]: value.trim() };
       } else product.raw[field] = value.trim();
-      stageEditorJson(product.path, product.file.data);
+      stageEditorJson(product.path, product.file);
     } else {
       const path = editorSelection.page;
       const pending = pendingEditorHtml.get(path);
@@ -1573,7 +1683,7 @@ async function saveEditorPageImage(replacement, remove = false) {
       const product = await findEditorProduct(editorSelection);
       if (product) {
         replaceEditorProductPhotos(product.raw, storedUrl);
-        stageEditorJson(product.path, product.file.data);
+        stageEditorJson(product.path, product.file);
       }
     }
     const pending = pendingEditorHtml.get(path);
@@ -1588,7 +1698,7 @@ async function saveEditorPageImage(replacement, remove = false) {
     const product = await findEditorProduct(editorSelection);
     if (product) {
       replaceEditorProductPhotos(product.raw, storedUrl);
-      stageEditorJson(product.path, product.file.data);
+      stageEditorJson(product.path, product.file);
       updateEditorMediaPreview(replacement);
       updateEditorProductGalleryPreview(replacement.url);
       return;
@@ -1654,8 +1764,7 @@ async function saveEditorPageImage(replacement, remove = false) {
 
   for (const collection of collections) {
     const filePath = `products/categories/${collection.file}`;
-    const pendingData = pendingEditorJson.get(filePath);
-    const file = pendingData ? { data: pendingData } : collectionFiles[collection.id] || await githubFile(filePath);
+    const file = structuredClone(pendingEditorJson.get(filePath) || collectionFiles[collection.id] || await githubFile(filePath));
     const product = file.data.products?.find(item => selectedProductPhoto(item, editorSelection));
     if (!product) continue;
     const isVideo = !remove && /^video\//i.test(replacement.type || '');
@@ -1678,7 +1787,7 @@ async function saveEditorPageImage(replacement, remove = false) {
         delete product.visualEditorVideoUrl;
       }
     }
-    stageEditorJson(filePath, file.data);
+    stageEditorJson(filePath, file);
     updateEditorMediaPreview(replacement, remove);
     return;
   }
@@ -1801,8 +1910,10 @@ function initializeVoteStatsView() {
   leadsNode.className = 'space-y-2.5';
   leadsNode.parentElement.append(contactedHeading, contactedNode);
   document.getElementById('vote-stats-refresh').addEventListener('click', loadVoteStats);
-  if (window.lucide) lucide.createIcons();
+  window.lucide?.createIcons();
 }
+
+let voteStatsRequest = 0;
 
 async function loadVoteStats() {
   const status = document.getElementById('vote-stats-status');
@@ -1810,10 +1921,12 @@ async function loadVoteStats() {
   const leadsNode = document.getElementById('vote-stats-leads');
   const contactedNode = document.getElementById('vote-stats-contacted');
   if (!status || !productsNode || !leadsNode || !contactedNode) return;
+  const request = ++voteStatsRequest;
   status.textContent = 'მონაცემები იტვირთება…';
   try {
     const response = await fetch(`${OAUTH_BASE}/api/stats`, { headers: { Authorization: `Bearer ${accessToken}` } });
     const data = await response.json();
+    if (request !== voteStatsRequest) return;
     if (!response.ok) throw new Error(data.error || 'სტატისტიკის ჩატვირთვა ვერ მოხერხდა.');
     productsNode.replaceChildren();
     leadsNode.replaceChildren();
@@ -1830,13 +1943,16 @@ async function loadVoteStats() {
       const image = document.createElement('img');
       image.className = 'h-12 w-12 shrink-0 rounded-lg border border-slate-700 object-cover bg-slate-900';
       image.alt = product ? `${product.title} — ფოტო` : item.title;
-      image.src = product?.image
-        ? new URL(product.image, new URL('../', window.location.href)).href
-        : 'https://placehold.co/96x96/1e293b/94a3b8?text=IMG';
-      image.onerror = () => { image.src = 'https://placehold.co/96x96/1e293b/94a3b8?text=IMG'; };
+      image.src = adminAssetUrl(product?.image, 'https://placehold.co/96x96/1e293b/94a3b8?text=IMG');
+      image.onerror = () => {
+        image.onerror = null;
+        image.src = 'https://placehold.co/96x96/1e293b/94a3b8?text=IMG';
+      };
       const title = document.createElement('span'); title.className = 'min-w-0 flex-1 font-semibold text-slate-100'; title.textContent = item.title;
       const count = document.createElement('span'); count.className = 'shrink-0 text-indigo-300'; count.textContent = `${item.votes} ხმა · ${item.contacts} კონტაქტი`;
-      row.append(image, title, count); productsNode.append(row);
+      row.classList.add('flex-wrap');
+      row.append(image, title, count, statDeleteButton('votes', item.productId, item.title));
+      productsNode.append(row);
     });
     (data.leads || []).forEach(item => {
       const row = document.createElement('div');
@@ -1848,10 +1964,11 @@ async function loadVoteStats() {
       const image = document.createElement('img');
       image.className = 'h-14 w-14 shrink-0 rounded-xl border border-slate-700/80 object-cover bg-slate-900';
       image.alt = product ? `${product.title} — მთავარი ფოტო` : item.title;
-      image.src = product?.image
-        ? new URL(product.image, new URL('../', window.location.href)).href
-        : 'https://placehold.co/128x128/1e293b/94a3b8?text=IMG';
-      image.onerror = () => { image.src = 'https://placehold.co/128x128/1e293b/94a3b8?text=IMG'; };
+      image.src = adminAssetUrl(product?.image, 'https://placehold.co/128x128/1e293b/94a3b8?text=IMG');
+      image.onerror = () => {
+        image.onerror = null;
+        image.src = 'https://placehold.co/128x128/1e293b/94a3b8?text=IMG';
+      };
       const details = document.createElement('div');
       details.className = 'min-w-0 flex-1 basis-40';
       const title = document.createElement('p'); title.className = 'truncate font-semibold text-slate-100'; title.textContent = item.title;
@@ -1865,7 +1982,7 @@ async function loadVoteStats() {
         : 'w-full shrink-0 rounded-xl border border-emerald-700/70 bg-emerald-500/10 px-3 py-2.5 text-[11px] font-semibold text-emerald-300 transition hover:border-emerald-500 hover:bg-emerald-500/20 sm:w-auto';
       statusButton.textContent = contacted ? 'დაბრუნება აქტიურ სიაში' : 'მონიშნე დაკავშირებულად';
       statusButton.addEventListener('click', () => updateLeadContactStatus(item.voteId, !contacted, statusButton));
-      row.append(image, details, statusButton);
+      row.append(image, details, statusButton, statDeleteButton('contact', item.voteId, item.title));
       (contacted ? contactedNode : leadsNode).append(row);
     });
     if (!(data.leads || []).some(item => item.contactedAt)) {
@@ -1888,8 +2005,38 @@ async function loadVoteStats() {
     }
     status.textContent = `პროდუქტები: ${(data.products || []).length} · ჯამური ხმები: ${(data.products || []).reduce((sum, item) => sum + Number(item.votes || 0), 0)}`;
   } catch (error) {
-    status.textContent = error.message || 'სტატისტიკის ჩატვირთვა ვერ მოხერხდა.';
+    if (request === voteStatsRequest) status.textContent = error.message || 'სტატისტიკის ჩატვირთვა ვერ მოხერხდა.';
   }
+}
+
+function statDeleteButton(kind, id, title) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'shrink-0 rounded-xl border border-rose-900 px-3 py-2 text-xs font-semibold text-rose-300 hover:bg-rose-950 disabled:opacity-50';
+  button.textContent = kind === 'votes' ? 'ხმების წაშლა' : 'კონტაქტის წაშლა';
+  button.addEventListener('click', async () => {
+    const prompt = kind === 'votes'
+      ? `„${title}“ — წაიშალოს ამ პროდუქტის ყველა ხმა და მათთან დაკავშირებული საკონტაქტო მოთხოვნა?`
+      : `„${title}“ — წაიშალოს ეს საკონტაქტო მოთხოვნა? ხმა შენარჩუნდება.`;
+    if (!window.confirm(prompt)) return;
+    button.disabled = true;
+    try {
+      const response = await fetch(`${OAUTH_BASE}/api/stats/delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({ kind, id }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || result.deleted !== true) throw new Error(result.error || 'ჩანაწერი ვერ წაიშალა.');
+      await loadVoteStats();
+      showToast('ჩანაწერი წაიშალა.');
+    } catch (error) {
+      showToast(error.message || 'ჩანაწერი ვერ წაიშალა.', 'error');
+    } finally {
+      button.disabled = false;
+    }
+  });
+  return button;
 }
 
 async function updateLeadContactStatus(voteId, contacted, button) {
@@ -1907,6 +2054,7 @@ async function updateLeadContactStatus(voteId, contacted, button) {
     await loadVoteStats();
   } catch (error) {
     if (status) status.textContent = error.message || 'კონტაქტის სტატუსის შენახვა ვერ მოხერხდა.';
+  } finally {
     button.disabled = false;
   }
 }
@@ -1984,40 +2132,42 @@ async function savePageVideo(event) {
   const url = document.getElementById('page-video-url').value.trim();
   const caption = document.getElementById('page-video-caption').value.trim();
   let parsedUrl;
-  try { parsedUrl = new URL(url); } catch { return showToast('შეიყვანე სწორი ვიდეოს ბმული.'); }
-  if (parsedUrl.protocol !== 'https:') return showToast('ვიდეოს ბმული უნდა იწყებოდეს https://-ით.');
-  const page = currentVideoPage();
-  const previous = JSON.stringify(pageVideosData);
-  const videos = pageVideoList();
+  try { parsedUrl = new URL(url); } catch { return showToast('შეიყვანე სწორი ვიდეოს ბმული.', 'error'); }
+  if (parsedUrl.protocol !== 'https:') return showToast('ვიდეოს ბმული უნდა იწყებოდეს https://-ით.', 'error');
   const id = document.getElementById('page-video-id').value;
-  if (id) {
-    const existing = videos.find(video => video.id === id);
-    if (existing) Object.assign(existing, { url, caption });
-  } else {
-    videos.push({ id: crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`, url, caption });
-  }
-  await persistPageVideos(previous);
+  const videoId = id || crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  await persistPageVideos(videos => {
+    const index = videos.findIndex(video => video.id === videoId);
+    if (id && index < 0) throw new Error('ეს ვიდეო სიაში აღარ არის.');
+    if (index < 0) return [...videos, { id: videoId, url, caption }];
+    return videos.map((video, position) => position === index ? { ...video, url, caption } : video);
+  });
 }
 
 async function deletePageVideo(id) {
-  const previous = JSON.stringify(pageVideosData);
-  pageVideosData.pages[currentVideoPage()] = pageVideoList().filter(video => video.id !== id);
-  await persistPageVideos(previous);
+  await persistPageVideos(videos => videos.filter(video => video.id !== id));
 }
 
-async function persistPageVideos(previous) {
+async function persistPageVideos(updateVideos) {
+  if (pageVideoWriteInProgress) return;
+  pageVideoWriteInProgress = true;
+  const page = currentVideoPage();
   const button = document.getElementById('page-video-submit');
   button.disabled = true;
   try {
-    await commitJson('content/page-videos.json', pageVideosData);
-    resetPageVideoForm();
+    let updated;
+    await commitJson('content/page-videos.json', data => {
+      updated = { ...data, pages: { ...data.pages, [page]: updateVideos(data.pages?.[page] || []) } };
+      return updated;
+    });
+    pageVideosData = updated;
+    if (currentVideoPage() === page) resetPageVideoForm();
     renderPageVideos();
     showToast('ვიდეოების სექცია განახლდა.');
   } catch (error) {
-    pageVideosData = JSON.parse(previous);
-    renderPageVideos();
-    showToast(error.message || 'ვიდეო ვერ შეინახა.');
+    showToast(error.message || 'ვიდეო ვერ შეინახა.', 'error');
   } finally {
+    pageVideoWriteInProgress = false;
     button.disabled = false;
   }
 }
@@ -2031,7 +2181,7 @@ function renderCollectionChips(filteredCollections = null) {
     const count = products.filter(product => product.collectionId === collection.id).length;
     return `<button onclick="selectCollection('${collection.id}')" class="shrink-0 px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border transition-all ${active ? 'bg-indigo-600 text-white border-indigo-500 shadow-md shadow-indigo-600/20' : 'bg-slate-900/80 text-slate-400 hover:text-slate-200 border-slate-800 hover:bg-slate-800'}"><i data-lucide="${collection.icon}" class="w-3.5 h-3.5"></i><span>${collection.name}</span><span class="px-1.5 py-0.5 rounded-md text-[10px] ${active ? 'bg-indigo-700 text-indigo-100' : 'bg-slate-800 text-slate-500'} font-bold">${count}</span></button>`;
   }).join('');
-  lucide.createIcons();
+  window.lucide?.createIcons();
 }
 
 function filterCollections() {
@@ -2072,12 +2222,12 @@ function renderProducts() {
   const fallback = 'https://placehold.co/200x200/1e293b/94a3b8?text=IMG';
   if (currentLayout === 'list') {
     container.className = 'space-y-2 pt-2';
-    container.innerHTML = filtered.map(product => `<div class="p-3 bg-slate-900/60 hover:bg-slate-800/60 border border-slate-800/80 rounded-xl flex items-center justify-between gap-3 transition-all group"><div class="flex items-center gap-3 min-w-0"><img loading="lazy" decoding="async" src="${escapeAttribute(product.image || fallback)}" onerror="this.src='${fallback}'" alt="" class="w-12 h-12 rounded-lg object-cover border border-slate-800 bg-slate-950 shrink-0"><div class="min-w-0"><h4 class="font-bold text-slate-100 text-xs sm:text-sm truncate">${escapeHtml(product.title)}</h4><div class="flex items-center gap-2 mt-0.5"><span class="text-xs font-bold text-indigo-400">₾${Number(product.price).toFixed(2)}</span>${product.size ? `<span class="text-[10px] text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded">${escapeHtml(product.size)}</span>` : ''}</div></div></div><div class="flex items-center gap-1 shrink-0"><button onclick="openEditProductModal('${product.id}')" title="რედაქტირება" class="p-2 text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-all"><i data-lucide="edit-2" class="w-4 h-4"></i></button><button onclick="deleteProduct('${product.id}')" title="წაშლა" class="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div></div>`).join('');
+    container.innerHTML = filtered.map(product => `<div class="p-3 bg-slate-900/60 hover:bg-slate-800/60 border border-slate-800/80 rounded-xl flex items-center justify-between gap-3 transition-all group"><div class="flex items-center gap-3 min-w-0"><img loading="lazy" decoding="async" src="${escapeAttribute(adminAssetUrl(product.image, fallback))}" onerror="this.onerror=null;this.src='${fallback}'" alt="" class="w-12 h-12 rounded-lg object-cover border border-slate-800 bg-slate-950 shrink-0"><div class="min-w-0"><h4 class="font-bold text-slate-100 text-xs sm:text-sm truncate">${escapeHtml(product.title)}</h4><div class="flex items-center gap-2 mt-0.5"><span class="text-xs font-bold text-indigo-400">₾${Number(product.price).toFixed(2)}</span>${product.size ? `<span class="text-[10px] text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded">${escapeHtml(product.size)}</span>` : ''}</div></div></div><div class="flex items-center gap-1 shrink-0"><button onclick="openEditProductModal('${product.id}')" title="რედაქტირება" class="p-2 text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-all"><i data-lucide="edit-2" class="w-4 h-4"></i></button><button onclick="deleteProduct('${product.id}')" title="წაშლა" class="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div></div>`).join('');
   } else {
     container.className = 'grid grid-cols-2 gap-3 pt-2';
-    container.innerHTML = filtered.map(product => `<div class="p-3 bg-slate-900/60 border border-slate-800/80 rounded-xl space-y-2 flex flex-col justify-between group"><div class="space-y-2"><div class="aspect-square w-full rounded-lg bg-slate-950 border border-slate-800 overflow-hidden relative"><img loading="lazy" decoding="async" src="${escapeAttribute(product.image || fallback)}" onerror="this.src='${fallback}'" alt="" class="w-full h-full object-cover"></div><div><h4 class="font-bold text-slate-100 text-xs line-clamp-1">${escapeHtml(product.title)}</h4><p class="text-xs font-bold text-indigo-400 mt-0.5">₾${Number(product.price).toFixed(2)}</p></div></div><div class="flex items-center justify-end gap-1 pt-2 border-t border-slate-800/60"><button onclick="openEditProductModal('${product.id}')" class="p-1.5 text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-all"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button><button onclick="deleteProduct('${product.id}')" class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div></div>`).join('');
+    container.innerHTML = filtered.map(product => `<div class="p-3 bg-slate-900/60 border border-slate-800/80 rounded-xl space-y-2 flex flex-col justify-between group"><div class="space-y-2"><div class="aspect-square w-full rounded-lg bg-slate-950 border border-slate-800 overflow-hidden relative"><img loading="lazy" decoding="async" src="${escapeAttribute(adminAssetUrl(product.image, fallback))}" onerror="this.onerror=null;this.src='${fallback}'" alt="" class="w-full h-full object-cover"></div><div><h4 class="font-bold text-slate-100 text-xs line-clamp-1">${escapeHtml(product.title)}</h4><p class="text-xs font-bold text-indigo-400 mt-0.5">₾${Number(product.price).toFixed(2)}</p></div></div><div class="flex items-center justify-end gap-1 pt-2 border-t border-slate-800/60"><button onclick="openEditProductModal('${product.id}')" class="p-1.5 text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-all"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button><button onclick="deleteProduct('${product.id}')" class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div></div>`).join('');
   }
-  lucide.createIcons();
+  window.lucide?.createIcons();
 }
 
 function escapeHtml(value) {
@@ -2161,6 +2311,8 @@ function openEditProductModal(id) {
 function closeProductModal() {
   document.getElementById('product-modal').classList.add('hidden');
   document.body.classList.remove('modal-open');
+  if (productPreviewObjectUrl) URL.revokeObjectURL(productPreviewObjectUrl);
+  productPreviewObjectUrl = '';
 }
 function closeModal() { closeProductModal(); }
 
@@ -2203,11 +2355,14 @@ function updateModalImagePreview() {
   const selectedFile = document.getElementById('form-product-files').files[0];
   const firstLink = [...document.querySelectorAll('[data-photo-link]')].map(input => input.value.trim()).find(Boolean);
   const preview = document.getElementById('form-image-preview');
+  if (productPreviewObjectUrl) URL.revokeObjectURL(productPreviewObjectUrl);
+  productPreviewObjectUrl = '';
   if (selectedFile) {
-    preview.src = URL.createObjectURL(selectedFile);
+    productPreviewObjectUrl = URL.createObjectURL(selectedFile);
+    preview.src = productPreviewObjectUrl;
     return;
   }
-  preview.src = firstLink || 'https://placehold.co/100x100/1e293b/94a3b8?text=IMG';
+  preview.src = adminAssetUrl(firstLink, 'https://placehold.co/100x100/1e293b/94a3b8?text=IMG');
 }
 
 function populateModalCollectionSelect() {
@@ -2216,12 +2371,11 @@ function populateModalCollectionSelect() {
 
 function productToRaw(product, collection, values, isNew) {
   const raw = { ...(product?.raw || {}) };
-  const titleChanged = raw.title !== values.title;
   raw.category = collection.name;
   raw.categoryId = collection.id;
   raw.title = values.title;
   raw.comingSoon = values.comingSoon === true;
-  if (isNew || !raw.slug || titleChanged || /^product-\d+$/.test(raw.slug)) {
+  if (isNew || !raw.slug) {
     raw.slug = uniqueProductSlug(values.title, product?.id);
   }
   raw.price = values.price;
@@ -2242,14 +2396,24 @@ function productToRaw(product, collection, values, isNew) {
     material: detailSettings.materialTitle,
   };
   raw.published = raw.published ?? true;
+  const previousPhotos = product ? productPhotoUrls(product.raw) : [];
+  if (!values.uploadedImages.length && JSON.stringify(values.imageLinks) === JSON.stringify(previousPhotos.slice(0, 5))) {
+    return raw;
+  }
   const photos = [];
   if (values.uploadedImages.length) photos.push({ source: 'gallery', images: values.uploadedImages });
   if (values.imageLinks.length) {
     photos.push(Object.fromEntries([['source', 'links'], ...values.imageLinks.map((url, index) => [`link${index + 1}`, url])]));
   }
+  if (previousPhotos.length > 5) photos.push({ source: 'gallery', images: previousPhotos.slice(5) });
   raw.photos = photos;
-  if (values.uploadedImages[0] || values.imageLinks[0]) raw.image = values.uploadedImages[0] || values.imageLinks[0];
-  else delete raw.image;
+  const cover = values.uploadedImages[0] || values.imageLinks[0] || previousPhotos[5];
+  if (cover) raw.image = cover;
+  else {
+    delete raw.image;
+    delete raw.imageUrl;
+    delete raw.images;
+  }
   return raw;
 }
 
@@ -2266,12 +2430,32 @@ async function uploadProductImage(file) {
   return `/PUPSYWEB/images/uploads/${encodeURIComponent(filename)}`;
 }
 
-function productsForCollection(collectionId) {
-  return products.filter(product => product.collectionId === collectionId).map(product => product.raw);
+async function writeCatalogProduct(collectionId, previous, replacement) {
+  const collection = collections.find(item => item.id === collectionId);
+  const sameRecord = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  await commitJson(`products/categories/${collection.file}`, data => {
+    const list = [...(data.products || [])];
+    const index = previous ? list.findIndex(item => previous.slug ? item.slug === previous.slug : sameRecord(item, previous)) : -1;
+    const existing = replacement && list.find(item => item.slug === replacement.slug);
+    if (existing && sameRecord(existing, replacement)) return data;
+    if (previous && index === -1 && !replacement) return data;
+    if (previous && (index === -1 || !sameRecord(list[index], previous))) {
+      throw new Error('პროდუქტი სხვაგან შეიცვალა. განაახლე სია და სცადე თავიდან.');
+    }
+    if (existing && existing !== list[index]) {
+      throw new Error('ამ ბმულით პროდუქტი უკვე არსებობს. განაახლე სია და სცადე თავიდან.');
+    }
+    if (index === -1) list.push(replacement);
+    else if (replacement) list[index] = replacement;
+    else list.splice(index, 1);
+    return { ...data, products: list };
+  });
 }
 
 async function saveProductForm(event) {
   event.preventDefault();
+  if (productWriteInProgress) return;
+  productWriteInProgress = true;
   const saveButton = event.submitter;
   const status = document.getElementById('product-save-status');
   const isEditing = Boolean(document.getElementById('form-product-id').value);
@@ -2285,10 +2469,13 @@ async function saveProductForm(event) {
   try {
     const id = document.getElementById('form-product-id').value;
     const existing = products.find(product => product.id === id);
-    const previousSlug = existing?.raw?.slug || '';
+    if (id && !existing) throw new Error('პროდუქტი სიაში აღარ არის. განაახლე სია.');
     const targetId = document.getElementById('form-product-collection').value;
     const targetCollection = collections.find(collection => collection.id === targetId);
     if (!targetCollection) throw new Error('აირჩიე პროდუქტის კატეგორია.');
+    const title = document.getElementById('form-product-title').value.trim();
+    const price = document.getElementById('form-product-price').valueAsNumber;
+    if (!title || !Number.isFinite(price) || price < 0) throw new Error('შეამოწმე პროდუქტის სახელი და ფასი.');
     const selectedFiles = [...document.getElementById('form-product-files').files];
     const uploadedImages = [];
     for (let index = 0; index < selectedFiles.length; index += 1) {
@@ -2305,8 +2492,8 @@ async function saveProductForm(event) {
     }
     const imageLinks = [...document.querySelectorAll('[data-photo-link]')].map(input => input.value.trim()).filter(Boolean);
     const values = {
-      title: document.getElementById('form-product-title').value.trim(),
-      price: Number(document.getElementById('form-product-price').value),
+      title,
+      price,
       comingSoon: document.getElementById('form-product-coming-soon').checked,
       size: document.getElementById('form-product-size').value,
       colors: [...document.querySelectorAll('#form-product-colors input[type="checkbox"]:checked')].map(input => input.value),
@@ -2320,24 +2507,10 @@ async function saveProductForm(event) {
     };
     const raw = productToRaw(existing, targetCollection, values, !existing);
     setSaveStatus('პროდუქტის მონაცემები GitHub-ზე ინახება…');
-    if (existing && existing.collectionId !== targetId) {
-      const oldData = collectionFiles[existing.collectionId].data;
-      oldData.products = productsForCollection(existing.collectionId).filter((_, index) => index !== existing.index);
-      await commitJson(`products/categories/${collections.find(c => c.id === existing.collectionId).file}`, oldData);
-      products = products.filter(product => product.id !== existing.id);
-    } else if (existing) {
-      const list = productsForCollection(targetId);
-      list[existing.index] = raw;
-      collectionFiles[targetId].data.products = list;
-    } else {
-      collectionFiles[targetId].data.products = [...productsForCollection(targetId), raw];
-    }
-    if (!existing || existing.collectionId !== targetId) {
-      collectionFiles[targetId].data.products = [...productsForCollection(targetId), raw];
-    }
-    await commitJson(`products/categories/${targetCollection.file}`, collectionFiles[targetId].data);
     await saveProductRoute(raw.slug);
-    if (previousSlug && previousSlug !== raw.slug) await deleteProductRoute(previousSlug);
+    const moved = existing && existing.collectionId !== targetId;
+    await writeCatalogProduct(targetId, moved ? null : existing?.raw, raw);
+    if (moved) await writeCatalogProduct(existing.collectionId, existing.raw, null);
     stagedProductImageUploads.clear();
     closeProductModal();
     showToast(existing ? 'პროდუქტი განახლდა' : 'პროდუქტი დაემატა');
@@ -2351,50 +2524,59 @@ async function saveProductForm(event) {
     setSaveStatus(`ვერ აიტვირთა: ${message} მონაცემები ფორმაში დარჩა — შეასწორე პრობლემა და თავიდან სცადე.`, true);
     showToast(message, 'error', 9000);
   } finally {
+    productWriteInProgress = false;
     if (saveButton) { saveButton.disabled = false; saveButton.textContent = actionLabel; }
   }
 }
 
 async function deleteProduct(id) {
   const product = products.find(item => item.id === id);
-  if (!product || !window.confirm('ნამდვილად წავშალო ეს პროდუქტი?')) return;
+  if (productWriteInProgress || !product || !window.confirm('ნამდვილად წავშალო ეს პროდუქტი?')) return;
+  productWriteInProgress = true;
   try {
-    const collection = collections.find(item => item.id === product.collectionId);
-    const file = collectionFiles[product.collectionId];
-    file.data.products = productsForCollection(product.collectionId).filter((_, index) => index !== product.index);
-    await commitJson(`products/categories/${collection.file}`, file.data);
+    await writeCatalogProduct(product.collectionId, product.raw, null);
     await deleteProductRoute(product.raw?.slug);
     await initializeDashboard();
     showToast('პროდუქტი წაიშალა');
-  } catch (error) { showToast(error.message || 'პროდუქტის წაშლა ვერ მოხერხდა'); }
+  } catch (error) { showToast(error.message || 'პროდუქტის წაშლა ვერ მოხერხდა', 'error'); }
+  finally { productWriteInProgress = false; }
 }
 
 function renderMediaGallery() {
   const grid = document.getElementById('media-grid');
   document.getElementById('media-count').textContent = mediaFiles.length;
-  grid.innerHTML = mediaFiles.map(file => `<div class="group relative bg-slate-900 border border-slate-800 rounded-xl overflow-hidden aspect-square flex items-center justify-center"><img loading="lazy" decoding="async" src="${escapeAttribute(file.url)}" alt="" class="w-full h-full object-cover group-hover:scale-105 transition-transform"><div class="absolute inset-0 bg-slate-950/70 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2"><span class="text-[10px] text-slate-300 font-mono truncate">${escapeHtml(file.name)}</span><div class="flex items-center justify-end gap-1"><button onclick="copyMediaUrl('${escapeAttribute(file.url)}')" title="URL-ის კოპირება" class="p-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-all"><i data-lucide="copy" class="w-3.5 h-3.5"></i></button></div></div></div>`).join('');
-  lucide.createIcons();
+  grid.innerHTML = mediaFiles.map(file => `<div class="group relative bg-slate-900 border border-slate-800 rounded-xl overflow-hidden aspect-square flex items-center justify-center"><img loading="lazy" decoding="async" src="${escapeAttribute(adminAssetUrl(file.url))}" alt="" class="w-full h-full object-cover group-hover:scale-105 transition-transform"><div class="absolute inset-0 bg-slate-950/70 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2"><span class="text-[10px] text-slate-300 font-mono truncate">${escapeHtml(file.name)}</span><div class="flex items-center justify-end gap-1"><button onclick="copyMediaUrl('${escapeAttribute(file.url)}')" title="URL-ის კოპირება" class="p-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-all"><i data-lucide="copy" class="w-3.5 h-3.5"></i></button></div></div></div>`).join('');
+  window.lucide?.createIcons();
 }
 
 async function handleMediaUpload(event) {
   const files = [...(event.target.files || [])];
   if (!files.length) return;
+  event.target.disabled = true;
+  let uploaded = 0;
   try {
     for (const file of files) {
       const optimizedFile = await optimizeUploadImage(file);
       const safeName = optimizedFile.name.normalize('NFKD').replace(/[^a-zA-Z0-9._-]+/g, '-');
-      const filename = `${Date.now()}-${safeName}`;
+      const filename = `${Date.now()}-${crypto.randomUUID()}-${safeName}`;
       const content = encodeBase64Utf8FromBytes(await optimizedFile.arrayBuffer());
       await githubRequest(`/repos/${GITHUB_REPO}/contents/images/uploads/${encodeURIComponent(filename)}`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: `Upload ${filename} from PUPSY CMS`, content, branch: GITHUB_BRANCH }),
       });
+      uploaded += 1;
     }
-    mediaFiles = await loadMediaFiles();
-    renderMediaGallery();
     showToast('ფაილები აიტვირთა');
-  } catch (error) { showToast(error.message || 'ფაილის ატვირთვა ვერ მოხერხდა'); }
-  finally { event.target.value = ''; }
+  } catch (error) {
+    showToast(`აიტვირთა ${uploaded}/${files.length} ფაილი. ${error.message || 'ატვირთვა შეწყდა.'}`, 'error');
+  } finally {
+    if (uploaded) {
+      mediaFilesLoaded = false;
+      await loadMediaView();
+    }
+    event.target.value = '';
+    event.target.disabled = false;
+  }
 }
 
 function encodeBase64Utf8FromBytes(buffer) {
@@ -2406,10 +2588,13 @@ function encodeBase64Utf8FromBytes(buffer) {
   return btoa(binary);
 }
 
-function copyMediaUrl(url) {
-  navigator.clipboard.writeText(new URL(url, window.location.origin).href)
-    .then(() => showToast('URL დაკოპირდა'))
-    .catch(() => showToast('URL-ის კოპირება ვერ მოხერხდა'));
+async function copyMediaUrl(url) {
+  try {
+    await navigator.clipboard.writeText(new URL(url, PUBLIC_SITE).href);
+    showToast('URL დაკოპირდა');
+  } catch {
+    showToast('URL-ის კოპირება ვერ მოხერხდა', 'error');
+  }
 }
 
 function showToast(message, type = 'success', duration = 3200) {
@@ -2423,7 +2608,7 @@ function showToast(message, type = 'success', duration = 3200) {
   text.textContent = message;
   toast.append(icon, text);
   container.appendChild(toast);
-  lucide.createIcons();
+  window.lucide?.createIcons();
   requestAnimationFrame(() => toast.classList.remove('translate-y-2', 'opacity-0'));
   setTimeout(() => {
     toast.classList.add('opacity-0', 'translate-y-2');

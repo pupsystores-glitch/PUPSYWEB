@@ -4,6 +4,14 @@
   const params = new URLSearchParams(location.search);
   const routeName = decodeURIComponent(location.pathname.split("/").pop() || "").replace(/\.html$/i, "");
   const id = params.get("cmsProduct") || (!/^(harnes1|index)$/i.test(routeName) ? routeName : "");
+  const sizeButtons = document.querySelector(".selector-wrapper--size [data-variant-buttons]");
+  sizeButtons?.addEventListener("change", (event) => {
+    const input = event.target;
+    if (!input.matches('input[type="radio"]:checked')) return;
+    // The template's Shopify variants can overwrite the product's fixed price.
+    event.stopPropagation();
+    selectSizeOption(input.closest(".radio__button"));
+  });
   if (!id) return;
 
   const baseUrl = new URL(".", document.baseURI);
@@ -461,14 +469,13 @@
   }
 
   function hideVariantSizeSelector() {
-    const buttons = document.querySelector(".radio__buttons[data-variant-buttons]");
-    const fieldset = buttons?.closest(".radio__fieldset");
+    const fieldset = sizeButtons?.closest(".radio__fieldset");
     const selector = fieldset?.closest(".product__block--lines") || fieldset;
     if (selector) {
       selector.hidden = true;
       selector.style.setProperty("display", "none", "important");
     }
-    buttons?.querySelectorAll('input[type="radio"]').forEach((input) => { input.disabled = true; });
+    sizeButtons?.querySelectorAll('input[type="radio"]').forEach((input) => { input.disabled = true; });
   }
 
   function accordionContent(block) {
@@ -549,8 +556,17 @@
       <p><a href="guide.html">ზომების ყველა გზამკვლევის ნახვა</a></p>
     </div>`;
 
+  function selectSizeOption(selected) {
+    if (!selected) return;
+    sizeButtons.querySelectorAll(":scope > .radio__button").forEach((option) => {
+      const active = option === selected;
+      option.classList.toggle("cms-selected-size", active);
+      const input = option.querySelector('input[type="radio"]');
+      if (input) input.checked = active;
+    });
+  }
+
   function setSelectedSize(product, categoryId, sizeBlock) {
-    const buttons = document.querySelector(".radio__buttons[data-variant-buttons]");
     const currentSize = String(product.size || "").trim();
     const hasNoSize = /არ\s*აქვს/i.test(currentSize);
     const hasSizeDetails = Boolean(String(product.sizeDetails || "").trim());
@@ -569,7 +585,7 @@
       return;
     }
     if (sizeBlock) sizeBlock.hidden = false;
-    if (!buttons) return;
+    if (!sizeButtons) return;
 
     const sizes = ["ძალიან პატარა", "პატარა", "საშუალო", "დიდი"];
     const storedSize = String(product.size || "").trim();
@@ -580,7 +596,7 @@
         : null);
     if (!selectedSize) return;
 
-    const options = [...buttons.querySelectorAll(":scope > .radio__button")];
+    const options = [...sizeButtons.querySelectorAll(":scope > .radio__button")];
     const optionFor = (size) => options.find((option) =>
       option.querySelector(".option-title")?.textContent.trim() === size);
     const selected = optionFor(selectedSize);
@@ -593,13 +609,8 @@
       sizeStyle.textContent = ".product__block .radio__button.cms-selected-size > label,.product__block .radio__button.cms-selected-size > label .option-title{background-color:#302d29!important;border:2px solid #302d29!important;color:#fff!important;-webkit-text-fill-color:#fff!important;font-weight:700!important;opacity:1!important;box-sizing:border-box}";
       document.head.append(sizeStyle);
     }
-    options.forEach((option) => option.classList.remove("cms-selected-size"));
-    selected.classList.add("cms-selected-size");
-    buttons.prepend(selected);
-    options.forEach((option) => {
-      const input = option.querySelector('input[type="radio"]');
-      if (input) input.checked = option === selected;
-    });
+    sizeButtons.prepend(selected);
+    selectSizeOption(selected);
   }
 
   function render(product) {
@@ -643,6 +654,7 @@
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
         }).format(amount);
+        price.dataset.productPrice = String(amount);
       }
       price.replaceChildren(icon, amountNode);
     }

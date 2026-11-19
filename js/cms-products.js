@@ -119,9 +119,17 @@
   function renderCard(product) {
     const card = document.createElement("div");
     card.className = "cms-product-card";
+    const slug = productSlug(product);
+    card.dataset.productSlug = slug;
     const link = document.createElement("a");
     link.className = "cms-product-card__link";
-    link.href = new URL(`product-pages/${encodeURIComponent(productSlug(product))}.html`, baseUrl).href;
+    link.href = new URL(`product-pages/${encodeURIComponent(slug)}.html`, baseUrl).href;
+    if (typeof product.productLink === "string" && product.productLink.trim()) {
+      try {
+        const destination = new URL(product.productLink, baseUrl);
+        if (["http:", "https:"].includes(destination.protocol)) link.href = destination.href;
+      } catch { /* Keep the generated product page for an invalid destination. */ }
+    }
 
     const imagePath = productImages(product)[0];
     const videoUrl = String(product.visualEditorVideoUrl || "").trim();
