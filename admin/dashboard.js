@@ -522,6 +522,7 @@ function clearEditorSelection() {
   preview?.classList.add('hidden');
   document.getElementById('site-editor-media-tools')?.classList.remove('hidden');
   document.getElementById('site-editor-text-tools')?.classList.add('hidden');
+  document.getElementById('site-editor-link-tools')?.classList.add('hidden');
   document.getElementById('site-editor-product-tools')?.classList.add('hidden');
   document.getElementById('site-editor-selection-hint').textContent = 'აირჩიეთ ფოტო, ტექსტი ან სექცია გადახედვის ფანჯარაში.';
   document.getElementById('site-editor-status').textContent = '';
@@ -548,6 +549,9 @@ function bindEditorFrame() {
       const anchor = target.closest('a[data-admin-original-href], a[data-admin-original-product-link], a[data-product-link], a[href]');
       const card = target.closest('.cms-product-card, .product-item, .product-card')
         || anchor?.closest('.cms-product-card, .product-item, .product-card');
+      const navigation = editorNavigation(target);
+      const productLink = navigation && card?.contains(navigation.element)
+        && navigation.element.matches('.cms-product-card__link, .product-link, [data-product-link]');
       let element = clicked || target;
       if (!(element instanceof doc.defaultView.HTMLElement)) return;
       let backgroundElement = null;
@@ -641,6 +645,7 @@ function bindEditorFrame() {
         productColors,
         productPrimaryColor,
         productField,
+        navigation: productLink ? null : navigation,
         sourceAttribute,
         mediaTagName,
         backgroundUrl,
@@ -656,6 +661,8 @@ function bindEditorFrame() {
       const isMedia = Boolean(mediaElement || backgroundElement);
       document.getElementById('site-editor-media-tools').classList.toggle('hidden', !isMedia);
       document.getElementById('site-editor-text-tools').classList.toggle('hidden', isMedia);
+      document.getElementById('site-editor-link-tools').classList.toggle('hidden', !editorSelection.navigation);
+      document.getElementById('site-editor-link-value').value = editorSelection.navigation?.value || '';
       document.getElementById('site-editor-product-tools').classList.toggle('hidden', !isProductCard && !productDetail);
       if (mediaTagName === 'video') preview.classList.add('hidden');
       else if (backgroundElement) {
@@ -683,7 +690,10 @@ function bindEditorFrame() {
           editorSelection.productHref = (pendingProduct || loadedProduct?.raw)?.productLink
             || new URL(`product-pages/${encodeURIComponent(pageSlug)}.html`, doc.baseURI).href;
         }
-        document.getElementById('site-editor-product-link').value = editorSelection.productHref;
+        const linkField = document.getElementById('site-editor-product-link');
+        editorSelection.canEditProductLink = isEditorLinkDestination(editorSelection.productHref, doc.baseURI);
+        linkField.closest('label').classList.toggle('hidden', !editorSelection.canEditProductLink);
+        linkField.value = editorSelection.canEditProductLink ? editorSelection.productHref : '';
         editorPrimaryColor = productPrimaryColor;
         renderEditorProductColors(productColors, editorPrimaryColor);
       }
@@ -775,8 +785,9 @@ function editorLiveSelector(element) {
   const parts = [];
   let current = element;
   while (current && current.tagName !== 'HTML') {
-    if (current.id) {
-      parts.unshift(`#${CSS.escape(current.id)}`);
+    const idSelector = current.id && `#${CSS.escape(current.id)}`;
+    if (idSelector && current.ownerDocument.querySelectorAll(idSelector).length === 1) {
+      parts.unshift(idSelector);
       break;
     }
     let uniqueDataSelector = '';
@@ -800,6 +811,107 @@ function editorLiveSelector(element) {
     current = current.parentElement;
   }
   return parts.join(' > ');
+}
+
+// Keep this function standalone so the published page can apply the same edit.
+function editorLinkAttribute(element, attribute, destination) {
+  const value = element.getAttribute(attribute);
+  if (value === null) return '';
+  if (attribute !== 'onclick') {
+    if (destination !== undefined && value !== destination) element.setAttribute(attribute, destination);
+    return value;
+  }
+  const literal = /(?:\b(?:window\.)?location(?:\.href)?\s*=\s*|\b(?:window\.)?location\.(?:assign|replace)\s*\(\s*|\bwindow\.open\s*\(\s*)("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')/.exec(value);
+  if (!literal) return '';
+  const quoted = literal[1];
+  if (destination !== undefined && quoted !== JSON.stringify(destination)) {
+    const end = literal.index + literal[0].length;
+    element.setAttribute(attribute, value.slice(0, end - quoted.length) + JSON.stringify(destination) + value.slice(end));
+  }
+  if (quoted.startsWith('"')) {
+    try { return JSON.parse(quoted); } catch { /* A JavaScript string can use escapes beyond JSON. */ }
+  }
+  return quoted.slice(1, -1);
+}
+
+function isEditorLinkDestination(value, base) {
+  const destination = value.trim();
+  if (!destination || destination === '#') return false;
+  try {
+    return ['http:', 'https:', 'mailto:', 'tel:', 'sms:'].includes(new URL(destination, base).protocol);
+  } catch {
+    return false;
+  }
+}
+
+function editorNavigation(target) {
+  for (let element = target; element; element = element.parentElement) {
+    const attributes = [];
+    if (element.matches('a[href], area[href]')) attributes.push('href');
+    if (element.hasAttribute('onclick')) attributes.push('onclick');
+    if (element.hasAttribute('data-href')) attributes.push('data-href');
+    if (element.matches('a, area, [role="link"]')) attributes.push('data-link', 'data-product-link');
+    const links = attributes.map(attribute => ({ attribute, value: editorLinkAttribute(element, attribute) }))
+      .filter(link => isEditorLinkDestination(link.value, element.ownerDocument.baseURI));
+    if (!links.length) continue;
+    const value = (links.find(link => link.attribute === 'onclick') || links[0]).value;
+    return { element, value, attributes: links.filter(link => link.value === value).map(link => link.attribute) };
+  }
+  return null;
+}
+
+async function saveEditorLink() {
+  const selection = editorSelection;
+  const navigation = selection?.navigation;
+  if (!navigation) return;
+  const status = document.getElementById('site-editor-status');
+  const value = document.getElementById('site-editor-link-value').value.trim();
+  const button = document.getElementById('site-editor-save-link');
+  if (!isEditorLinkDestination(value, navigation.element.ownerDocument.baseURI)) {
+    status.textContent = 'მიუთითეთ სწორი ბმული.';
+    return;
+  }
+  if (button.disabled || value === navigation.value) return;
+  button.disabled = true;
+  try {
+    const page = pendingEditorHtml.get(selection.page) || await editorHtmlFile(selection.page);
+    if (selection !== editorSelection) return;
+    const selector = editorLiveSelector(navigation.element);
+    if (!selector || navigation.element.ownerDocument.querySelectorAll(selector).length !== 1) {
+      throw new Error('ბმულის ზუსტად მონიშვნა ვერ მოხერხდა.');
+    }
+    const existing = /<script\b[^>]*data-admin-editor-link-edits="([^"]*)"[^>]*>[\s\S]*?<\/script>/i.exec(page.content);
+    const edits = existing ? JSON.parse(decodeURIComponent(existing[1])) : [];
+    const edit = edits.find(item => item.selector === selector);
+    if (edit) Object.assign(edit, { value, attributes: navigation.attributes });
+    else edits.push({ selector, value, attributes: navigation.attributes });
+    const encoded = encodeURIComponent(JSON.stringify(edits));
+    const script = `<script data-admin-editor-link-edits="${encoded}">(function(){
+      const editAttribute = ${editorLinkAttribute.toString()};
+      const edits = JSON.parse(decodeURIComponent(document.currentScript.dataset.adminEditorLinkEdits));
+      const apply = () => {
+        for (const edit of edits) {
+          const matches = document.querySelectorAll(edit.selector);
+          if (matches.length === 1) edit.attributes.forEach(attribute => editAttribute(matches[0], attribute, edit.value));
+        }
+      };
+      new MutationObserver(apply).observe(document.documentElement, {
+        childList: true, subtree: true, attributes: true, attributeFilter: ['href', 'onclick', 'data-href', 'data-link', 'data-url', 'data-product-link']
+      });
+      apply();
+    })();</script>`;
+    const updated = existing
+      ? page.content.replace(existing[0], () => script)
+      : /<\/body>/i.test(page.content) ? page.content.replace(/<\/body>/i, closing => script + closing) : page.content + script;
+    stageEditorHtml(selection.page, page.sha, updated, `Edit navigation link on ${selection.page}`);
+    navigation.attributes.forEach(attribute => editorLinkAttribute(navigation.element, attribute, value));
+    navigation.value = value;
+    status.textContent = 'ბმული შეიცვალა გადახედვაში. გამოსაქვეყნებლად დააჭირეთ „ცვლილებების შენახვა“.';
+  } catch (error) {
+    status.textContent = error.message || 'ბმული ვერ შეიცვალა.';
+  } finally {
+    button.disabled = false;
+  }
 }
 
 function stageEditorLiveElementDeletion(page, element) {
@@ -1304,7 +1416,7 @@ async function saveSelectedProduct() {
     || editorSelection.productTitle || editorSelection.text || '';
   const priceField = document.getElementById('site-editor-product-price').value;
   const price = priceField === '' ? Number(editorSelection.productPrice || 0) : Number(priceField);
-  const linkField = document.getElementById('site-editor-product-link').value.trim();
+  const linkField = selection.canEditProductLink ? document.getElementById('site-editor-product-link').value.trim() : '';
   const card = editorSelectedNode?.closest('.cms-product-card, .product-item, .product-card');
   const base = editorSelectedNode?.ownerDocument.baseURI || PUBLIC_SITE;
   if (linkField) {
@@ -1331,7 +1443,7 @@ async function saveSelectedProduct() {
   if (editorSelection !== selection) return;
   const previousLink = editorSelection.productHref;
   const isStaticCard = editorSelection.isProductCard && !editorSelection.isCmsProductCard;
-  const linkChanged = linkField !== previousLink;
+  const linkChanged = selection.canEditProductLink && linkField !== previousLink;
   if (!product && !isStaticCard) {
     status.textContent = productDataError?.message || 'პროდუქტი კატალოგში ვერ მოიძებნა.';
     return;
