@@ -3,6 +3,7 @@ const GITHUB_BRANCH = 'main';
 const GITHUB_API = 'https://api.github.com';
 const OAUTH_BASE = 'https://pupsy-decap-oauth.pupsystores.workers.dev';
 const PUBLIC_SITE = 'https://pupsystores-glitch.github.io/PUPSYWEB/';
+const SHARED_PRODUCT_TEMPLATE = 'harnes1.html';
 const collections = [
   { id: 'collars', file: 'collars.json', name: 'საყელურები', icon: 'shield', desc: 'ძაღლისა და კატის საყელურები' },
   { id: 'harnesses', file: 'harnesses.json', name: 'წელსამაგრები', icon: 'paperclip', desc: 'კომფორტული და უსაფრთხო წელსამაგრები' },
@@ -74,13 +75,13 @@ function uniqueProductSlug(title, currentId) {
 function productRouteStub(slug) {
   const image = 'https://pupsystores-glitch.github.io/PUPSYWEB/images/pupsy-share-preview-v2.png';
   const url = `https://pupsystores-glitch.github.io/PUPSYWEB/product-pages/${encodeURIComponent(slug)}.html`;
-  return `<!doctype html><html lang="ka"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PUPSY Product</title><meta name="description" content="Discover PUPSY products for dogs."><meta property="og:type" content="product"><meta property="og:site_name" content="PUPSY"><meta property="og:title" content="PUPSY Product"><meta property="og:description" content="Discover PUPSY products for dogs."><meta property="og:url" content="${url}"><meta property="og:image" content="${image}"><meta property="og:image:secure_url" content="${image}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="PUPSY Product"><meta name="twitter:description" content="Discover PUPSY products for dogs."><meta name="twitter:image" content="${image}"><link rel="icon" type="image/png" sizes="192x192" href="../images/pupsy-icon-192.png"><link rel="shortcut icon" type="image/x-icon" href="../favicon.ico"><link rel="apple-touch-icon" sizes="192x192" href="../images/pupsy-icon-192.png"></head><body><script src="../js/cms-product-route.js" defer></script></body></html>\n`;
+  return `<!doctype html><html lang="ka"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PUPSY Product</title><meta name="description" content="Discover PUPSY products for dogs."><meta property="og:type" content="product"><meta property="og:site_name" content="PUPSY"><meta property="og:title" content="PUPSY Product"><meta property="og:description" content="Discover PUPSY products for dogs."><meta property="og:url" content="${url}"><meta property="og:image" content="${image}"><meta property="og:image:secure_url" content="${image}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="PUPSY Product"><meta name="twitter:description" content="Discover PUPSY products for dogs."><meta name="twitter:image" content="${image}"><link rel="icon" type="image/png" sizes="192x192" href="../images/pupsy-icon-192.png"><link rel="shortcut icon" type="image/x-icon" href="../favicon.ico"><link rel="apple-touch-icon" sizes="192x192" href="../images/pupsy-icon-192.png"></head><body><script src="../js/cms-product-route.js?v=2" defer></script></body></html>\n`;
 }
 async function saveProductRoute(slug) {
   const path = `product-pages/${slug}.html`;
-  let sha;
   try {
-    sha = (await githubRequest(`/repos/${GITHUB_REPO}/contents/${path}?ref=${GITHUB_BRANCH}`)).sha;
+    await githubRequest(`/repos/${GITHUB_REPO}/contents/${path}?ref=${GITHUB_BRANCH}`);
+    return;
   } catch (error) {
     if (error.status !== 404) throw error;
   }
@@ -90,7 +91,6 @@ async function saveProductRoute(slug) {
     body: JSON.stringify({
       message: `Update product page ${slug}`,
       content: encodeBase64Utf8(productRouteStub(slug)),
-      ...(sha ? { sha } : {}),
       branch: GITHUB_BRANCH,
     }),
   });
@@ -335,20 +335,30 @@ async function loadMediaFiles() {
     .map(file => ({ id: file.sha, name: file.name, url: `/PUPSYWEB/images/uploads/${encodeURIComponent(file.name)}` }));
 }
 
+let activeAdminTab = 'contents';
+
 function switchMainTab(tab) {
+  activeAdminTab = tab;
+  const productEditor = tab === 'product-editor';
+  const showEditor = productEditor || tab === 'editor';
   const selected = 'flex-1 min-w-0 justify-center px-2.5 py-2 rounded-xl text-[11px] sm:text-xs font-semibold flex items-center gap-1.5 transition-all bg-indigo-600 text-white active-tab-glow';
   const idle = 'flex-1 min-w-0 justify-center px-2.5 py-2 rounded-xl text-[11px] sm:text-xs font-semibold flex items-center gap-1.5 text-slate-400 hover:text-white transition-all';
   ['contents', 'media', 'videos', 'stats', 'editor'].forEach(view => {
-    document.getElementById(`${view}-view`).classList.toggle('hidden', view !== tab);
+    document.getElementById(`${view}-view`).classList.toggle('hidden', view === 'editor' ? !showEditor : view !== tab);
     const button = document.getElementById(`tab-${view}-btn`);
     if (button) button.className = view === tab ? selected : idle;
   });
+  const productTab = document.getElementById('tab-product-editor-btn');
+  if (productTab) productTab.className = productEditor ? selected : idle;
+  document.getElementById('site-editor-site-picker').classList.toggle('hidden', productEditor);
+  document.getElementById('site-editor-product-picker').classList.toggle('hidden', !productEditor);
   document.getElementById('site-editor-open')?.classList.toggle('ring-2', tab === 'editor');
   const main = document.querySelector('main');
-  if (main) main.style.maxWidth = tab === 'editor' ? 'none' : '';
+  if (main) main.style.maxWidth = showEditor ? 'none' : '';
   if (tab === 'media') loadMediaView();
   if (tab === 'videos') loadPageVideosView();
   if (tab === 'editor') loadEditorPage();
+  if (productEditor) loadProductEditorPages();
   if (tab === 'stats') loadVoteStats();
 }
 
@@ -484,13 +494,42 @@ async function saveEditorChanges() {
   }
 }
 
+function currentEditorPage() {
+  return document.getElementById(activeAdminTab === 'product-editor' ? 'site-editor-product-page' : 'site-editor-page')?.value;
+}
+
+async function loadProductEditorPages() {
+  const select = document.getElementById('site-editor-product-page');
+  const status = document.getElementById('site-editor-product-page-status');
+  select.disabled = true;
+  status.textContent = 'პროდუქტის გვერდები იტვირთება…';
+  try {
+    const entries = await githubRequest(`/repos/${GITHUB_REPO}/contents/product-pages?ref=${GITHUB_BRANCH}`);
+    const pages = entries.filter(entry => entry.type === 'file' && /\.html$/i.test(entry.name))
+      .map(entry => {
+        const slug = entry.name.replace(/\.html$/i, '');
+        const title = products.find(item => item.raw.slug === slug)?.title || slug;
+        return { name: entry.name, title };
+      }).sort((a, b) => a.title.localeCompare(b.title, 'ka'));
+    const selectedPage = select.value;
+    select.replaceChildren(...pages.map(page => new Option(page.title, `product-pages/${page.name}`)));
+    if (pages.some(page => `product-pages/${page.name}` === selectedPage)) select.value = selectedPage;
+    status.textContent = pages.length ? '' : 'პროდუქტის გვერდები ვერ მოიძებნა.';
+  } catch (error) {
+    status.textContent = error.message || 'პროდუქტის გვერდები ვერ ჩაიტვირთა.';
+  } finally {
+    select.disabled = !select.options.length;
+    if (activeAdminTab === 'product-editor') loadEditorPage();
+  }
+}
+
 function loadEditorPage(force = false) {
-  const page = document.getElementById('site-editor-page')?.value;
+  const page = currentEditorPage();
   const frame = document.getElementById('site-editor-frame');
   if (!page || !frame || (!force && editorLoadedPage === page)) return;
   editorLoadedPage = page;
   clearEditorSelection();
-  const url = new URL(`../${page}`, window.location.href);
+  const url = new URL(`../${page.split('/').map(encodeURIComponent).join('/')}`, window.location.href);
   url.searchParams.set('admin-preview', Date.now());
   editorLoadedUrl = url.href;
   frame.src = editorLoadedUrl;
@@ -533,13 +572,18 @@ function bindEditorFrame() {
   try {
     const doc = frame.contentDocument;
     if (!doc) return;
+    if (doc.location.href !== editorLoadedUrl) return;
+    if (editorLoadedPage.startsWith('product-pages/') && doc.querySelector('script[src*="cms-product-route.js"]')
+      && !doc.querySelector('product-component')) return;
     if (boundEditorDocuments.has(doc)) return;
     boundEditorDocuments.add(doc);
     const editorStyle = doc.createElement('style');
     editorStyle.dataset.adminEditorStyles = 'true';
     editorStyle.textContent = '*{cursor:crosshair!important}';
     (doc.head || doc.documentElement).append(editorStyle);
+    previewSharedProductFooter(doc);
     doc.defaultView.addEventListener('click', event => {
+      if (editorLoadedPage !== currentEditorPage()) return;
       document.getElementById('site-editor-status').textContent = '';
       event.preventDefault();
       event.stopImmediatePropagation();
@@ -603,8 +647,9 @@ function bindEditorFrame() {
             : productAccordion ? (['description', 'sizeDetails', 'benefits', 'materialCare'][accordionIndex] || '')
             : element.closest('.product__title') ? 'title'
               : element.closest('[data-product-price]') ? 'price' : '';
-      const pageSlug = card?.dataset.productSlug
-        || document.getElementById('site-editor-page').value.match(/product-pages\/([^/]+)\.html/i)?.[1]
+      const page = currentEditorPage();
+      const encodedPageSlug = page.match(/product-pages\/([^/]+)\.html/i)?.[1];
+      const pageSlug = card?.dataset.productSlug || encodedPageSlug
         || card?.getAttribute('href')?.match(/product-pages\/([^/]+)\.html/i)?.[1] || '';
       const productTitle = card?.querySelector('.cms-product-card__title')?.textContent.trim()
         || card?.querySelector('.product-item__title')?.textContent.trim()
@@ -614,6 +659,7 @@ function bindEditorFrame() {
       const productPriceText = (card?.querySelector('.cms-product-card__price, .product-item__price')
         || doc.querySelector('[data-product-price]'))?.textContent.match(/[\d,]+(?:\.\d+)?/g)?.at(-1) || '';
       const productDetail = Boolean(!card && pageSlug && doc.querySelector('.product__title'));
+      const sharedSlot = target.closest('[data-shared-product-photo]')?.dataset.sharedProductPhoto;
       const colorScope = card || (productDetail ? doc.querySelector('.product__siblings') : null);
       const productColors = loadedProduct
         ? (loadedProduct.raw?.colorsEnabled === true ? loadedProduct.raw.colors || [] : [])
@@ -622,7 +668,7 @@ function bindEditorFrame() {
       const productPrimaryColor = loadedProduct?.raw?.primaryColor || selectedSwatch?.getAttribute('data-tooltip') || productColors[0] || '';
       const isProductCard = Boolean(card && (card.classList.contains('cms-product-card') || card.classList.contains('product-item') || card.classList.contains('product-card')));
       editorSelection = {
-        page: document.getElementById('site-editor-page').value,
+        page,
         tagName,
         id: element.id,
         className: element.className?.toString() || '',
@@ -640,7 +686,8 @@ function bindEditorFrame() {
         productOccurrence: Math.max(0, Array.prototype.indexOf.call(productNodes, card)),
         isProductCard,
         isCmsProductCard: Boolean(card?.matches('.cms-product-card')),
-        isProductDetail: productDetail,
+        isProductDetail: productDetail && !sharedSlot,
+        sharedSlot,
         productPrice: loadedProduct?.raw?.price ?? productPriceText.replace(/,/g, ''),
         productColors,
         productPrimaryColor,
@@ -663,7 +710,7 @@ function bindEditorFrame() {
       document.getElementById('site-editor-text-tools').classList.toggle('hidden', isMedia);
       document.getElementById('site-editor-link-tools').classList.toggle('hidden', !editorSelection.navigation);
       document.getElementById('site-editor-link-value').value = editorSelection.navigation?.value || '';
-      document.getElementById('site-editor-product-tools').classList.toggle('hidden', !isProductCard && !productDetail);
+      document.getElementById('site-editor-product-tools').classList.toggle('hidden', !isProductCard && !editorSelection.isProductDetail);
       if (mediaTagName === 'video') preview.classList.add('hidden');
       else if (backgroundElement) {
         preview.src = backgroundUrl;
@@ -675,12 +722,14 @@ function bindEditorFrame() {
           preview.classList.remove('hidden');
         } else preview.classList.add('hidden');
       }
-      document.getElementById('site-editor-selection-hint').textContent = element.alt || `${tagName.toUpperCase()} მონიშნულია.`;
+      document.getElementById('site-editor-selection-hint').textContent = sharedSlot
+        ? `საერთო ფოტო ${sharedSlot} — ცვლილება ყველა პროდუქტის გვერდზე გავრცელდება.`
+        : element.alt || `${tagName.toUpperCase()} მონიშნულია.`;
       document.getElementById('site-editor-text-value').value = editorSelection.editTextValue;
       document.getElementById('site-editor-text-value').disabled = !editorSelection.canEditText;
       document.getElementById('site-editor-save-text').disabled = !editorSelection.canEditText;
       document.getElementById('site-editor-save-text').classList.toggle('opacity-40', !editorSelection.canEditText);
-      if (isProductCard || productDetail) {
+      if (isProductCard || editorSelection.isProductDetail) {
         document.getElementById('site-editor-product-title').value = productTitle;
         document.getElementById('site-editor-product-price').value = productPriceText.replace(/,/g, '') || loadedProduct?.raw?.price || '';
         if (productDetail) {
@@ -778,6 +827,44 @@ function editorTagRange(html, selection) {
   if (!matching.length) matching = candidates;
   const index = Math.min(Math.max(Number(selection.occurrence) || 0, 0), matching.length - 1);
   return matching[index] || null;
+}
+
+async function stageSharedProductPhoto(slot, { url, caption }) {
+  const id = `shared-product-photo-${slot}`;
+  const page = pendingEditorHtml.get(SHARED_PRODUCT_TEMPLATE) || await editorHtmlFile(SHARED_PRODUCT_TEMPLATE);
+  const latest = pendingEditorHtml.get(SHARED_PRODUCT_TEMPLATE) || page;
+  const range = editorTagRange(latest.content, { tagName: 'div', id });
+  if (range?.id !== id) throw new Error('საერთო ფოტო შაბლონში ვერ მოიძებნა.');
+  const original = latest.content.slice(range.start, range.end);
+  const updated = url !== undefined
+    ? original.replace(/<img\b[^>]*>/i, tag =>
+      tag.replace(/\s(?:src|srcset|data-src|data-srcset|sizes)\s*=\s*(["'])[^"']*\1/gi, '')
+        .replace(/^<img/i, () => `<img src="${escapeHtmlAttribute(url)}"`))
+    : original.replace(/(<p\b[^>]*>)[\s\S]*?(<\/p>)/i, (_, open, close) => open + escapeEditorText(caption) + close);
+  if (updated === original) return;
+  const content = latest.content.slice(0, range.start) + updated + latest.content.slice(range.end);
+  stageEditorHtml(SHARED_PRODUCT_TEMPLATE, latest.sha, content, 'Update shared product page photos');
+}
+
+function previewSharedProductFooter(doc) {
+  const draft = pendingEditorHtml.get(SHARED_PRODUCT_TEMPLATE);
+  const slots = doc.querySelectorAll('[data-shared-product-photo]');
+  if (!draft || !slots.length) return;
+  const staged = new DOMParser().parseFromString(draft.content, 'text/html');
+  for (const slot of slots) {
+    const source = staged.getElementById(slot.id);
+    const image = slot.querySelector('img');
+    const stagedImage = source?.querySelector('img');
+    if (image && stagedImage) {
+      for (const attribute of ['src', 'srcset', 'data-src', 'data-srcset', 'sizes']) {
+        const value = stagedImage.getAttribute(attribute);
+        if (value === null) image.removeAttribute(attribute);
+        else image.setAttribute(attribute, pendingEditorAssets.get(value)?.previewUrl || value);
+      }
+    }
+    const caption = slot.querySelector('.column__text p');
+    if (caption && source) caption.textContent = source.querySelector('.column__text p')?.textContent || '';
+  }
 }
 
 function editorLiveSelector(element) {
@@ -1571,6 +1658,15 @@ async function saveEditorText() {
   if (!editorSelection || !editorSelection.canEditText) { status.textContent = 'აირჩიეთ ტექსტური სათაური ან ველი.'; return; }
   const value = document.getElementById('site-editor-text-value').value;
   try {
+    if (editorSelection.sharedSlot) {
+      const selected = editorSelectedNode;
+      const caption = selected?.closest('.column__text p');
+      if (!caption) throw new Error('აირჩიეთ ფოტოს ქვემოთ მდებარე წარწერა.');
+      await stageSharedProductPhoto(editorSelection.sharedSlot, { caption: value.trim() });
+      caption.textContent = value.trim();
+      status.textContent = 'წარწერა შეიცვალა გადახედვაში. შენახვის შემდეგ ყველა პროდუქტის გვერდზე განახლდება.';
+      return;
+    }
     const product = await findEditorProduct(editorSelection);
     if (product && (editorSelection.productField || product.raw.title === editorSelection.text)) {
       const field = editorSelection.productField || 'title';
@@ -1799,6 +1895,15 @@ async function saveEditorPageImage(replacement, remove = false) {
   if (!editorSelection) throw new Error('ჯერ აირჩიეთ ფოტო საიტის გადახედვაში.');
   const path = editorSelection.page;
   const storedUrl = replacement ? replacement.stagedUrl || replacement.url : '';
+  if (editorSelection.sharedSlot) {
+    if (remove || editorSelection.mediaTagName !== 'img' || /^video\//i.test(replacement?.type || '')) {
+      throw new Error('ასარჩევად დააწკაპუნეთ ფოტოზე და მიუთითეთ ახალი სურათი.');
+    }
+    const selection = editorSelection;
+    await stageSharedProductPhoto(selection.sharedSlot, { url: storedUrl });
+    if (editorSelection === selection) updateEditorMediaPreview(replacement);
+    return true;
+  }
   if (editorSelection.mediaTagName === 'background') {
     if (!remove) {
       const product = await findEditorProduct(editorSelection);
@@ -1815,7 +1920,17 @@ async function saveEditorPageImage(replacement, remove = false) {
     updateEditorMediaPreview(replacement, remove);
     return;
   }
-  if (!remove && !/^video\//i.test(replacement.type || '')) {
+  const productRoute = path.startsWith('product-pages/');
+  const productGallery = editorSelectedNode?.closest('product-images, [data-product-media-list]');
+  if (productRoute && productGallery && (remove || !/^video\//i.test(replacement?.type || ''))) {
+    const product = await findEditorProduct(editorSelection);
+    if (!product || !selectedProductPhoto(product.raw, editorSelection)) throw new Error('არჩეული ფოტო პროდუქტის გალერეაში ვერ მოიძებნა.');
+    updateProductPhotoReferences(product.raw, editorSelection, remove ? null : storedUrl);
+    stageEditorJson(product.path, product.file);
+    updateEditorMediaPreview(replacement, remove);
+    return;
+  }
+  if (!productRoute && !remove && !/^video\//i.test(replacement.type || '')) {
     const product = await findEditorProduct(editorSelection);
     if (product) {
       replaceEditorProductPhotos(product.raw, storedUrl);
@@ -1962,13 +2077,21 @@ async function replaceEditorImage() {
   const url = document.getElementById('site-editor-url').value.trim();
   if (!editorSelection) { status.textContent = 'აირჩიეთ ფოტო ან ვიდეო გვერდის წინასწარ ხედში.'; return; }
   if (!file && !url) { status.textContent = 'აირჩიეთ ფაილი ან მიუთითეთ მედიის ბმული.'; return; }
+  const selection = editorSelection;
+  if (selection.sharedSlot && file && !file.type.startsWith('image/')) {
+    status.textContent = 'ამ ადგილას აირჩიეთ ფოტოს ფაილი.';
+    return;
+  }
   status.textContent = 'მედია იცვლება წინასწარ ხედში...';
   let media;
   try {
     const videoMatch = url.match(/\.(mp4|webm|ogg)(?:$|\?)/i);
     media = file ? await uploadEditorMedia(file) : { url, type: videoMatch ? `video/${videoMatch[1].toLowerCase()}` : 'image/*' };
-    await saveEditorPageImage(media);
-    status.textContent = 'მედია შეიცვალა წინასწარ ხედში. საიტზე ასატვირთად დააჭირეთ ქვემოთ „ცვლილებების შენახვა“ ღილაკს.';
+    if (selection !== editorSelection) return;
+    const shared = await saveEditorPageImage(media);
+    status.textContent = shared
+      ? 'ფოტო შეიცვალა გადახედვაში. შენახვის შემდეგ ყველა პროდუქტის გვერდზე განახლდება.'
+      : 'მედია შეიცვალა წინასწარ ხედში. საიტზე ასატვირთად დააჭირეთ ქვემოთ „ცვლილებების შენახვა“ ღილაკს.';
     document.getElementById('site-editor-file').value = '';
     document.getElementById('site-editor-url').value = '';
   } catch (error) {
@@ -2006,6 +2129,8 @@ function initializeVoteStatsView() {
   button.innerHTML = '<i data-lucide="chart-no-axes-column-increasing" class="w-3.5 h-3.5"></i><span>სტატისტიკა</span>';
   button.onclick = () => switchMainTab('stats');
   nav.append(button);
+  const productEditorButton = document.getElementById('tab-product-editor-btn');
+  if (productEditorButton) nav.append(productEditorButton);
   const view = document.createElement('div');
   view.id = 'stats-view';
   view.className = 'hidden space-y-5';

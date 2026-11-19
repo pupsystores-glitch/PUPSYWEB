@@ -150,7 +150,7 @@
             </a>
             <button id="site-editor-open" type="button" onclick="switchMainTab('editor')" class="self-start rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-[11px] font-bold tracking-wide text-amber-200 hover:bg-amber-400/20 hover:text-white inline-flex items-center gap-1.5 transition-colors">EDIT <i data-lucide="pencil" class="w-3 h-3"></i></button></div>
 
-            <div class="w-full bg-slate-900/90 p-1 rounded-2xl border border-slate-800 flex items-center gap-1 shadow-inner">
+            <div class="w-full bg-slate-900/90 p-1 rounded-2xl border border-slate-800 flex flex-wrap items-center gap-1 shadow-inner">
                 <button id="tab-contents-btn" onclick="switchMainTab('contents')" class="flex-1 min-w-0 justify-center px-2.5 py-2 rounded-xl text-[11px] sm:text-xs font-semibold flex items-center gap-1.5 transition-all bg-indigo-600 text-white active-tab-glow">
                     <i data-lucide="folder-tree" class="w-3.5 h-3.5"></i>
                     <span>შინაარსი</span>
@@ -163,6 +163,10 @@
                     <i data-lucide="video" class="w-3.5 h-3.5"></i>
                     <span>ვიდეოები</span>
                 </button>
+                <button id="tab-product-editor-btn" type="button" onclick="switchMainTab('product-editor')" class="flex-1 justify-center px-2.5 py-2 rounded-xl text-[11px] sm:text-xs font-semibold flex items-center gap-1.5 text-slate-400 hover:text-white">
+                    <i data-lucide="package-pen" class="w-3.5 h-3.5"></i>
+                    <span>პროდუქტის რედაქტორი</span>
+                </button>
             </div>
         </div>
     </header>
@@ -173,11 +177,17 @@
             <section class="glass-card rounded-2xl p-4 sm:p-5 space-y-4">
                 <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
                     <div><h2 class="text-lg font-bold text-white">საიტის ვიზუალური რედაქტორი</h2><p class="mt-1 text-xs text-slate-400">&#4324;&#4317;&#4322;&#4317;&#32;&#4304;&#4316;&#32;&#4322;&#4308;&#4325;&#4321;&#4322;&#4312;&#32;&#4308;&#4320;&#4311;&#4312;&#32;&#4307;&#4304;&#4333;&#4308;&#4320;&#4312;&#4311;&#32;&#4315;&#4317;&#4316;&#4312;&#4328;&#4316;&#4308;&#4311;&#59;&#32;&#4318;&#4320;&#4317;&#4307;&#4323;&#4325;&#4322;&#4312;&#4321;&#32;&#4306;&#4309;&#4308;&#4320;&#4307;&#4312;&#32;&#4321;&#4304;&#4315;&#4312;&#32;&#4307;&#4304;&#4333;&#4308;&#4320;&#4312;&#4311;&#32;&#4312;&#4334;&#4321;&#4316;&#4308;&#4305;&#4304;&#46;</p></div>
-                    <label class="text-xs text-slate-300 sm:min-w-56">გვერდი
+                    <label id="site-editor-site-picker" class="text-xs text-slate-300 sm:min-w-56">გვერდი
                         <select id="site-editor-page" onchange="loadEditorPage()" class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-white">
                             <option value="index.html">მთავარი</option><option value="shop2.html">აქსესუარების/პროდუქტების გვერდი</option><option value="harnes1.html">შესაკრავების სრული გვერდი</option><option value="product.html">პროდუქტის გვერდი</option><option value="privacy.html">კონფიდენციალურობა</option><option value="shop.html">პროდუქტები</option><option value="accessory.html">აქსესუარები</option><option value="collar.html">საყელოები</option><option value="harnes.html">შესაკრავები</option><option value="leash.html">საბელები</option><option value="care.html">მოვლა</option><option value="play.html">თამაშები</option><option value="about.html">ჩვენ შესახებ</option><option value="contact.html">კონტაქტი</option><option value="guide.html">გზამკვლევი</option><option value="ambassador.html">ამბასადორები</option><option value="collections/harnesses.html">შესაკრავების კოლექცია</option><option value="collections/velvet-collars.html">ხავერდის საყელოები</option><option value="collections/poop-bag-holders.html">პარკის სათავსოები</option><option value="collections/lick-mat.html">სალოკი ხალიჩები</option><option value="collections/braided-leash.html">წნული საბელები</option><option value="product-pages/tsqlis-botli.html">წყლის ბოთლი</option><option value="product-pages/Tedy-brown-harness.html">TEDY-ის შესაკრავი</option><option value="product-pages/sportuli-kepi.html">სპორტული კეპი</option>
                         </select>
                     </label>
+                    <div id="site-editor-product-picker" class="hidden space-y-2">
+                        <label for="site-editor-product-page" class="block text-xs text-slate-300">პროდუქტის გვერდი</label>
+                        <select id="site-editor-product-page" onchange="loadEditorPage()" disabled class="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-white sm:min-w-56"></select>
+                        <p id="site-editor-product-page-status" role="status" class="text-xs text-slate-400"></p>
+                        <p class="text-xs text-slate-300">ფუტერის ზემოთ მდებარე ხუთ ფოტოდან აირჩიე ფოტო ან მისი წარწერა. შენახვის შემდეგ ეს ცვლილება ყველა პროდუქტის გვერდზე გამოჩნდება.</p>
+                    </div>
                 </div>
                 <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_280px] gap-4 items-start">
                     <div class="overflow-hidden rounded-xl border border-slate-700 bg-white"><iframe id="site-editor-frame" title="საიტის ცოცხალი გადახედვა" src="../index.html" class="block w-full h-[68vh] min-h-[460px] bg-white"></iframe></div>
@@ -519,6 +529,6 @@
     </div>
 
     <!-- Application JavaScript State & Controller -->
-    <script src="dashboard.js?v=43"></script>
+    <script src="dashboard.js?v=44"></script>
 </body>
 </html>
