@@ -423,7 +423,7 @@
   const originals = new WeakMap();
   let currentLanguage = "ka";
   const openedUrl = new URL(location.href);
-  const sharePages = new Set(["index.html", "shop.html", "ambassador.html", "about.html", "contact.html"]);
+  const sharePages = new Set(["index.html", "shop.html", "ambassador.html", "about.html", "contact.html", "harnes1.html"]);
   const openedPath = openedUrl.pathname.slice(new URL(document.baseURI).pathname.length) || "index.html";
   const hasLocalizedShare = !openedUrl.searchParams.has("admin-preview")
     && (sharePages.has(openedPath) || /^product-pages\/[^/]+\.html$/.test(openedPath));
