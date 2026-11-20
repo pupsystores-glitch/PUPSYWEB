@@ -27,6 +27,10 @@
   border-color: #8a4d2e;
 }
 
+.site-footer .footer-contact-list__link::after {
+  content: none;
+}
+
 .site-footer .footer-contact-list__link:focus-visible {
   outline: 2px solid #71301e;
   outline-offset: 2px;
@@ -51,4 +55,5 @@
   font-weight: 700;
   line-height: 1.35;
   color: #35231f;
+  -webkit-text-fill-color: currentColor !important;
 }
