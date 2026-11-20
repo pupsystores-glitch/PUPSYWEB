@@ -77,20 +77,88 @@ function productRouteStub(slug) {
   const url = `https://pupsystores-glitch.github.io/PUPSYWEB/product-pages/${encodeURIComponent(slug)}.html`;
   return `<!doctype html><html lang="ka"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PUPSY Product</title><meta name="description" content="Discover PUPSY products for dogs."><meta property="og:type" content="product"><meta property="og:site_name" content="PUPSY"><meta property="og:title" content="PUPSY Product"><meta property="og:description" content="Discover PUPSY products for dogs."><meta property="og:url" content="${url}"><meta property="og:image" content="${image}"><meta property="og:image:secure_url" content="${image}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="PUPSY Product"><meta name="twitter:description" content="Discover PUPSY products for dogs."><meta name="twitter:image" content="${image}"><link rel="icon" type="image/png" sizes="192x192" href="../images/pupsy-icon-192.png"><link rel="shortcut icon" type="image/x-icon" href="../favicon.ico"><link rel="apple-touch-icon" sizes="192x192" href="../images/pupsy-icon-192.png"></head><body><script src="../js/cms-product-route.js?v=2" defer></script></body></html>\n`;
 }
-async function saveProductRoute(slug) {
-  const path = `product-pages/${slug}.html`;
+function productShareSource(product) {
+  const photo = productPhotoUrls(product)[0];
+  if (!photo) return '';
   try {
-    await githubRequest(`/repos/${GITHUB_REPO}/contents/${path}?ref=${GITHUB_BRANCH}`);
-    return;
+    const url = new URL(photo, PUBLIC_SITE);
+    return url.protocol === 'https:' ? url.href : '';
+  } catch { return ''; }
+}
+
+function productShareMarkup(html, product, source, image) {
+  const title = escapeHtmlAttribute(product.title || 'PUPSY');
+  const preview = escapeHtmlAttribute(image || new URL('images/pupsy-share-preview-v2.png', PUBLIC_SITE).href);
+  return html.replace(/<title>[^<]*<\/title>/i, () => `<title>${title} | PUPSY</title>`)
+    .replace(/(<meta (?:property|name)="(?:og:title|twitter:title)" content=")[^"]*"/g, (_, prefix) => `${prefix}${title}"`)
+    .replace(/(<meta (?:property|name)="(?:og:image|og:image:secure_url|twitter:image)" content=")[^"]*"/g, (_, prefix) => `${prefix}${preview}"`)
+    .replace(/<meta name="pupsy:share-source" content="[^"]*">/g, '')
+    .replace('</head>', () => `<meta name="pupsy:share-source" content="${escapeHtmlAttribute(source)}"></head>`);
+}
+
+async function productShareThumbnail(source) {
+  if (!source) return '';
+  try {
+    const download = source.startsWith(PUBLIC_SITE)
+      ? `https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}/${source.slice(PUBLIC_SITE.length)}`
+      : source;
+    const response = await fetch(download, { signal: AbortSignal.timeout(5000) });
+    if (!response.ok) return source;
+    const bitmap = await createImageBitmap(await response.blob());
+    const canvas = document.createElement('canvas');
+    try {
+      const scale = Math.min(1, 640 / Math.max(bitmap.width, bitmap.height));
+      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+      const context = canvas.getContext('2d');
+      context.fillStyle = '#fff';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    } finally { bitmap.close(); }
+    const jpeg = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.7));
+    const bytes = await jpeg.arrayBuffer();
+    const hash = [...new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))]
+      .map(byte => byte.toString(16).padStart(2, '0')).join('');
+    const path = `images/share/product-${hash}.jpg`;
+    const endpoint = `/repos/${GITHUB_REPO}/contents/${path}`;
+    try {
+      await githubRequest(`${endpoint}?ref=${GITHUB_BRANCH}`);
+    } catch (error) {
+      if (error.status !== 404) throw error;
+      await githubRequest(endpoint, {
+        method: 'PUT',
+        body: JSON.stringify({ message: 'Add compact product share preview', content: encodeBase64Utf8FromBytes(bytes), branch: GITHUB_BRANCH }),
+      });
+    }
+    return new URL(path, PUBLIC_SITE).href;
+  } catch { return source; }
+}
+
+async function saveProductRoute(product) {
+  const { slug } = product;
+  const path = `product-pages/${slug}.html`;
+  let sha;
+  let original = productRouteStub(slug);
+  try {
+    const existing = await editorHtmlFile(path);
+    sha = existing.sha;
+    original = existing.content;
+    if (!original.includes('cms-product-route.js')) return;
   } catch (error) {
     if (error.status !== 404) throw error;
   }
+  const source = productShareSource(product);
+  const unchangedSource = original.includes(`name="pupsy:share-source" content="${escapeHtmlAttribute(source)}"`);
+  const image = unchangedSource ? /property="og:image" content="([^"]+)"/.exec(original)?.[1]?.replaceAll('&amp;', '&') : '';
+  const updated = productShareMarkup(original, product, source, image || await productShareThumbnail(source));
+  if (sha && original === updated) return;
   await githubRequest(`/repos/${GITHUB_REPO}/contents/${path}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       message: `Update product page ${slug}`,
-      content: encodeBase64Utf8(productRouteStub(slug)),
+      content: encodeBase64Utf8(updated),
+      ...(sha ? { sha } : {}),
       branch: GITHUB_BRANCH,
     }),
   });
@@ -466,8 +534,17 @@ async function saveEditorChanges() {
       updateEditorSaveButton();
     }
     for (const [path, draft] of pendingEditorJson) {
-      const sha = await commitJson(path, draft.data, draft.sha);
       const collection = collections.find(item => path === `products/categories/${item.file}`);
+      if (collection) {
+        const previous = collectionFiles[collection.id]?.data.products || [];
+        for (const product of draft.data.products) {
+          const old = previous.find(item => item.slug === product.slug);
+          if (product.slug && old && (old.title !== product.title || productShareSource(old) !== productShareSource(product))) {
+            await saveProductRoute(product);
+          }
+        }
+      }
+      const sha = await commitJson(path, draft.data, draft.sha);
       if (collection) {
         collectionFiles[collection.id] = { sha, data: draft.data };
         products = products.filter(product => product.collectionId !== collection.id)
@@ -2753,7 +2830,7 @@ async function saveProductForm(event) {
     };
     const raw = productToRaw(existing, targetCollection, values, !existing);
     setSaveStatus('პროდუქტის მონაცემები GitHub-ზე ინახება…');
-    await saveProductRoute(raw.slug);
+    await saveProductRoute(raw);
     const moved = existing && existing.collectionId !== targetId;
     await writeCatalogProduct(targetId, moved ? null : existing?.raw, raw);
     if (moved) await writeCatalogProduct(existing.collectionId, existing.raw, null);
