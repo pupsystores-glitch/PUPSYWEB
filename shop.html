@@ -17494,9 +17494,10 @@
 
           /* botões ficam inline (não flexbox) */
           .subcollection-buttons {
-            display: inline-flex;
+            display: flex;
             gap: 20px;
-            min-width: max-content;
+            width: max-content;
+            margin-inline: auto;
           }
 
           .subcollection-button {
@@ -17517,8 +17518,11 @@
             transition: background-color 0.3s, color 0.3s;
           }
 
-          .subcollection-button[href="shop.html"] {
-            border: 2px solid #9b4f3f;
+          .subcollection-button[aria-current="page"] {
+            border-color: #71301e;
+            background-color: #fff7f1;
+            color: #542215;
+            font-weight: 700;
           }
 
           .subcollection-button:hover {

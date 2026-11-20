@@ -18359,9 +18359,10 @@
 
           /* botões ficam inline (não flexbox) */
           .subcollection-buttons {
-            display: inline-flex;
+            display: flex;
             gap: 20px;
-            min-width: max-content;
+            width: max-content;
+            margin-inline: auto;
           }
 
           .subcollection-button {
@@ -18379,8 +18380,11 @@
             transition: background-color 0.3s, color 0.3s;
           }
 
-          .subcollection-button[href="/collections/braided-leash"] {
-            border: 2px solid #9b4f3f;
+          .subcollection-button[aria-current="page"] {
+            border-color: #71301e;
+            background-color: #fff7f1;
+            color: #542215;
+            font-weight: 700;
           }
 
           .subcollection-button:hover {
@@ -18403,8 +18407,8 @@
         </style>
         <section class="subcollections collection-all section-padding color-scheme-1" id="Subcollections--template--20657884758204__subcollections">
           <div class="subcollection-buttons-wrapper">
-            <div class="subcollection-buttons"><a href="/collections/braided-leash" class="subcollection-button">დაწნული თოკი</a>
-<a href="/collections/poop-bag-holders" class="subcollection-button">პარკის ჩანთების სათავსოები</a><a href="/collections/harnesses" class="subcollection-button">წელსამაგრები</a><a href="/collections/velvet-collars" class="subcollection-button">საყელოები</a><a href="/collections/lick-mat" class="subcollection-button">ყველა პროდუქტი</a></div>
+            <div class="subcollection-buttons"><a aria-current="page" href="collections/braided-leash.html" class="subcollection-button">დაწნული თოკი</a>
+<a href="collections/poop-bag-holders.html" class="subcollection-button">პარკის ჩანთების სათავსოები</a><a href="collections/harnesses.html" class="subcollection-button">წელსამაგრები</a><a href="collections/velvet-collars.html" class="subcollection-button">საყელოები</a><a href="collections/lick-mat.html" class="subcollection-button">ყველა პროდუქტი</a></div>
           </div>
         </section>
         <style>
