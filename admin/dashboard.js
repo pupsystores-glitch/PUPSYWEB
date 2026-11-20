@@ -90,11 +90,39 @@ function productShareMarkup(html, product, source, image) {
   const title = escapeHtmlAttribute(product.title || 'PUPSY');
   const preview = escapeHtmlAttribute(image || new URL('images/pupsy-share-preview-v2.png', PUBLIC_SITE).href);
   return html.replace(/<title>[^<]*<\/title>/i, () => `<title>${title} | PUPSY</title>`)
+    .replace(/(<meta (?:property|name)="(?:og:description|twitter:description|description)" content=")[^"]*"/g, (_, prefix) => `${prefix}იხილეთ ეს პროდუქტი PUPSY-ზე."`)
     .replace(/(<meta (?:property|name)="(?:og:title|twitter:title)" content=")[^"]*"/g, (_, prefix) => `${prefix}${title}"`)
     .replace(/(<meta (?:property|name)="(?:og:image|og:image:secure_url|twitter:image)" content=")[^"]*"/g, (_, prefix) => `${prefix}${preview}"`)
     .replace(/<meta name="pupsy:share-source" content="[^"]*">/g, '')
     .replace(/<meta name="pupsy:share-version" content="[^"]*">/g, '')
-    .replace('</head>', () => `<meta name="pupsy:share-source" content="${escapeHtmlAttribute(source)}">${image?.includes('/images/share/') ? '<meta name="pupsy:share-version" content="2">' : ''}</head>`);
+    .replace(/<meta property="og:locale" content="[^"]*">/g, '')
+    .replace('</head>', () => `<meta property="og:locale" content="ka_GE"><meta name="pupsy:share-source" content="${escapeHtmlAttribute(source)}">${image?.includes('/images/share/') ? '<meta name="pupsy:share-version" content="2">' : ''}</head>`);
+}
+
+async function saveEnglishProductShare(product, image) {
+  const page = `product-pages/${encodeURIComponent(product.slug)}.html`;
+  const path = `share/en/${page}`;
+  const englishNames = {
+    'Tedy-brown-harness': 'TEDY harness', 'ortklis-savartskheli': 'Steam grooming brush',
+    'sportuli-kepi': 'Sports cap', 'tsqlis-botli': 'Water bottle',
+  };
+  const title = escapeHtmlAttribute(product.titleEn || englishNames[product.slug]
+    || (/[ა-ჰ]/.test(product.title || '') ? 'PUPSY product' : product.title) || 'PUPSY product');
+  const photo = escapeHtmlAttribute(image || new URL('images/pupsy-share-preview-v2.png', PUBLIC_SITE).href);
+  const redirect = `../../../${page}?lang=en`;
+  const content = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${title} | PUPSY</title><meta property="og:type" content="product"><meta property="og:locale" content="en_US"><meta property="og:site_name" content="PUPSY"><meta property="og:url" content="${new URL(path, PUBLIC_SITE).href}"><meta property="og:title" content="${title}"><meta property="og:description" content="View this product on PUPSY."><meta property="og:image" content="${photo}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${title}"><meta name="twitter:description" content="View this product on PUPSY."><meta name="twitter:image" content="${photo}"></head><body><a id="open-page" href="${redirect}">Open product</a><script>location.replace(document.getElementById("open-page").href)</script></body></html>\n`;
+  let sha;
+  try {
+    const existing = await editorHtmlFile(path);
+    if (existing.content === content) return;
+    sha = existing.sha;
+  } catch (error) {
+    if (error.status !== 404) throw error;
+  }
+  await githubRequest(`/repos/${GITHUB_REPO}/contents/${path}`, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: 'Update English product sharing page', content: encodeBase64Utf8(content), branch: GITHUB_BRANCH, ...(sha ? { sha } : {}) }),
+  });
 }
 
 async function productShareThumbnail(source) {
@@ -165,7 +193,9 @@ async function saveProductRoute(product) {
   const unchangedSource = original.includes(`name="pupsy:share-source" content="${escapeHtmlAttribute(source)}"`)
     && original.includes('name="pupsy:share-version" content="2"');
   const image = unchangedSource ? /property="og:image" content="([^"]+)"/.exec(original)?.[1]?.replaceAll('&amp;', '&') : '';
-  const updated = productShareMarkup(original, product, source, image || await productShareThumbnail(source));
+  const preview = image || await productShareThumbnail(source);
+  const updated = productShareMarkup(original, product, source, preview);
+  await saveEnglishProductShare(product, preview);
   if (sha && original === updated) return;
   await githubRequest(`/repos/${GITHUB_REPO}/contents/${path}`, {
     method: 'PUT',
@@ -181,19 +211,22 @@ async function saveProductRoute(product) {
 
 async function deleteProductRoute(slug) {
   if (!slug) return;
-  const path = `product-pages/${slug}.html`;
-  let route;
-  try {
-    route = await githubRequest(`/repos/${GITHUB_REPO}/contents/${path}?ref=${GITHUB_BRANCH}`);
-  } catch (error) {
-    if (error.status === 404) return;
-    throw error;
+  const page = `product-pages/${encodeURIComponent(slug)}.html`;
+  for (const path of [page, `share/en/${page}`]) {
+    const endpoint = `/repos/${GITHUB_REPO}/contents/${path}`;
+    let route;
+    try {
+      route = await githubRequest(`${endpoint}?ref=${GITHUB_BRANCH}`);
+    } catch (error) {
+      if (error.status === 404) continue;
+      throw error;
+    }
+    await githubRequest(endpoint, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: `Delete product page ${slug}`, sha: route.sha, branch: GITHUB_BRANCH }),
+    });
   }
-  await githubRequest(`/repos/${GITHUB_REPO}/contents/${path}`, {
-    method: 'DELETE',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: `Delete product page ${slug}`, sha: route.sha, branch: GITHUB_BRANCH }),
-  });
 }
 
 window.addEventListener('load', () => {

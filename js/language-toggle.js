@@ -422,6 +422,23 @@
   const attributeSelector = translatedAttributes.map(name => `[${name}]`).join(", ");
   const originals = new WeakMap();
   let currentLanguage = "ka";
+  const openedUrl = new URL(location.href);
+  const sharePages = new Set(["index.html", "shop.html", "ambassador.html", "about.html", "contact.html"]);
+  const openedPath = openedUrl.pathname.slice(new URL(document.baseURI).pathname.length) || "index.html";
+  const hasLocalizedShare = !openedUrl.searchParams.has("admin-preview")
+    && (sharePages.has(openedPath) || /^product-pages\/[^/]+\.html$/.test(openedPath));
+
+  function updateShareAddress() {
+    if (!hasLocalizedShare || document.readyState !== "complete") return;
+    const url = currentLanguage === "en"
+      ? new URL(`share/en/${openedPath}`, document.baseURI)
+      : new URL(openedUrl);
+    url.search = location.search;
+    url.searchParams.delete("lang");
+    url.hash = location.hash;
+    history.replaceState(history.state, "", url);
+  }
+  window.addEventListener("load", updateShareAddress, { once: true });
 
   function localize(owner, key, value, write) {
     if (!value) return;
@@ -489,6 +506,7 @@
     const isGeorgian = currentLanguage === "ka";
     document.documentElement.lang = currentLanguage;
     document.documentElement.dataset.language = currentLanguage;
+    updateShareAddress();
     localizeTree(document.documentElement);
     setToggleLabel(currentLanguage);
 
@@ -529,5 +547,7 @@
       localStorage.removeItem("pupsy-language");
     }
   } catch {}
+  const requestedLanguage = openedUrl.searchParams.get("lang");
+  if (requestedLanguage === "ka" || requestedLanguage === "en") savedLanguage = requestedLanguage;
   setLanguage(savedLanguage);
 })();
