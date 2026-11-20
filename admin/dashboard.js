@@ -2647,6 +2647,7 @@ function openEditProductModal(id) {
   document.getElementById('product-submit-button').textContent = 'კორექტირება';
   document.getElementById('form-product-id').value = product.id;
   document.getElementById('form-product-title').value = product.title;
+  document.getElementById('form-product-title-en').value = product.raw.titleEn || '';
   document.getElementById('form-product-collection').value = product.collectionId;
   document.getElementById('form-product-price').value = product.price;
   document.getElementById('form-product-coming-soon').checked = product.comingSoon === true;
@@ -2752,6 +2753,8 @@ function productToRaw(product, collection, values, isNew) {
   raw.category = collection.name;
   raw.categoryId = collection.id;
   raw.title = values.title;
+  if (values.titleEn) raw.titleEn = values.titleEn;
+  else delete raw.titleEn;
   raw.comingSoon = values.comingSoon === true;
   if (isNew || !raw.slug) {
     raw.slug = uniqueProductSlug(values.title, product?.id);
@@ -2871,6 +2874,7 @@ async function saveProductForm(event) {
     const imageLinks = [...document.querySelectorAll('[data-photo-link]')].map(input => input.value.trim()).filter(Boolean);
     const values = {
       title,
+      titleEn: document.getElementById('form-product-title-en').value.trim(),
       price,
       comingSoon: document.getElementById('form-product-coming-soon').checked,
       size: document.getElementById('form-product-size').value,

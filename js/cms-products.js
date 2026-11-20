@@ -171,6 +171,11 @@
     const title = document.createElement("span");
     title.className = "cms-product-card__title";
     title.textContent = product.title || "პროდუქტი";
+    if (product.titleEn) {
+      title.dataset.nameKa = title.textContent;
+      title.dataset.nameEn = product.titleEn;
+      if (document.documentElement.lang === "en") title.textContent = product.titleEn;
+    }
     const price = document.createElement("span");
     price.className = "cms-product-card__price";
     const currency = document.createElement("img");
@@ -240,5 +245,11 @@
     }
   }
 
+  document.addEventListener("pupsy:language-change", () => {
+    const language = document.documentElement.lang === "en" ? "nameEn" : "nameKa";
+    for (const title of document.querySelectorAll(".cms-product-card__title[data-name-en]")) {
+      title.textContent = title.dataset[language];
+    }
+  });
   loadCatalog();
 })();

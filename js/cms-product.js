@@ -592,9 +592,14 @@
 
   function render(product) {
     hideProductHeaderIcons();
-    document.title = product.title + " | PUPSY";
     const title = document.querySelector(".product__title [data-zoom-caption]") || document.querySelector(".product__title");
-    if (title) title.textContent = product.title || "PUPSY პროდუქტი";
+    const updateTitle = () => {
+      const value = (document.documentElement.lang === "en" && product.titleEn) || product.title || "PUPSY";
+      document.title = value + " | PUPSY";
+      if (title && title.textContent !== value) title.textContent = value;
+    };
+    updateTitle();
+    document.addEventListener("pupsy:language-change", updateTitle);
 
     const titleWrapper = document.querySelector(".product__title__wrapper");
     titleWrapper?.querySelector("[data-cms-coming-soon]")?.remove();

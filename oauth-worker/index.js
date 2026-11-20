@@ -8,6 +8,12 @@ export default {
     if (url.pathname.startsWith("/api/")) {
       if (request.method === "OPTIONS") return apiResponse(null, 204, request);
       if (!env.VOTES_DB) return apiResponse({ error: "Vote storage is not configured." }, 503, request);
+      if (request.method === "POST" && (url.pathname === "/api/votes" || url.pathname === "/api/contacts")) {
+        const ip = request.headers.get("CF-Connecting-IP") || "local";
+        if (!env.PUBLIC_WRITE_LIMIT) return apiResponse({ error: "Write protection unavailable." }, 503, request);
+        const { success } = await env.PUBLIC_WRITE_LIMIT.limit({ key: `${url.pathname}:${ip}` });
+        if (!success) return apiResponse({ error: "Too many requests. Try again shortly." }, 429, request);
+      }
       if (url.pathname === "/api/votes" && request.method === "POST") return castVote(request, env);
       if (url.pathname === "/api/votes" && request.method === "GET") return getVoteCount(url, request, env);
       if (url.pathname === "/api/contacts" && request.method === "POST") return saveContact(request, env);

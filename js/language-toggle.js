@@ -521,6 +521,7 @@
       localStorage.setItem("pupsy-language", currentLanguage);
       if (rememberChoice) localStorage.setItem("pupsy-language-choice-v2", "true");
     } catch {}
+    document.dispatchEvent(new CustomEvent("pupsy:language-change", { detail: currentLanguage }));
   }
 
   window.addEventListener("click", event => {

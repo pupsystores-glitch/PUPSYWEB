@@ -17,6 +17,14 @@ binding = "VOTES_DB"
 database_name = "pupsy-product-votes"
 database_id = "2c28938a-1075-4746-9724-b555bcb6ce98"
 
+[[ratelimits]]
+name = "PUBLIC_WRITE_LIMIT"
+namespace_id = "742901"
+
+  [ratelimits.simple]
+  limit = 12
+  period = 60
+
 # After deployment, set these as Worker secrets in Cloudflare:
 # GITHUB_CLIENT_ID
 # GITHUB_CLIENT_SECRET
