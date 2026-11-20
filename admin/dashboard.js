@@ -93,7 +93,8 @@ function productShareMarkup(html, product, source, image) {
     .replace(/(<meta (?:property|name)="(?:og:title|twitter:title)" content=")[^"]*"/g, (_, prefix) => `${prefix}${title}"`)
     .replace(/(<meta (?:property|name)="(?:og:image|og:image:secure_url|twitter:image)" content=")[^"]*"/g, (_, prefix) => `${prefix}${preview}"`)
     .replace(/<meta name="pupsy:share-source" content="[^"]*">/g, '')
-    .replace('</head>', () => `<meta name="pupsy:share-source" content="${escapeHtmlAttribute(source)}"></head>`);
+    .replace(/<meta name="pupsy:share-version" content="[^"]*">/g, '')
+    .replace('</head>', () => `<meta name="pupsy:share-source" content="${escapeHtmlAttribute(source)}">${image?.includes('/images/share/') ? '<meta name="pupsy:share-version" content="2">' : ''}</head>`);
 }
 
 async function productShareThumbnail(source) {
@@ -104,18 +105,31 @@ async function productShareThumbnail(source) {
       : source;
     const response = await fetch(download, { signal: AbortSignal.timeout(5000) });
     if (!response.ok) return source;
-    const bitmap = await createImageBitmap(await response.blob());
+    const logoResponse = await fetch(new URL('../images/logo_PUPSY_optimized.png', window.location.href), { signal: AbortSignal.timeout(5000) });
+    if (!logoResponse.ok) return source;
+    const logo = await createImageBitmap(await logoResponse.blob());
+    const blob = await response.blob();
     const canvas = document.createElement('canvas');
     try {
-      const scale = Math.min(1, 640 / Math.max(bitmap.width, bitmap.height));
-      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
-      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
-      const context = canvas.getContext('2d');
-      context.fillStyle = '#fff';
-      context.fillRect(0, 0, canvas.width, canvas.height);
-      context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-    } finally { bitmap.close(); }
-    const jpeg = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.7));
+      const bitmap = await createImageBitmap(blob);
+      try {
+        const scale = Math.min(1, 480 / Math.max(bitmap.width, bitmap.height));
+        canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+        canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+        const context = canvas.getContext('2d');
+        context.fillStyle = '#fff';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+        const width = Math.max(1, Math.round(Math.min(canvas.width, canvas.height) * 0.22));
+        const height = Math.max(1, Math.round(width * logo.height / logo.width));
+        const pad = Math.max(1, Math.round(width / 10));
+        const x = canvas.width - width - 2 * pad;
+        const y = canvas.height - height - 2 * pad;
+        context.fillRect(x, y, width + pad, height + pad);
+        context.drawImage(logo, x + pad / 2, y + pad / 2, width, height);
+      } finally { bitmap.close(); }
+    } finally { logo.close(); }
+    const jpeg = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.5));
     const bytes = await jpeg.arrayBuffer();
     const hash = [...new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))]
       .map(byte => byte.toString(16).padStart(2, '0')).join('');
@@ -148,7 +162,8 @@ async function saveProductRoute(product) {
     if (error.status !== 404) throw error;
   }
   const source = productShareSource(product);
-  const unchangedSource = original.includes(`name="pupsy:share-source" content="${escapeHtmlAttribute(source)}"`);
+  const unchangedSource = original.includes(`name="pupsy:share-source" content="${escapeHtmlAttribute(source)}"`)
+    && original.includes('name="pupsy:share-version" content="2"');
   const image = unchangedSource ? /property="og:image" content="([^"]+)"/.exec(original)?.[1]?.replaceAll('&amp;', '&') : '';
   const updated = productShareMarkup(original, product, source, image || await productShareThumbnail(source));
   if (sha && original === updated) return;
