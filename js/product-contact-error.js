@@ -2,7 +2,7 @@
   const script = document.currentScript || Array.from(document.scripts).find(item =>
     /(?:^|\/)product-contact-error\.js(?:\?|$)/.test(item.src)
   );
-  const imageBase = new URL("../images/", script ? script.src : document.baseURI);
+  const root = new URL("../", script ? script.src : document.baseURI);
   const container = document.querySelector("[data-cart-errors-container]");
   if (!container) return;
 
@@ -98,19 +98,21 @@
     ? "Please contact us to purchase this product."
     : "პროდუქტის შესაძენად დაგვიკავშირდით.";
 
-  function createChannel(label, href, imageSource) {
+  function createChannel(label, href, image) {
     const link = document.createElement("a");
     link.className = "product-contact-prompt__link";
     link.href = href;
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
     link.setAttribute("aria-label", label);
-    const icon = document.createElement("img");
-    icon.className = "product-contact-prompt__icon";
-    icon.src = new URL(imageSource, imageBase).href;
-    icon.alt = "";
-    link.append(icon, document.createElement("span"));
-    link.lastElementChild.textContent = label;
+    if (image) {
+      const icon = document.createElement("img");
+      icon.className = "product-contact-prompt__icon";
+      icon.src = new URL(`images/${image}`, root).href;
+      icon.alt = "";
+      link.append(icon);
+    }
+    const text = document.createElement("span");
+    text.textContent = label;
+    link.append(text);
     return link;
   }
 
@@ -128,9 +130,23 @@
 
       const channels = document.createElement("div");
       channels.className = "product-contact-prompt__channels";
+      const productTitle = document.querySelector(".product__title")?.textContent.trim();
+      const size = document.querySelector(".selector-wrapper--size input:checked:not(:disabled)")?.labels[0]?.textContent.trim();
+      const price = document.querySelector("[data-product-price]")?.dataset.productPrice;
+      const orderDetails = [
+        "გამარჯობა, მსურს პროდუქტის შეკვეთა.",
+        productTitle,
+        size && `ზომა: ${size}`,
+        price && `ფასი: ${price} ₾`,
+        location.href.split("#")[0],
+      ].filter(Boolean).join("\n");
+      const whatsapp = new URL("https://wa.me/995593553600");
+      whatsapp.searchParams.set("text", orderDetails);
+      const email = `mailto:pupsystores@gmail.com?subject=${encodeURIComponent(productTitle || "PUPSY")}&body=${encodeURIComponent(orderDetails)}`;
       channels.append(
-        createChannel("WhatsApp", "https://wa.me/13142039237", "Whatsapp-Logo.png"),
-        createChannel("Messenger", "https://m.me/furlou", "Messenger-Logo.png")
+        createChannel("WhatsApp", whatsapp, "Whatsapp-Logo.png"),
+        createChannel("Facebook", "https://www.facebook.com/profile.php?id=61584558216059", "order-facebook.png"),
+        createChannel("Email", email, "order-gmail.png")
       );
 
       const close = document.createElement("button");
@@ -167,6 +183,23 @@
     attributes: true,
     attributeFilter: ["lang"]
   });
+
+  function showContactPrompt(event) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const error = document.createElement("div");
+    error.className = "errors";
+    container.replaceChildren(error);
+    container.classList.add("is-visible");
+    renderContactPrompt();
+  }
+
+  window.addEventListener("click", event => {
+    if (event.target.closest?.("form[data-product-form] [data-add-to-cart]")) showContactPrompt(event);
+  }, true);
+  window.addEventListener("submit", event => {
+    if (event.target.matches?.("form[data-product-form]")) showContactPrompt(event);
+  }, true);
 
   container.addEventListener("click", event => {
     const close = event.target.closest("[data-close-error]");

@@ -100,15 +100,12 @@
     return row;
   }
 
-  function safeImagePath(path, width) {
+  function safeImagePath(path) {
     if (!path) return "";
     try {
       const url = new URL(path, baseUrl);
       if (location.hostname !== "pupsystores-glitch.github.io" && url.pathname.startsWith("/PUPSYWEB/")) {
         url.pathname = url.pathname.slice("/PUPSYWEB".length);
-      }
-      if (/\/cdn\/shop\/files\/|cdn\.shopify\.com/i.test(url.hostname + url.pathname)) {
-        url.searchParams.set("width", String(width || 640));
       }
       return url.href;
     } catch (_) {
@@ -148,14 +145,8 @@
     } else {
       const image = document.createElement("img");
       image.className = "cms-product-card__image";
-      if (imagePath) image.src = safeImagePath(imagePath, 640);
+      if (imagePath) image.src = safeImagePath(imagePath);
       else image.hidden = true;
-      if (imagePath && /\/cdn\/shop\/files\/|cdn\.shopify\.com/i.test(imagePath)) {
-        image.srcset = [320, 480, 640, 800]
-          .map((width) => safeImagePath(imagePath, width) + " " + width + "w")
-          .join(", ");
-        image.sizes = "(max-width: 600px) 50vw, 25vw";
-      }
       image.alt = product.title || "PUPSY პროდუქტი";
       image.loading = "lazy";
       link.append(image);

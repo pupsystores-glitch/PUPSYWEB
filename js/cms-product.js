@@ -8,7 +8,7 @@
   sizeButtons?.addEventListener("change", (event) => {
     const input = event.target;
     if (!input.matches('input[type="radio"]:checked')) return;
-    // The template's Shopify variants can overwrite the product's fixed price.
+    // The catalog price is independent of the size control.
     event.stopPropagation();
     selectSizeOption(input.closest(".radio__button"));
   });
@@ -256,22 +256,6 @@
     return new URL(value, baseUrl).href;
   }
 
-  function imageUrl(path, width) {
-    const url = new URL(assetUrl(path));
-    if (/\/cdn\/shop\/files\/|cdn\.shopify\.com/i.test(url.hostname + url.pathname)) {
-      url.searchParams.set("width", String(width));
-    }
-    return url.href;
-  }
-
-  function originalImageUrl(path) {
-    const url = new URL(assetUrl(path));
-    if (/\/cdn\/shop\/files\/|cdn\.shopify\.com/i.test(url.hostname + url.pathname)) {
-      ["width", "height", "crop"].forEach((parameter) => url.searchParams.delete(parameter));
-    }
-    return url.href;
-  }
-
   function setGallery(product) {
     const gallery = document.querySelector(".product__slides[data-product-media-list]");
     const prototype = gallery && gallery.querySelector(".product__slide");
@@ -294,22 +278,17 @@
 
       const photo = slide.querySelector(".product__photo");
       const image = slide.querySelector(".product__photo img");
-      const src = imageUrl(path.trim(), 1600);
-      const originalSrc = originalImageUrl(path.trim());
-      const source = new URL(assetUrl(path.trim()));
-      const canResize = /\/cdn\/shop\/files\/|cdn\.shopify\.com/i.test(source.hostname + source.pathname);
+      const src = assetUrl(path);
       if (photo) {
         photo.style.setProperty("--aspect-ratio", "1");
-        photo.dataset.zoomImage = originalSrc;
-        photo.dataset.imageSrc = originalSrc;
+        photo.dataset.zoomImage = src;
+        photo.dataset.imageSrc = src;
         photo.dataset.imageWidth = "1600";
         photo.dataset.imageHeight = "1600";
       }
       if (image) {
         image.src = src;
-        image.srcset = canResize
-          ? [480, 800, 1200, 1600].map((width) => `${imageUrl(path.trim(), width)} ${width}w`).join(", ")
-          : "";
+        image.removeAttribute("srcset");
         image.alt = product.title || "PUPSY პროდუქტი";
         image.loading = index === 0 ? "eager" : "lazy";
         image.fetchPriority = index === 0 ? "high" : "auto";
@@ -335,10 +314,8 @@
         figure.setAttribute("aria-current", "false");
         const image = figure.querySelector("img");
         if (image) {
-          image.src = imageUrl(path.trim(), 160);
-          image.srcset = /\/cdn\/shop\/files\/|cdn\.shopify\.com/i.test(path)
-            ? [80, 120, 160].map((width) => `${imageUrl(path.trim(), width)} ${width}w`).join(", ")
-            : "";
+          image.src = assetUrl(path);
+          image.removeAttribute("srcset");
           image.sizes = "80px";
           image.alt = product.title || "PUPSY პროდუქტი";
           image.width = 160;

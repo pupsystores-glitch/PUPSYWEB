@@ -1,7 +1,67 @@
 (() => {
   const translations = {
+    "Terms and Policies — PUPSY": "წესები და პოლიტიკა — PUPSY",
+    "Georgian lari": "ქართული ლარი",
+    "GEL": "ლარი",
+    "Instagram profile picture": "ინსტაგრამის პროფილის ფოტო",
+    "close button": "დახურვის ღილაკი",
+    "Mute": "ხმის გამორთვა",
+    "Unmute": "ხმის ჩართვა",
+    "Scroll to product": "პროდუქტზე გადასვლა",
+    "View photo": "ფოტოს ნახვა",
+    "dog photo": "ძაღლის ფოტო",
+    "TikTok social photo": "ტიკტოკის ფოტო",
+    "Facebook social photo": "ფეისბუქის ფოტო",
+    "Instagram social photo": "ინსტაგრამის ფოტო",
+    "WhatsApp social photo": "ვოთსაპის ფოტო",
+    "Gmail social photo": "ელფოსტის ფოტო",
+    "Phone social photo": "ტელეფონის ფოტო",
+    "Powered by GS": "შექმნილია GS-ის მიერ",
+    "Your messages about our Sherpa Harnesses haven’t stopped, and we’re loving the excitement! 🤎 They’re on their way to our warehouses, and we can’t wait to share this release with you. Which color are you hoping to get? 👀 The beautiful @athena.dobermannn #dogharness #dogshop #dogsofinstagram": "შერპას წელსამაგრებზე თქვენი შეტყობინებები არ წყდება და თქვენი გამოხმაურება გვახარებს! 🤎 კოლექცია უკვე გზაშია და მოუთმენლად ველით, როდის გაგიზიარებთ. რომელ ფერს ელოდებით? 👀 ფოტოზე ულამაზესი @athena.dobermannn.",
+    "Brown is officially having its moment 🤎 Usually saved for the cozier seasons, it became one of your favorites even throughout summer, and we can completely see why 🤩 Check our Comfort Collection - 9 colors available 📸 the best model @woody_australianlabradoodle #dogharness #dogshop #doggear": "ყავისფერის დრო დადგა 🤎 ეს ფერი მყუდრო სეზონებს გვახსენებს, მაგრამ ზაფხულშიც ერთ-ერთი თქვენი ფავორიტი იყო და გვესმის, რატომაც 🤩 ნახეთ კომფორტის კოლექცია ცხრა ფერში. 📸 ჩვენი მოდელია @woody_australianlabradoodle.",
+    "One week until fall 🍂 hands free season is almost here 🍁 🤎 ☕️ 🧸 🕯️ 🧣 #dogaccessories #handsfreeleash #dogleash #doggifts": "შემოდგომამდე ერთი კვირაა 🍂 ხელების დაუკავებლად სასეირნო საბელების სეზონი გვიახლოვდება 🍁",
+    "Now that I have your attention 🙃 Hi, I’m Iolanda, the founder of PUPSY and I think we may have created the cutest harnesses for this fall 🍂🤎 #dogharness #dogaccessories #handsfreeleash #dogleash": "რაკი თქვენი ყურადღება მოვიპოვე 🙃 გამარჯობა, მე იოლანდა ვარ და ვფიქრობ, ამ შემოდგომისთვის უსაყვარლესი წელსამაგრები შევქმენით 🍂🤎",
+    "Mirror mirror who’s the best dressed pup of them all? 🤎✨ #dogharness #dogaccessories #doggifts #dogleash": "სარკევ, სარკევ, ვის აცვია ყველაზე ლამაზად? 🤎✨",
+    "Just restocked our bestseller strap harnesses 🌈 A true staple for every season! perfect for layering on cooler days or wearing on its own when the sun is out. Easy, lightweight & made for everyday ✨ #dogharness #dogproducts #doggifts #dogaccessories": "ჩვენი ყველაზე მოთხოვნადი ღვედებიანი წელსამაგრები ისევ მარაგშია 🌈 მსუბუქი და ყოველდღიური სეირნობისთვის მოსახერხებელი. გრილ ამინდში ტანსაცმელზეც მოარგებთ, მზიან დღეს კი ცალკეც გამოიყენებთ ✨",
+    "Everyone’s ready for fall and we’re like… it’s still August 😭☀️ so I will keep the summer energy, but in fall approved colors!!": "ყველა შემოდგომას ელოდება, მაგრამ ჯერ აგვისტოა 😭☀️ ამიტომ ზაფხულის განწყობას შემოდგომის ფერებში ვინარჩუნებთ!",
+    "A PUPSY summer is a colorful one 🌈☀️🐶 made brighter with our colorful strap harnesses #dogharness #dogaccessories #doggear #doggifts": "ზაფხული ფერადია 🌈☀️🐶 ჩვენი ფერადი ღვედებიანი წელსამაგრები კი მას კიდევ უფრო ახალისებს.",
+    "Pretty in Powder Rose 🌸 Comfort, style, and the cutest model we’ve ever seen 🤍🧸 📸 @bouboudogstore #dogharness #dogshop #doggear": "პუდრისფერ ვარდისფერში 🌸 კომფორტი, სტილი და უსაყვარლესი მოდელი 🤍🧸 📸 @bouboudogstore",
+    "After more than a year of working behind the scenes, we’re so excited to finally say… PUPSY is officially on Chewy! This has been a huge milestone for us, and we couldn’t be happier to make it even easier to shop your favorite PUPSY products. Shop PUPSY on Chewy! 💙💙💙": "ერთ წელზე მეტი ხნის მუშაობის შემდეგ ჩვენი პროდუქცია Chewy-ზეც გამოჩნდა! ეს ჩვენთვის მნიშვნელოვანი ეტაპია და გვიხარია, რომ სასურველი ნივთების შეძენა უფრო მარტივია. 💙",
+    "A dad and his girlie 🩷 #dogharness #furlouharness #dogaccesories #dogleash": "მამა და მისი გოგო 🩷",
+    "Which day’s style is your favorite? 🤍🫣 #dogharness #dogstyle #dogshop": "რომელი დღის სტილი მოგწონთ ყველაზე მეტად? 🤍🫣",
+    "In case you missed it… We just released brand new colors for our Comfort Harnesses and Strap Harnesses, + matching accessories and a full restock of your favorites. Designed for comfort and made for everyday adventures, ✨ #dogharness #dogshop #dogmom #dogleash #handsfreeleash": "თუ გამოგრჩათ, კომფორტისა და ღვედებიანი წელსამაგრების ახალი ფერები და შესაფერისი აქსესუარები დავამატეთ. თქვენი რჩეული ნივთების მარაგიც შევავსეთ. შექმნილია კომფორტისა და ყოველდღიური თავგადასავლებისთვის ✨",
+    "New comfort harness colors, new strap harness colors, matching leashes, collars, accessories, and a full restock are officially live! 🐶 This shoot with @pollycreativestudios was such a fun one, and we have so much more to share. Stay tuned. ✨": "კომფორტისა და ღვედებიანი წელსამაგრების ახალი ფერები, შესაფერისი საბელები, საყელურები და აქსესუარები უკვე ხელმისაწვდომია! 🐶 მარაგიც შევავსეთ. @pollycreativestudios-თან გადაღება ძალიან სახალისო იყო. კიდევ ბევრ სიახლეს გაგიზიარებთ ✨",
+    "Our new comfort and strap harness will be available this Saturday July 18th at 10AM EST ☀️ along with a restock of everything else on our website!! #dogharness #dogmom #dogshop #dogaccessories #handsfreeleash": "ახალი კომფორტისა და ღვედებიანი წელსამაგრები შაბათს, 18 ივლისს, აშშ-ის აღმოსავლეთის დროით დილის 10 საათიდან იქნება ხელმისაწვდომი ☀️ სხვა ნივთების მარაგსაც შევავსებთ.",
+    "Our Flower Slow Feeder isn’t just cute 🌸 it’s designed to help dogs who eat too fast slow down and enjoy their meals, supporting healthier digestion and reducing gulping 🤩 Feeling creative? Turn mealtime into a work of art by adding your dog’s favorite food, treats, fruits, veggies, or supplements 👩🏽‍🍳 Or keep it simple with kibble or wet food. Either way, your pup gets all the benefits of eating at a healthier pace 🤍 A small change that can make a big difference for your dog’s well-being 🐶 📸 @woody_australianlabradoodle #slowfeeder #lickmat #dogfood": "ყვავილის ფორმის ნელი კვების თასი 🌸 განკუთვნილია ძაღლებისთვის, რომლებიც საკვებს სწრაფად ჭამენ. ის ეხმარება მათ, ნელა ჭამონ და ნაკლებად გადაყლაპონ საკვები მოუღეჭავად. შეგიძლიათ დაამატოთ საყვარელი საკვები, სასუსნავი ან შესაფერისი ხილი და ბოსტნეული, ან უბრალოდ გამოიყენოთ მშრალი თუ სველი საკვები. 📸 @woody_australianlabradoodle",
+    "PUPSY was born on a walk to the dog park. I was walking my first dog Louie on a retractable leash when I realized - not only was it boring but also lacking in functionality (no hate to retractable leash fans).": "იდეა ძაღლების პარკში სეირნობისას გაჩნდა. ჩემს ძაღლ ლუის გასაწევი საბელით ვასეირნებდი და მივხვდი, რომ უფრო პრაქტიკული და ლამაზი აქსესუარი მინდოდა.",
+    "I knew I wasn't the only one who cared about their pups this much, and that there would be people looking for cute and practical dog products just like myself.": "ვიცოდი, რომ სხვა ადამიანებიც ისევე ზრუნავდნენ თავიანთ ძაღლებზე, როგორც მე, და მათაც სურდათ ლამაზი და პრაქტიკული ნივთები.",
+    "With any small business comes a personal touch. We value our customer relationships (many of which have grown into friendships.) We love to hear your stories and how your pups have impacted your life. That is really what PUPSY is all about; being a part of the growing community of dog parents.You can expect to receive the same customer service you'd get from your local small boutique.Feel free to ask us about our products, sizes and materials - We are here to help and guide you through your purchase.": "ჩვენთვის მომხმარებლებთან ურთიერთობა მნიშვნელოვანია. გვიყვარს თქვენი ისტორიების მოსმენა და იმის გაგება, როგორ შეცვალეს ძაღლებმა თქვენი ცხოვრება. თუ შეკითხვა გაქვთ პროდუქტზე, ზომაზე ან მასალაზე, დაგვეკონტაქტეთ და არჩევანში დაგეხმარებით.",
+    "Our perspective is simple: We want to provide top quality products while manufacturing responsibly and ethically. And ultimately try our best to offer products at accessible and fair prices.": "ჩვენი მიზანია პასუხისმგებლობით დამზადებული, მაღალი ხარისხის პროდუქცია ხელმისაწვდომ და სამართლიან ფასად შემოგთავაზოთ.",
+    "Your beloved SHERPA HARNESSES are back 🤎 And because autumn calls for both cosy walks and rainy days at home, we’re introducing our NEW LICK MATS in beautiful shades. A little something to keep your pup entertained when it’s time to stay in 🐕🍂 Shop now - US & European website! #dogharness #lickmat #slowfeeder": "თქვენი საყვარელი შერპას წელსამაგრები დაბრუნდა 🤎 წვიმიანი დღეებისთვის კი ახალ სალოკ საფენებს გთავაზობთ. როცა სახლში დარჩენაა საჭირო, საფენი ძაღლს თავის შექცევაში დაეხმარება 🐕🍂",
+    "The moment you’ve been waiting for… SHERPA COLLECTION RESTOCK SATURDAY 🤍🧸 October 10th at 10AM EST 🐕 #dogharness #dogshop #dogaccessories": "შერპას კოლექციის მარაგი შაბათს შეივსება 🤍🧸 10 ოქტომბერს, აშშ-ის აღმოსავლეთის დროით დილის 10 საათზე 🐕",
+    "Strap Harnesseses": "ღვედებიანი წელსამაგრები",
+    "XS": "ძალიან პატარა",
+    "View products": "პროდუქტების ნახვა",
+    "How we were born": "როგორ დავიწყეთ",
+    "OUR MISSION": "ჩვენი მისია",
+    "Why shop at PUPSY?": "რატომ უნდა აირჩიოთ PUPSY?",
+    "Our products": "ჩვენი პროდუქცია",
+    "Facebook": "ფეისბუქი",
+    "WhatsApp": "ვოთსაპი",
+    "Email": "ელფოსტა",
+    "E-mail": "ელფოსტა",
+    "© 2026 PUPSY . Powered by": "© 2026 PUPSY. შექმნილია",
+    "GS": "GS",
+    "Play video": "ვიდეოს დაკვრა",
+    "Pause video": "ვიდეოს შეჩერება",
+    "Zoom in": "გადიდება",
+    "Zoom out": "დაპატარავება",
+    "Increase quantity": "რაოდენობის გაზრდა",
+    "Decrease quantity": "რაოდენობის შემცირება",
+    "Final sale products can't be returned or exchanged.": "საბოლოო გაყიდვის პროდუქტების დაბრუნება ან გაცვლა შეუძლებელია.",
+    "Next slide": "შემდეგი სლაიდი",
+    "Previous slide": "წინა სლაიდი",
     "Pupsy - Dog Accessories – PUPSY": "PUPSY — ძაღლის აქსესუარები",
-    "Furlou - Dog Accessories – FURLOU": "PUPSY — ძაღლის აქსესუარები",
     "Hello, summer walks.": "მოგესალმები, ზაფხულის სეირნობავ.",
     "For your four-legged friend.": "შენი ოთხფეხა მეგობრისთვის.",
     "NEW COLLECTION": "ახალი კოლექცია",
@@ -14,7 +74,7 @@
     "Eat & Drink": "საკვები და სასმელი",
     "Made for the season": "ამ სეზონისთვის შექმნილი",
     "OUR STORY": "ჩვენი ისტორია",
-    "The Furlou Family": "ფურლოუს ოჯახი",
+    "The PUPSY Family": "PUPSY-ის ოჯახი",
     "Paws, Leashes, and Memories": "თათები, საბელები და მოგონებები",
     "When beauty meets functionality.": "როცა სილამაზე პრაქტიკულობას ერწყმის.",
     "I knew I wasn't the only one who cared about their pup this much, and that there would be people looking for cute and practical dog products just like myself.": "ვიცოდი, რომ მხოლოდ მე არ ვზრუნავდი ჩემს ოთხფეხა მეგობარზე ასე ძალიან და რომ სხვებსაც სურდათ ისეთი საყვარელი და პრაქტიკული ნივთები ძაღლებისთვის, როგორსაც თავად ვეძებდი.",
@@ -208,8 +268,6 @@
     "Blog": "ბლოგი",
     "Policies": "პოლიტიკები",
     "Contacts": "კონტაქტი",
-    "E-mail: woof@furlou.com": "ელფოსტა: woof@furlou.com",
-    "© 2026 FURLOU . Powered by": "© 2026 PUPSY. პლატფორმა:",
     "Previous": "წინა",
     "Next": "შემდეგი",
     "Close": "დახურვა",
@@ -244,7 +302,7 @@
     "ზრუნვა, რომელიც ჩანს": "Care you can see",
     "იხილეთ, სად მიდის თქვენი წვლილი ყოველთვიურად.": "See where your contribution goes each month.",
     "გამორჩეული ხარისხი და დიზაინი: თითოეული პროდუქტი შერჩეულია განსაკუთრებული ყურადღებითა და სიყვარულით. მზუნველობა და პასუხისმგებლობა: ყოველი შენაძენით ეხმარებით უსახლკარო ცხოველებს. სრული გამჭვირვალობა: ყოველთვიური ვიდეო-რეპორტაჟები ჩვენი ერთობლივი ქველმოქმედების შესახებ. გმადლობთ, რომ ირჩევთ PUPSY-ს და ჩვენთან ერთად ცვლით სამყაროს უკეთესობისკენ! 🐾🤍": "Exceptional quality and design: every product is chosen with special care and love. Care and responsibility: every purchase helps animals without a home. Full transparency: monthly video reports show the difference our shared charity work makes. Thank you for choosing PUPSY and helping us make the world a better place! 🐾🤍",
-    "The Furlou Family": "The Furlou Family",
+    "PUPSY-ის ოჯახი": "The PUPSY Family",
     "წესები და პოლიტიკა": "Terms and Policies",
     "1. ბრენდის პოლიტიკა და ზოგადი პირობები": "1. Brand Policy and General Terms",
     "მომსახურების არსი:": "Nature of Service:",
@@ -306,7 +364,52 @@
     "2-5 სამუშაო დღის": "2–5 business days",
     "Paws, Leashes, and Memories": "Paws, Leashes, and Memories"
   };
-  const getGeorgian = english => georgianOverrides[english] ?? translations[english];
+  const lookup = (dictionary, key) => Object.hasOwn(dictionary, key) ? dictionary[key] : undefined;
+  const months = {
+    January: "იანვარი", February: "თებერვალი", March: "მარტი", April: "აპრილი",
+    May: "მაისი", June: "ივნისი", July: "ივლისი", August: "აგვისტო",
+    September: "სექტემბერი", October: "ოქტომბერი", November: "ნოემბერი", December: "დეკემბერი"
+  };
+  const colors = {
+    Black: "შავი", Blue: "ლურჯი", Brown: "ყავისფერი", Green: "მწვანე", Tan: "ღია ყავისფერი",
+    Terracotta: "ტერაკოტისფერი", "Powder Rose": "პუდრისფერი ვარდისფერი", Lavender: "ლავანდისფერი",
+    Clay: "თიხისფერი", Rainbow: "ცისარტყელასფერი", Lilac: "იასამნისფერი", Sand: "ქვიშისფერი",
+    Yellow: "ყვითელი", Pink: "ვარდისფერი", Bordeaux: "ბორდოსფერი"
+  };
+  const productKinds = {
+    "Comfort Dog Harness": "ძაღლის კომფორტული წელსამაგრი",
+    "Velvet Dog Harness": "ძაღლის ხავერდის წელსამაგრი",
+    "Dog Harness": "ძაღლის წელსამაგრი",
+    "Canvas Dog Collar": "ძაღლის ტილოს საყელური",
+    "Velvet Dog Collar": "ძაღლის ხავერდის საყელური",
+    "Hands Free Braided Leash": "ხელების დაუკავებლად სატარებელი დაწნული საბელი",
+    "Braided Rope Leash": "დაწნული თოკის საბელი"
+  };
+  function translateColors(value) {
+    const parts = value.replace(/^'|'$/g, "").split(" and ");
+    return parts.every(part => lookup(colors, part)) ? parts.map(part => colors[part]).join(" და ") : undefined;
+  }
+  function getGeorgian(english) {
+    const translated = lookup(georgianOverrides, english) ?? lookup(translations, english);
+    if (translated) return translated;
+    const date = /^([A-Z][a-z]+) ([0-9]{1,2})$/.exec(english);
+    if (date && lookup(months, date[1])) return `${date[2]} ${months[date[1]]}`;
+    const [color, product, brand] = english.split(" - ");
+    if (!product) {
+      const translatedColor = translateColors(color);
+      if (translatedColor) return translatedColor;
+    } else if (lookup(productKinds, product) && translateColors(color)) {
+      return [translateColors(color), productKinds[product], brand].filter(Boolean).join(" — ");
+    }
+    const instagram = /^Instagram post #([0-9]+) details$/.exec(english);
+    if (instagram) return `ინსტაგრამის პოსტის №${instagram[1]} დეტალები`;
+    if (english.startsWith("Instagram post with the caption:")) return "ინსტაგრამის პოსტის ფოტო";
+    if (/^WhatsApp:\s*\+?[\d ()-]+$/.test(english)) return english.replace("WhatsApp", "ვოთსაპი");
+    if (/^[\d.,\s()"–—-]+\s*cm\)$/i.test(english)) {
+      return english.replace(/"/g, " დუიმი").replace(/\bcm\b/i, "სმ");
+    }
+    if (/ video$/.test(english) && /[\u10a0-\u10ff]/.test(english)) return english.replace(/ video$/, " — ვიდეო");
+  }
 
   const normalize = value => value.replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
   const reverseTranslations = {};
@@ -314,51 +417,61 @@
     reverseTranslations[normalize(defaultGeorgian)] = english;
     reverseTranslations[normalize(getGeorgian(english))] = english;
   }
-  const originalTitle = document.title;
-  const isPrivacyPolicyPage = /(?:^|\/)privacy\.html$/i.test(window.location.pathname);
-  const englishTitle = isPrivacyPolicyPage
-    ? "Terms and Policies — PUPSY"
-    : reverseTranslations[normalize(originalTitle)] || originalTitle;
-  const georgianTitle = getGeorgian(normalize(originalTitle)) || originalTitle;
-  const textEntries = [];
-  const attributeEntries = [];
-  const walker = document.createTreeWalker(document.documentElement, NodeFilter.SHOW_TEXT);
+  const translatedAttributes = ["aria-label", "aria-description", "alt", "title", "placeholder", "data-tooltip", "value"];
+  const excluded = "script, style, noscript, svg, [data-popout-toggle-text]";
+  const attributeSelector = translatedAttributes.map(name => `[${name}]`).join(", ");
+  const originals = new WeakMap();
+  let currentLanguage = "ka";
 
-  while (walker.nextNode()) {
-    const node = walker.currentNode;
-    if (!node.nodeValue.trim() || node.parentElement.closest("script, style, noscript, svg")) continue;
-    const key = normalize(node.nodeValue);
-    if (Object.prototype.hasOwnProperty.call(translations, key)) {
-      textEntries.push({ node, original: node.nodeValue, translated: getGeorgian(key) });
-    } else if (Object.prototype.hasOwnProperty.call(reverseTranslations, key)) {
-      textEntries.push({ node, original: reverseTranslations[key], translated: node.nodeValue });
-    } else if (Object.prototype.hasOwnProperty.call(georgianToEnglish, key)) {
-      textEntries.push({ node, original: georgianToEnglish[key], translated: node.nodeValue });
+  function localize(owner, key, value, write) {
+    if (!value) return;
+    const entries = originals.get(owner) || new Map();
+    let entry = entries.get(key);
+    if (!entry || value !== entry.rendered) {
+      const normalized = normalize(value);
+      const translated = getGeorgian(normalized);
+      const english = lookup(georgianToEnglish, normalized) || lookup(reverseTranslations, normalized);
+      if (!translated && !english) return;
+      entry = { ka: translated || value, en: translated ? value : english };
+      entries.set(key, entry);
+      originals.set(owner, entries);
+    }
+    entry.rendered = entry[currentLanguage];
+    if (value !== entry.rendered) write(entry.rendered);
+  }
+
+  function localizeText(node) {
+    if (!node.parentElement || node.parentElement.closest(excluded)) return;
+    localize(node, "text", node.nodeValue, text => { node.nodeValue = text; });
+  }
+
+  function localizeAttributes(element) {
+    if (element.closest(excluded)) return;
+    for (const attribute of translatedAttributes) {
+      if (attribute === "value" && !element.matches('input[type="submit"], input[type="button"]')) continue;
+      localize(element, attribute, element.getAttribute(attribute), value => element.setAttribute(attribute, value));
     }
   }
 
-  for (const element of document.querySelectorAll("[aria-label], [title], [placeholder]")) {
-    for (const attribute of ["aria-label", "title", "placeholder"]) {
-      if (!element.hasAttribute(attribute)) continue;
-      const original = element.getAttribute(attribute);
-      const key = normalize(original);
-      if (Object.prototype.hasOwnProperty.call(translations, key)) {
-        attributeEntries.push({ element, attribute, original, translated: getGeorgian(key) });
-      } else if (Object.prototype.hasOwnProperty.call(reverseTranslations, key)) {
-        attributeEntries.push({ element, attribute, original: reverseTranslations[key], translated: original });
-      }
-    }
+  function localizeTree(root) {
+    if (root.nodeType === Node.TEXT_NODE) return localizeText(root);
+    if (root.nodeType !== Node.ELEMENT_NODE || root.closest(excluded)) return;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    while (walker.nextNode()) localizeText(walker.currentNode);
+    localizeAttributes(root);
+    root.querySelectorAll(attributeSelector).forEach(localizeAttributes);
   }
 
-  for (const element of document.querySelectorAll('input[type="submit"], input[type="button"]')) {
-    const original = element.value;
-    const key = normalize(original);
-    if (translations[key]) {
-      attributeEntries.push({ element, attribute: "value", original, translated: getGeorgian(key) });
-    } else if (reverseTranslations[key]) {
-      attributeEntries.push({ element, attribute: "value", original: reverseTranslations[key], translated: original });
+  new MutationObserver(records => {
+    for (const record of records) {
+      if (record.type === "characterData") localizeText(record.target);
+      if (record.type === "attributes") localizeAttributes(record.target);
+      if (record.type === "childList") record.addedNodes.forEach(localizeTree);
     }
-  }
+  }).observe(document.documentElement, {
+    subtree: true, childList: true, characterData: true, attributes: true,
+    attributeFilter: translatedAttributes
+  });
 
   const fontStyle = document.createElement("style");
   fontStyle.textContent = 'html[data-language="ka"] body, html[data-language="ka"] body *:not(svg):not(path), html[data-language="ka"] #pupsy-mobile-navigation, html[data-language="ka"] #pupsy-mobile-navigation a { font-family: "BPG Nino Mtavruli", sans-serif !important; }';
@@ -372,14 +485,11 @@
   }
 
   function setLanguage(language, rememberChoice = false) {
-    const currentLanguage = language === "ka" ? "ka" : "en";
+    currentLanguage = language === "ka" ? "ka" : "en";
     const isGeorgian = currentLanguage === "ka";
     document.documentElement.lang = currentLanguage;
     document.documentElement.dataset.language = currentLanguage;
-    document.title = isGeorgian ? georgianTitle : englishTitle;
-
-    for (const entry of textEntries) entry.node.nodeValue = isGeorgian ? entry.translated : entry.original;
-    for (const entry of attributeEntries) entry.element.setAttribute(entry.attribute, isGeorgian ? entry.translated : entry.original);
+    localizeTree(document.documentElement);
     setToggleLabel(currentLanguage);
 
     for (const option of document.querySelectorAll("a[data-popout-option]")) {
