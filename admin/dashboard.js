@@ -96,7 +96,7 @@ function productShareMarkup(html, product, source, image) {
     .replace(/<meta name="pupsy:share-source" content="[^"]*">/g, '')
     .replace(/<meta name="pupsy:share-version" content="[^"]*">/g, '')
     .replace(/<meta property="og:locale" content="[^"]*">/g, '')
-    .replace('</head>', () => `<meta property="og:locale" content="ka_GE"><meta name="pupsy:share-source" content="${escapeHtmlAttribute(source)}">${image?.includes('/images/share/') ? '<meta name="pupsy:share-version" content="5">' : ''}</head>`);
+    .replace('</head>', () => `<meta property="og:locale" content="ka_GE"><meta name="pupsy:share-source" content="${escapeHtmlAttribute(source)}">${image?.includes('/images/share/') ? '<meta name="pupsy:share-version" content="6">' : ''}</head>`);
 }
 
 async function saveEnglishProductShare(product, image) {
@@ -141,7 +141,7 @@ async function productShareThumbnail(source) {
     try {
       const bitmap = await createImageBitmap(blob);
       try {
-        const scale = Math.min(1, 360 / Math.max(bitmap.width, bitmap.height));
+        const scale = Math.min(1, 480 / Math.max(bitmap.width, bitmap.height));
         const photoWidth = Math.max(1, Math.round(bitmap.width * scale));
         const photoHeight = Math.max(1, Math.round(bitmap.height * scale));
         canvas.width = Math.max(200, photoWidth);
@@ -160,11 +160,11 @@ async function productShareThumbnail(source) {
       } finally { bitmap.close(); }
     } finally { logo.close(); }
     let jpeg;
-    for (const quality of [0.78, 0.68, 0.58, 0.48, 0.38, 0.28, 0.18, 0.08, 0]) {
+    for (const quality of [0.86, 0.78, 0.68, 0.58, 0.48, 0.38, 0.28, 0.18, 0.08, 0]) {
       jpeg = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality));
-      if (jpeg?.size <= 10000) break;
+      if (jpeg?.size <= 25000) break;
     }
-    if (!jpeg || jpeg.size > 10000) return source;
+    if (!jpeg || jpeg.size > 25000) return source;
     const bytes = await jpeg.arrayBuffer();
     const hash = [...new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))]
       .map(byte => byte.toString(16).padStart(2, '0')).join('');
@@ -198,7 +198,7 @@ async function saveProductRoute(product) {
   }
   const source = productShareSource(product);
   const unchangedSource = original.includes(`name="pupsy:share-source" content="${escapeHtmlAttribute(source)}"`)
-    && original.includes('name="pupsy:share-version" content="5"');
+    && original.includes('name="pupsy:share-version" content="6"');
   const image = unchangedSource ? /property="og:image" content="([^"]+)"/.exec(original)?.[1]?.replaceAll('&amp;', '&') : '';
   const preview = image || await productShareThumbnail(source);
   const updated = productShareMarkup(original, product, source, preview);
