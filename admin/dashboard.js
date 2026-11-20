@@ -96,7 +96,7 @@ function productShareMarkup(html, product, source, image) {
     .replace(/<meta name="pupsy:share-source" content="[^"]*">/g, '')
     .replace(/<meta name="pupsy:share-version" content="[^"]*">/g, '')
     .replace(/<meta property="og:locale" content="[^"]*">/g, '')
-    .replace('</head>', () => `<meta property="og:locale" content="ka_GE"><meta name="pupsy:share-source" content="${escapeHtmlAttribute(source)}">${image?.includes('/images/share/') ? '<meta name="pupsy:share-version" content="2">' : ''}</head>`);
+    .replace('</head>', () => `<meta property="og:locale" content="ka_GE"><meta name="pupsy:share-source" content="${escapeHtmlAttribute(source)}">${image?.includes('/images/share/') ? '<meta name="pupsy:share-version" content="3">' : ''}</head>`);
 }
 
 async function saveEnglishProductShare(product, image) {
@@ -141,13 +141,15 @@ async function productShareThumbnail(source) {
     try {
       const bitmap = await createImageBitmap(blob);
       try {
-        const scale = Math.min(1, 480 / Math.max(bitmap.width, bitmap.height));
-        canvas.width = Math.max(1, Math.round(bitmap.width * scale));
-        canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+        const scale = Math.min(1, 320 / Math.max(bitmap.width, bitmap.height));
+        const photoWidth = Math.max(1, Math.round(bitmap.width * scale));
+        const photoHeight = Math.max(1, Math.round(bitmap.height * scale));
+        canvas.width = Math.max(200, photoWidth);
+        canvas.height = Math.max(200, photoHeight);
         const context = canvas.getContext('2d');
         context.fillStyle = '#fff';
         context.fillRect(0, 0, canvas.width, canvas.height);
-        context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+        context.drawImage(bitmap, (canvas.width - photoWidth) / 2, (canvas.height - photoHeight) / 2, photoWidth, photoHeight);
         const width = Math.max(1, Math.round(Math.min(canvas.width, canvas.height) * 0.22));
         const height = Math.max(1, Math.round(width * logo.height / logo.width));
         const pad = Math.max(1, Math.round(width / 10));
@@ -157,7 +159,7 @@ async function productShareThumbnail(source) {
         context.drawImage(logo, x + pad / 2, y + pad / 2, width, height);
       } finally { bitmap.close(); }
     } finally { logo.close(); }
-    const jpeg = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.5));
+    const jpeg = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.30));
     const bytes = await jpeg.arrayBuffer();
     const hash = [...new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))]
       .map(byte => byte.toString(16).padStart(2, '0')).join('');
@@ -191,7 +193,7 @@ async function saveProductRoute(product) {
   }
   const source = productShareSource(product);
   const unchangedSource = original.includes(`name="pupsy:share-source" content="${escapeHtmlAttribute(source)}"`)
-    && original.includes('name="pupsy:share-version" content="2"');
+    && original.includes('name="pupsy:share-version" content="3"');
   const image = unchangedSource ? /property="og:image" content="([^"]+)"/.exec(original)?.[1]?.replaceAll('&amp;', '&') : '';
   const preview = image || await productShareThumbnail(source);
   const updated = productShareMarkup(original, product, source, preview);
