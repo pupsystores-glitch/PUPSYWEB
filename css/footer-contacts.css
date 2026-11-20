@@ -43,21 +43,12 @@
   border-radius: 8px;
 }
 
-.footer-contact-list__label,
-.footer-contact-list__detail {
+.site-footer .footer-contact-list__value {
   display: block;
+  min-width: 0;
   overflow-wrap: anywhere;
-}
-
-.footer-contact-list__label {
   font-size: 13px;
   font-weight: 700;
-  line-height: 1.25;
-}
-
-.footer-contact-list__detail {
-  margin-top: 3px;
-  color: #664c44;
-  font-size: 11px;
-  line-height: 1.4;
+  line-height: 1.35;
+  color: #35231f;
 }
